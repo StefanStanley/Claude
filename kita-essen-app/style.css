@@ -453,8 +453,52 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.demo-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.demo-divider::before, .demo-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.btn-demo {
+    width: 100%;
+    padding: 0.8rem;
+    background: linear-gradient(135deg, var(--sunshine) 0%, #F57C00 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 800;
+    font-family: var(--font);
+    transition: all 0.3s;
+    box-shadow: 0 4px 16px rgba(255,143,0,0.3);
+    letter-spacing: 0.3px;
+}
+
+.btn-demo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(255,143,0,0.4);
+}
+
+.btn-demo:active {
+    transform: translateY(0);
+}
+
 .login-hint {
-    margin-top: 1.5rem;
+    margin-top: 1.25rem;
     font-size: 0.8rem;
     color: var(--text-muted);
     text-align: center;

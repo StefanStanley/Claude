@@ -41,7 +41,7 @@ const ROLE_LABELS = { admin: 'Admin', kueche: 'Küche', eltern: 'Eltern' };
 let state = {
     meals: [], children: [], weekPlans: {}, users: [],
     currentWeekOffset: 0, editingMealId: null, editingChildId: null, pickingDay: null,
-    currentUser: null,
+    currentUser: null, demoMode: false,
 };
 
 // ===================== AUTH =====================
@@ -149,7 +149,54 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
+document.getElementById('btn-logout').addEventListener('click', () => {
+    if (state.demoMode) {
+        state.demoMode = false;
+        state.currentUser = null;
+        state.meals = []; state.children = []; state.weekPlans = {}; state.users = [];
+        showLogin();
+        return;
+    }
+    auth.signOut();
+});
+
+// ===================== DEMO MODE =====================
+document.getElementById('btn-demo').addEventListener('click', () => {
+    state.demoMode = true;
+    state.currentUser = { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null };
+
+    // Demo-Speisen
+    state.meals = [
+        { id: 'd1', name: 'Spaghetti Bolognese', category: 'fleisch', description: '', allergens: ['gluten', 'milch'] },
+        { id: 'd2', name: 'Fischstäbchen mit Kartoffelpüree', category: 'fisch', description: '', allergens: ['fisch', 'gluten', 'milch'] },
+        { id: 'd3', name: 'Gemüse-Lasagne', category: 'vegetarisch', description: '', allergens: ['gluten', 'milch', 'eier'] },
+        { id: 'd4', name: 'Reis mit Gemüsecurry', category: 'vegan', description: '', allergens: [] },
+        { id: 'd5', name: 'Hähnchen-Nuggets mit Pommes', category: 'fleisch', description: '', allergens: ['gluten'] },
+        { id: 'd6', name: 'Lachs mit Brokkoli', category: 'fisch', description: '', allergens: ['fisch'] },
+        { id: 'd7', name: 'Kartoffelsuppe', category: 'vegan', description: '', allergens: ['sellerie'] },
+        { id: 'd8', name: 'Pfannkuchen mit Apfelmus', category: 'vegetarisch', description: '', allergens: ['gluten', 'milch', 'eier'] },
+    ];
+
+    // Demo-Kinder
+    state.children = [
+        { id: 'c1', firstname: 'Jim', lastname: 'Knopf', group: 'Lummerland', notes: '', allergens: [] },
+        { id: 'c2', firstname: 'Lukas', lastname: 'Lokomotivführer', group: 'Lummerland', notes: '', allergens: ['milch'] },
+        { id: 'c3', firstname: 'Li', lastname: 'Si', group: 'Mandala', notes: 'kein Schweinefleisch', allergens: ['erdnuesse', 'soja'] },
+        { id: 'c4', firstname: 'Prinzessin', lastname: 'Li Si', group: 'Mandala', notes: '', allergens: [] },
+    ];
+
+    // Demo-Wochenplan
+    const wk = getWeekKey(0);
+    state.weekPlans[wk] = { 0: ['d1'], 1: ['d6'], 2: ['d3', 'd4'], 3: ['d5'], 4: ['d8', 'd7'] };
+
+    state.users = [
+        { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null },
+        { uid: 'demo2', email: 'kueche@lummerland.de', name: 'Frau Waas', role: 'kueche', childId: null },
+    ];
+
+    showApp();
+    renderAll();
+});
 
 function showLogin() {
     document.getElementById('login-page').classList.remove('hidden');
@@ -292,12 +339,12 @@ window.editMeal = function (id) {
 
 window.deleteMeal = async function (id) {
     if (!isStaff() || !confirm('Speise wirklich löschen?')) return;
-    await db.collection('meals').doc(id).delete();
+    if (!state.demoMode) await db.collection('meals').doc(id).delete();
     state.meals = state.meals.filter(m => m.id !== id);
     for (const k of Object.keys(state.weekPlans)) {
         const p = state.weekPlans[k]; let changed = false;
         for (let d = 0; d < 5; d++) if (p[d] && p[d].includes(id)) { p[d] = p[d].filter(x => x !== id); changed = true; }
-        if (changed) await db.collection('weekPlans').doc(k).set(p);
+        if (changed && !state.demoMode) await db.collection('weekPlans').doc(k).set(p);
     }
     renderMealsList(); renderWeekPlan();
 };
@@ -310,7 +357,9 @@ document.getElementById('form-meal').addEventListener('submit', async (e) => {
     const allergens = getCheckedAllergens('meal-allergens');
     if (state.editingMealId) {
         const m = state.meals.find(x => x.id === state.editingMealId);
-        if (m) { m.name = name; m.category = cat; m.description = desc; m.allergens = allergens; await db.collection('meals').doc(m.id).set({ name, category: cat, description: desc, allergens }); }
+        if (m) { m.name = name; m.category = cat; m.description = desc; m.allergens = allergens; if (!state.demoMode) await db.collection('meals').doc(m.id).set({ name, category: cat, description: desc, allergens }); }
+    } else if (state.demoMode) {
+        state.meals.push({ id: 'demo_' + Date.now(), name, category: cat, description: desc, allergens });
     } else {
         const ref = await db.collection('meals').add({ name, category: cat, description: desc, allergens });
         state.meals.push({ id: ref.id, name, category: cat, description: desc, allergens });
@@ -362,7 +411,7 @@ window.editChild = function (id) {
 
 window.deleteChild = async function (id) {
     if (!isStaff() || !confirm('Kind wirklich löschen?')) return;
-    await db.collection('children').doc(id).delete();
+    if (!state.demoMode) await db.collection('children').doc(id).delete();
     state.children = state.children.filter(c => c.id !== id);
     renderChildrenList();
 };
@@ -378,7 +427,9 @@ document.getElementById('form-child').addEventListener('submit', async (e) => {
     };
     if (state.editingChildId) {
         const c = state.children.find(x => x.id === state.editingChildId);
-        if (c) { Object.assign(c, data); await db.collection('children').doc(c.id).set(data); }
+        if (c) { Object.assign(c, data); if (!state.demoMode) await db.collection('children').doc(c.id).set(data); }
+    } else if (state.demoMode) {
+        state.children.push({ id: 'demo_' + Date.now(), ...data });
     } else {
         const ref = await db.collection('children').add(data);
         state.children.push({ id: ref.id, ...data });
@@ -504,7 +555,7 @@ window.selectMealForDay = async function (mealId) {
     const k = getWeekKey(state.currentWeekOffset), plan = getWeekPlan(state.currentWeekOffset);
     if (!plan[state.pickingDay]) plan[state.pickingDay] = [];
     plan[state.pickingDay].push(mealId);
-    await db.collection('weekPlans').doc(k).set(plan);
+    if (!state.demoMode) await db.collection('weekPlans').doc(k).set(plan);
     closeModal('modal-pick-meal'); renderWeekPlan();
 };
 
@@ -512,7 +563,7 @@ window.removeMealFromDay = async function (di, mealId) {
     if (!isStaff()) return;
     const k = getWeekKey(state.currentWeekOffset), plan = getWeekPlan(state.currentWeekOffset);
     if (plan[di]) { const idx = plan[di].indexOf(mealId); if (idx !== -1) plan[di].splice(idx, 1); }
-    await db.collection('weekPlans').doc(k).set(plan);
+    if (!state.demoMode) await db.collection('weekPlans').doc(k).set(plan);
     renderWeekPlan();
 };
 
@@ -573,7 +624,7 @@ document.getElementById('form-user').addEventListener('submit', async (e) => {
 
 window.deleteUser = async function (uid) {
     if (!confirm('Benutzer wirklich entfernen?')) return;
-    await db.collection('users').doc(uid).delete();
+    if (!state.demoMode) await db.collection('users').doc(uid).delete();
     state.users = state.users.filter(u => u.uid !== uid);
     renderUsersList();
 };
