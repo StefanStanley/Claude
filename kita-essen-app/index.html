@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#1a3a4a">
-    <title>KiTa Lummerland - Essensplanung</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F2F2F7">
+    <title>KiTa Lummerland</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260316d">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20260316e">
 </head>
 <body>
     <!-- === LOGIN === -->
@@ -19,8 +19,6 @@
             <div class="cloud cloud-1"></div>
             <div class="cloud cloud-2"></div>
             <div class="cloud cloud-3"></div>
-
-            <!-- Locomotive Emma (CSS) -->
             <div class="emma-locomotive">
                 <div class="emma-smoke"><span></span><span></span><span></span></div>
                 <div class="emma-body">
@@ -36,12 +34,10 @@
                 </div>
                 <div class="emma-track"></div>
             </div>
-
             <div class="login-card">
                 <div class="login-logo">
-                    <!-- SVG Island Logo -->
                     <div class="logo-island">
-                        <svg viewBox="0 0 80 80" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 80 80" width="52" height="52" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="40" cy="56" rx="28" ry="10" fill="#FFD54F"/>
                             <ellipse cx="40" cy="52" rx="22" ry="8" fill="#4CAF50"/>
                             <rect x="37" y="22" width="6" height="32" rx="3" fill="#795548"/>
@@ -49,295 +45,256 @@
                             <ellipse cx="34" cy="18" rx="10" ry="9" fill="#43A047"/>
                             <ellipse cx="50" cy="26" rx="8" ry="7" fill="#81C784"/>
                             <circle cx="58" cy="16" r="8" fill="#FFF176" opacity="0.9"/>
-                            <path d="M58 8 L60 14 L58 12 L56 14 Z" fill="#FFD54F"/>
                         </svg>
                     </div>
                     <h1>KiTa Lummerland</h1>
                     <p class="login-tagline">Essensplanung f&uuml;r kleine Entdecker</p>
                 </div>
                 <form id="form-login">
-                    <div class="input-group">
-                        <span class="input-icon">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                        </span>
-                        <input type="email" id="login-email" required placeholder="name@example.de">
+                    <div class="ios-input-group">
+                        <div class="ios-input-row">
+                            <svg class="ios-input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                            <input type="email" id="login-email" required placeholder="E-Mail">
+                        </div>
+                        <div class="ios-input-row">
+                            <svg class="ios-input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <input type="password" id="login-password" required placeholder="Passwort">
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <span class="input-icon">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                        </span>
-                        <input type="password" id="login-password" required placeholder="Passwort">
-                    </div>
-                    <div id="login-error" class="login-error hidden"></div>
-                    <button type="submit" class="btn-primary btn-login">
-                        <span>Anmelden</span>
-                        <span class="btn-arrow">&rarr;</span>
-                    </button>
-                    <button type="button" id="btn-register" class="btn-ghost">
-                        Neu hier? <strong>Registrieren</strong>
-                    </button>
+                    <div id="login-error" class="ios-error hidden"></div>
+                    <button type="submit" class="ios-btn-primary btn-login">Anmelden</button>
+                    <button type="button" id="btn-register" class="ios-btn-secondary">Neuen Account erstellen</button>
                 </form>
                 <div class="demo-divider"><span>oder</span></div>
-                <button type="button" id="btn-demo" class="btn-demo">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-3px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    Demo-Modus starten
+                <button type="button" id="btn-demo" class="ios-btn-tinted">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Demo ohne Anmeldung
                 </button>
-                <p class="login-hint">Erster Account wird automatisch Admin.</p>
             </div>
         </div>
     </div>
 
-    <!-- === APP (nach Login) === -->
+    <!-- === APP === -->
     <div id="app-container" class="hidden">
-        <header>
-            <div class="header-top">
-                <div class="header-brand">
-                    <div class="header-logo">
-                        <svg viewBox="0 0 36 36" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="18" cy="24" rx="12" ry="5" fill="#FFD54F" opacity="0.8"/>
-                            <ellipse cx="18" cy="22" rx="9" ry="4" fill="#66BB6A"/>
-                            <rect x="16.5" y="10" width="3" height="13" rx="1.5" fill="#8D6E63"/>
-                            <ellipse cx="21" cy="10" rx="6" ry="5.5" fill="#43A047"/>
-                            <ellipse cx="15" cy="8" rx="5" ry="4.5" fill="#2E7D32"/>
-                        </svg>
+        <!-- iOS-style top bar -->
+        <header class="ios-header" id="ios-header">
+            <div class="ios-header-bar">
+                <div class="ios-header-left">
+                    <div class="ios-header-logo">
+                        <svg viewBox="0 0 36 36" width="28" height="28"><circle cx="18" cy="24" rx="12" ry="5" fill="#FFD54F" opacity="0.8"/><ellipse cx="18" cy="22" rx="9" ry="4" fill="#66BB6A"/><rect x="16.5" y="10" width="3" height="13" rx="1.5" fill="#8D6E63"/><ellipse cx="21" cy="10" rx="6" ry="5.5" fill="#43A047"/><ellipse cx="15" cy="8" rx="5" ry="4.5" fill="#2E7D32"/></svg>
                     </div>
-                    <div>
-                        <h1>KiTa Lummerland</h1>
-                        <p class="header-sub">Essensplanung &middot; F&ouml;rderverein</p>
-                    </div>
+                    <span class="ios-header-title">Lummerland</span>
                 </div>
-                <div class="user-bar">
-                    <div class="user-avatar" id="user-avatar">?</div>
-                    <div class="user-details">
-                        <span id="user-info"></span>
-                    </div>
-                    <button id="btn-logout" class="btn-logout" title="Abmelden">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <div class="ios-header-right">
+                    <span id="user-info" class="ios-user-info"></span>
+                    <button id="btn-logout" class="ios-btn-icon" title="Abmelden">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                     </button>
                 </div>
             </div>
-            <nav id="main-nav">
-                <button class="nav-btn active" data-view="wochenplan">
-                    <span class="nav-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    </span>
-                    <span class="nav-label">Wochenplan</span>
-                </button>
-                <button class="nav-btn" data-view="speisen">
-                    <span class="nav-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-                    </span>
-                    <span class="nav-label">Speisen</span>
-                </button>
-                <button class="nav-btn nav-role-staff" data-view="kinder">
-                    <span class="nav-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </span>
-                    <span class="nav-label">Kinder</span>
-                </button>
-                <button class="nav-btn nav-role-admin" data-view="benutzer">
-                    <span class="nav-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    </span>
-                    <span class="nav-label">Benutzer</span>
-                </button>
-            </nav>
         </header>
 
-        <main>
+        <main id="ios-main">
             <!-- Wochenplan -->
             <section id="view-wochenplan" class="view active">
-                <div class="view-header">
-                    <div class="view-title-group">
-                        <h2>
-                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--island-green)" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            Wochenplan
-                        </h2>
-                        <p class="view-subtitle">Mahlzeiten f&uuml;r die Woche planen</p>
-                    </div>
-                    <button class="btn-accent" onclick="window.print()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                        Drucken
+                <div class="ios-large-title">
+                    <h1>Wochenplan</h1>
+                    <button class="ios-btn-circle" onclick="window.print()" title="Drucken">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                     </button>
                 </div>
-                <div class="week-nav">
-                    <button id="prev-week" class="btn-week-nav">&larr; Vorwoche</button>
-                    <span id="current-week" class="week-label"></span>
-                    <button id="next-week" class="btn-week-nav">N&auml;chste &rarr;</button>
+                <div class="ios-week-selector">
+                    <button id="prev-week" class="ios-btn-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span id="current-week" class="ios-week-label"></span>
+                    <button id="next-week" class="ios-btn-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
                 </div>
-                <div id="parent-allergy-banner" class="alert alert-warning hidden"></div>
-                <div id="stats-bar" class="stats-bar"></div>
-                <div id="variety-alert" class="alert hidden"></div>
+                <div id="parent-allergy-banner" class="ios-banner ios-banner-warning hidden"></div>
+                <div id="stats-bar" class="ios-stats-row"></div>
+                <div id="variety-alert" class="ios-banner hidden"></div>
                 <div class="print-header"><h2>KiTa Lummerland - Speiseplan</h2><p id="print-week-label"></p></div>
-                <div id="weekplan-grid" class="weekplan-grid"></div>
+                <div id="weekplan-grid" class="ios-day-grid"></div>
             </section>
 
             <!-- Speisen -->
             <section id="view-speisen" class="view">
-                <div class="view-header">
-                    <div class="view-title-group">
-                        <h2>
-                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--emma-red)" stroke-width="2.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-                            Speisen verwalten
-                        </h2>
-                        <p class="view-subtitle">Alle verf&uuml;gbaren Gerichte</p>
-                    </div>
-                    <button id="btn-add-meal" class="btn-primary btn-role-staff">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Neue Speise
+                <div class="ios-large-title">
+                    <h1>Speisen</h1>
+                    <button id="btn-add-meal" class="ios-btn-circle btn-role-staff" title="Neue Speise">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                 </div>
-                <div class="filter-bar">
-                    <button class="filter-btn active" data-filter="alle">Alle</button>
-                    <button class="filter-btn filter-fleisch" data-filter="fleisch">Fleisch</button>
-                    <button class="filter-btn filter-fisch" data-filter="fisch">Fisch</button>
-                    <button class="filter-btn filter-veg" data-filter="vegetarisch">Vegetarisch</button>
-                    <button class="filter-btn filter-vegan" data-filter="vegan">Vegan</button>
+                <div class="ios-segmented" id="meals-filter">
+                    <button class="ios-seg-btn active" data-filter="alle">Alle</button>
+                    <button class="ios-seg-btn" data-filter="fleisch">Fleisch</button>
+                    <button class="ios-seg-btn" data-filter="fisch">Fisch</button>
+                    <button class="ios-seg-btn" data-filter="vegetarisch">Veggie</button>
+                    <button class="ios-seg-btn" data-filter="vegan">Vegan</button>
                 </div>
-                <div id="meals-list" class="meals-list"></div>
+                <div id="meals-list" class="ios-list-group"></div>
             </section>
 
             <!-- Kinder -->
             <section id="view-kinder" class="view">
-                <div class="view-header">
-                    <div class="view-title-group">
-                        <h2>
-                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ocean-blue)" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            Kinder &amp; Allergien
-                        </h2>
-                        <p class="view-subtitle">Kinder und Unvertr&auml;glichkeiten verwalten</p>
-                    </div>
-                    <button id="btn-add-child" class="btn-primary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Kind hinzuf&uuml;gen
+                <div class="ios-large-title">
+                    <h1>Kinder</h1>
+                    <button id="btn-add-child" class="ios-btn-circle" title="Kind hinzuf&uuml;gen">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                 </div>
-                <div id="children-list" class="children-list"></div>
+                <div id="children-list" class="ios-list-group"></div>
             </section>
 
             <!-- Benutzer (Admin) -->
             <section id="view-benutzer" class="view">
-                <div class="view-header">
-                    <div class="view-title-group">
-                        <h2>
-                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--sunshine)" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            Benutzerverwaltung
-                        </h2>
-                        <p class="view-subtitle">Zug&auml;nge und Rollen verwalten</p>
-                    </div>
-                    <button id="btn-add-user" class="btn-primary">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Benutzer anlegen
+                <div class="ios-large-title">
+                    <h1>Benutzer</h1>
+                    <button id="btn-add-user" class="ios-btn-circle" title="Benutzer anlegen">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
                 </div>
-                <div id="users-list" class="children-list"></div>
+                <div id="users-list" class="ios-list-group"></div>
             </section>
         </main>
+
+        <!-- iOS Bottom Tab Bar -->
+        <nav class="ios-tab-bar" id="ios-tab-bar">
+            <button class="ios-tab active" data-view="wochenplan">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Plan</span>
+            </button>
+            <button class="ios-tab" data-view="speisen">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                <span>Speisen</span>
+            </button>
+            <button class="ios-tab nav-role-staff" data-view="kinder">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Kinder</span>
+            </button>
+            <button class="ios-tab nav-role-admin" data-view="benutzer">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Mehr</span>
+            </button>
+        </nav>
     </div>
 
     <!-- Modal: Speise -->
-    <div id="modal-meal" class="modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content">
-            <div class="modal-header">
+    <div id="modal-meal" class="ios-sheet hidden">
+        <div class="ios-sheet-backdrop"></div>
+        <div class="ios-sheet-content">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+                <button class="ios-sheet-cancel modal-cancel">Abbrechen</button>
                 <h3 id="modal-meal-title">Neue Speise</h3>
-                <button class="modal-close">&times;</button>
+                <button type="submit" form="form-meal" class="ios-sheet-done">Fertig</button>
             </div>
-            <form id="form-meal">
-                <label>Name der Speise <input type="text" id="meal-name" required></label>
-                <label>Kategorie
-                    <select id="meal-category" required>
-                        <option value="fleisch">Fleisch</option>
-                        <option value="fisch">Fisch</option>
-                        <option value="vegetarisch">Vegetarisch</option>
-                        <option value="vegan">Vegan</option>
-                    </select>
-                </label>
-                <fieldset>
-                    <legend>Enthaltene Allergene</legend>
-                    <div class="allergen-checkboxes" id="meal-allergens"></div>
-                </fieldset>
-                <label>Beschreibung (optional) <textarea id="meal-description" rows="2"></textarea></label>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary modal-cancel">Abbrechen</button>
-                    <button type="submit" class="btn-primary">Speichern</button>
+            <form id="form-meal" class="ios-form">
+                <div class="ios-form-section">
+                    <div class="ios-form-group">
+                        <div class="ios-form-row"><label>Name</label><input type="text" id="meal-name" required placeholder="Name der Speise"></div>
+                        <div class="ios-form-row"><label>Kategorie</label><select id="meal-category" required><option value="fleisch">Fleisch</option><option value="fisch">Fisch</option><option value="vegetarisch">Vegetarisch</option><option value="vegan">Vegan</option></select></div>
+                        <div class="ios-form-row"><label>Beschreibung</label><textarea id="meal-description" rows="2" placeholder="Optional"></textarea></div>
+                    </div>
+                </div>
+                <div class="ios-form-section">
+                    <div class="ios-form-section-title">Allergene</div>
+                    <div class="ios-form-group" id="meal-allergens"></div>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal: Kind -->
-    <div id="modal-child" class="modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content">
-            <div class="modal-header">
+    <div id="modal-child" class="ios-sheet hidden">
+        <div class="ios-sheet-backdrop"></div>
+        <div class="ios-sheet-content">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+                <button class="ios-sheet-cancel modal-cancel">Abbrechen</button>
                 <h3 id="modal-child-title">Kind hinzuf&uuml;gen</h3>
-                <button class="modal-close">&times;</button>
+                <button type="submit" form="form-child" class="ios-sheet-done">Fertig</button>
             </div>
-            <form id="form-child">
-                <label>Vorname <input type="text" id="child-firstname" required></label>
-                <label>Nachname <input type="text" id="child-lastname" required></label>
-                <label>Gruppe <input type="text" id="child-group" placeholder="z.B. Lummerland, Jim Knopf"></label>
-                <fieldset>
-                    <legend>Allergien / Unvertr&auml;glichkeiten</legend>
-                    <div class="allergen-checkboxes" id="child-allergens"></div>
-                </fieldset>
-                <label>Sonstige Hinweise <textarea id="child-notes" rows="2" placeholder="z.B. kein Schweinefleisch"></textarea></label>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary modal-cancel">Abbrechen</button>
-                    <button type="submit" class="btn-primary">Speichern</button>
+            <form id="form-child" class="ios-form">
+                <div class="ios-form-section">
+                    <div class="ios-form-group">
+                        <div class="ios-form-row"><label>Vorname</label><input type="text" id="child-firstname" required placeholder="Vorname"></div>
+                        <div class="ios-form-row"><label>Nachname</label><input type="text" id="child-lastname" required placeholder="Nachname"></div>
+                        <div class="ios-form-row"><label>Gruppe</label><input type="text" id="child-group" placeholder="z.B. Lummerland"></div>
+                        <div class="ios-form-row"><label>Hinweise</label><textarea id="child-notes" rows="2" placeholder="z.B. kein Schweinefleisch"></textarea></div>
+                    </div>
+                </div>
+                <div class="ios-form-section">
+                    <div class="ios-form-section-title">Allergien</div>
+                    <div class="ios-form-group" id="child-allergens"></div>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal: Speise ausw&auml;hlen -->
-    <div id="modal-pick-meal" class="modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content modal-wide">
-            <div class="modal-header">
-                <h3 id="modal-pick-title">Speise ausw&auml;hlen</h3>
-                <button class="modal-close">&times;</button>
+    <div id="modal-pick-meal" class="ios-sheet hidden">
+        <div class="ios-sheet-backdrop"></div>
+        <div class="ios-sheet-content">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+                <button class="ios-sheet-cancel modal-cancel">Abbrechen</button>
+                <h3 id="modal-pick-title">Speise w&auml;hlen</h3>
+                <span></span>
             </div>
-            <div class="filter-bar" style="padding:0.75rem 1.25rem 0;">
-                <button class="pick-filter-btn active" data-filter="alle">Alle</button>
-                <button class="pick-filter-btn" data-filter="fleisch">Fleisch</button>
-                <button class="pick-filter-btn" data-filter="fisch">Fisch</button>
-                <button class="pick-filter-btn" data-filter="vegetarisch">Vegetarisch</button>
-                <button class="pick-filter-btn" data-filter="vegan">Vegan</button>
+            <div style="padding:0 16px 8px;">
+                <div class="ios-segmented" id="pick-filter">
+                    <button class="ios-seg-btn pick-filter-btn active" data-filter="alle">Alle</button>
+                    <button class="ios-seg-btn pick-filter-btn" data-filter="fleisch">Fleisch</button>
+                    <button class="ios-seg-btn pick-filter-btn" data-filter="fisch">Fisch</button>
+                    <button class="ios-seg-btn pick-filter-btn" data-filter="vegetarisch">Veggie</button>
+                    <button class="ios-seg-btn pick-filter-btn" data-filter="vegan">Vegan</button>
+                </div>
             </div>
-            <div id="pick-meals-list" class="meals-list pick-list" style="padding:0.75rem 1.25rem 1.25rem;"></div>
+            <div id="pick-meals-list" class="ios-list-group pick-list" style="padding:0 16px 16px;"></div>
         </div>
     </div>
 
-    <!-- Modal: Benutzer anlegen -->
-    <div id="modal-user" class="modal hidden">
-        <div class="modal-backdrop"></div>
-        <div class="modal-content">
-            <div class="modal-header">
+    <!-- Modal: Benutzer -->
+    <div id="modal-user" class="ios-sheet hidden">
+        <div class="ios-sheet-backdrop"></div>
+        <div class="ios-sheet-content">
+            <div class="ios-sheet-handle"></div>
+            <div class="ios-sheet-header">
+                <button class="ios-sheet-cancel modal-cancel">Abbrechen</button>
                 <h3>Benutzer anlegen</h3>
-                <button class="modal-close">&times;</button>
+                <button type="submit" form="form-user" class="ios-sheet-done">Anlegen</button>
             </div>
-            <form id="form-user">
-                <label>Name <input type="text" id="user-name" required placeholder="Vorname Nachname"></label>
-                <label>E-Mail <input type="email" id="user-email" required placeholder="name@example.de"></label>
-                <label>Passwort (mind. 6 Zeichen) <input type="password" id="user-password" required minlength="6"></label>
-                <label>Rolle
-                    <select id="user-role" required>
-                        <option value="eltern">Eltern</option>
-                        <option value="kueche">K&uuml;che</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </label>
-                <div id="user-child-assign" class="hidden">
-                    <label>Kind zuweisen <select id="user-child-select"><option value="">-- Kein Kind --</option></select></label>
+            <form id="form-user" class="ios-form">
+                <div class="ios-form-section">
+                    <div class="ios-form-group">
+                        <div class="ios-form-row"><label>Name</label><input type="text" id="user-name" required placeholder="Vorname Nachname"></div>
+                        <div class="ios-form-row"><label>E-Mail</label><input type="email" id="user-email" required placeholder="name@example.de"></div>
+                        <div class="ios-form-row"><label>Passwort</label><input type="password" id="user-password" required minlength="6" placeholder="Mind. 6 Zeichen"></div>
+                        <div class="ios-form-row"><label>Rolle</label><select id="user-role" required><option value="eltern">Eltern</option><option value="kueche">K&uuml;che</option><option value="admin">Admin</option></select></div>
+                    </div>
                 </div>
-                <div id="user-form-error" class="login-error hidden"></div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary modal-cancel">Abbrechen</button>
-                    <button type="submit" class="btn-primary">Anlegen</button>
+                <div id="user-child-assign" class="ios-form-section hidden">
+                    <div class="ios-form-group">
+                        <div class="ios-form-row"><label>Kind</label><select id="user-child-select"><option value="">Kein Kind</option></select></div>
+                    </div>
                 </div>
+                <div id="user-form-error" class="ios-error hidden" style="margin:0 16px;"></div>
             </form>
+        </div>
+    </div>
+
+    <!-- iOS Action Sheet (for deletes) -->
+    <div id="ios-action-sheet" class="ios-action-sheet hidden">
+        <div class="ios-sheet-backdrop"></div>
+        <div class="ios-action-sheet-content">
+            <div class="ios-action-group">
+                <div class="ios-action-title" id="action-sheet-title">Wirklich l&ouml;schen?</div>
+                <button class="ios-action-btn ios-action-destructive" id="action-sheet-confirm">L&ouml;schen</button>
+            </div>
+            <button class="ios-action-btn ios-action-cancel" id="action-sheet-cancel">Abbrechen</button>
         </div>
     </div>
 
@@ -345,7 +302,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v=20260316d"></script>
-    <script src="app.js?v=20260316d"></script>
+    <script src="firebase-config.js?v=20260316e"></script>
+    <script src="app.js?v=20260316e"></script>
 </body>
 </html>

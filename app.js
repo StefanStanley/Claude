@@ -70,7 +70,7 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     const errEl = document.getElementById('login-error');
     const btn = e.target.querySelector('button[type="submit"]');
     errEl.classList.add('hidden');
-    if (!auth) { errEl.textContent = 'Firebase nicht geladen. Bitte Seite neu laden.'; errEl.classList.remove('hidden'); return; }
+    if (!auth) { errEl.textContent = 'Firebase nicht geladen.'; errEl.classList.remove('hidden'); return; }
     btn.disabled = true; btn.textContent = 'Anmelden...';
     try {
         await auth.signInWithEmailAndPassword(email, pw);
@@ -81,9 +81,9 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
             'auth/invalid-email': 'Ungültige E-Mail.',
             'auth/invalid-credential': 'E-Mail oder Passwort falsch.',
             'auth/too-many-requests': 'Zu viele Versuche. Bitte warten.',
-            'auth/network-request-failed': 'Netzwerk-Fehler. Bitte Internetverbindung prüfen.',
+            'auth/network-request-failed': 'Netzwerk-Fehler.',
         };
-        errEl.textContent = msgs[err.code] || 'Fehler: ' + err.code + ' — ' + err.message;
+        errEl.textContent = msgs[err.code] || err.code + ' — ' + err.message;
         errEl.classList.remove('hidden');
     } finally {
         btn.disabled = false; btn.textContent = 'Anmelden';
@@ -96,32 +96,26 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     const errEl = document.getElementById('login-error');
     const btn = document.getElementById('btn-register');
     errEl.classList.add('hidden');
-    if (!auth) { errEl.textContent = 'Firebase nicht geladen. Bitte Seite neu laden.'; errEl.classList.remove('hidden'); return; }
-    if (!email || !pw) { errEl.textContent = 'Bitte E-Mail und Passwort eingeben.'; errEl.classList.remove('hidden'); return; }
-    if (pw.length < 6) { errEl.textContent = 'Passwort muss mind. 6 Zeichen haben.'; errEl.classList.remove('hidden'); return; }
+    if (!auth) { errEl.textContent = 'Firebase nicht geladen.'; errEl.classList.remove('hidden'); return; }
+    if (!email || !pw) { errEl.textContent = 'E-Mail und Passwort eingeben.'; errEl.classList.remove('hidden'); return; }
+    if (pw.length < 6) { errEl.textContent = 'Passwort: mind. 6 Zeichen.'; errEl.classList.remove('hidden'); return; }
     btn.disabled = true; btn.textContent = 'Registrieren...';
     try {
         await auth.createUserWithEmailAndPassword(email, pw);
     } catch (err) {
-        const msgs = {
-            'auth/email-already-in-use': 'Diese E-Mail ist bereits registriert. Bitte "Anmelden" klicken.',
-            'auth/weak-password': 'Passwort zu kurz (mind. 6 Zeichen).',
-            'auth/invalid-email': 'Ungültige E-Mail-Adresse.',
-        };
-        errEl.textContent = msgs[err.code] || 'Registrierung fehlgeschlagen: ' + (err.code || err.message);
+        const msgs = { 'auth/email-already-in-use': 'E-Mail bereits registriert.', 'auth/weak-password': 'Passwort zu kurz.', 'auth/invalid-email': 'Ungültige E-Mail.' };
+        errEl.textContent = msgs[err.code] || err.code || err.message;
         errEl.classList.remove('hidden');
     } finally {
-        btn.disabled = false; btn.textContent = 'Registrieren';
+        btn.disabled = false; btn.textContent = 'Neuen Account erstellen';
     }
 });
 
 document.getElementById('btn-logout').addEventListener('click', () => {
     if (state.demoMode) {
-        state.demoMode = false;
-        state.currentUser = null;
+        state.demoMode = false; state.currentUser = null;
         state.meals = []; state.children = []; state.weekPlans = {}; state.users = [];
-        showLogin();
-        return;
+        showLogin(); return;
     }
     auth.signOut();
 });
@@ -130,8 +124,6 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 document.getElementById('btn-demo').addEventListener('click', () => {
     state.demoMode = true;
     state.currentUser = { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null };
-
-    // Demo-Speisen
     state.meals = [
         { id: 'd1', name: 'Spaghetti Bolognese', category: 'fleisch', description: '', allergens: ['gluten', 'milch'] },
         { id: 'd2', name: 'Fischstäbchen mit Kartoffelpüree', category: 'fisch', description: '', allergens: ['fisch', 'gluten', 'milch'] },
@@ -142,26 +134,19 @@ document.getElementById('btn-demo').addEventListener('click', () => {
         { id: 'd7', name: 'Kartoffelsuppe', category: 'vegan', description: '', allergens: ['sellerie'] },
         { id: 'd8', name: 'Pfannkuchen mit Apfelmus', category: 'vegetarisch', description: '', allergens: ['gluten', 'milch', 'eier'] },
     ];
-
-    // Demo-Kinder
     state.children = [
         { id: 'c1', firstname: 'Jim', lastname: 'Knopf', group: 'Lummerland', notes: '', allergens: [] },
         { id: 'c2', firstname: 'Lukas', lastname: 'Lokomotivführer', group: 'Lummerland', notes: '', allergens: ['milch'] },
         { id: 'c3', firstname: 'Li', lastname: 'Si', group: 'Mandala', notes: 'kein Schweinefleisch', allergens: ['erdnuesse', 'soja'] },
         { id: 'c4', firstname: 'Prinzessin', lastname: 'Li Si', group: 'Mandala', notes: '', allergens: [] },
     ];
-
-    // Demo-Wochenplan
     const wk = getWeekKey(0);
     state.weekPlans[wk] = { 0: ['d1'], 1: ['d6'], 2: ['d3', 'd4'], 3: ['d5'], 4: ['d8', 'd7'] };
-
     state.users = [
         { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null },
         { uid: 'demo2', email: 'kueche@lummerland.de', name: 'Frau Waas', role: 'kueche', childId: null },
     ];
-
-    showApp();
-    renderAll();
+    showApp(); renderAll();
 });
 
 function showLogin() {
@@ -175,8 +160,6 @@ function showApp() {
     const u = state.currentUser;
     document.getElementById('user-info').innerHTML =
         `${esc(u.name)} <span class="role-badge">${ROLE_LABELS[u.role] || u.role}</span>`;
-    const avatar = document.getElementById('user-avatar');
-    if (avatar) avatar.textContent = (u.name || u.email || '?').charAt(0).toUpperCase();
     applyRole();
 }
 
@@ -221,35 +204,69 @@ function getWeekKey(off) {
 function getWeekLabel(off) {
     const m = getMonday(off), f = new Date(m); f.setDate(f.getDate() + 4);
     const fmt = d => `${d.getDate()}.${d.getMonth() + 1}.`;
-    return `KW ${getWeekKey(off).split('-')[1]} (${fmt(m)} - ${fmt(f)}${m.getFullYear()})`;
+    return `KW ${getWeekKey(off).split('-')[1]}  ·  ${fmt(m)} – ${fmt(f)}${m.getFullYear()}`;
 }
 function getDayDate(off, i) { const m = getMonday(off), d = new Date(m); d.setDate(d.getDate() + i); return `${d.getDate()}.${d.getMonth() + 1}.`; }
 function getWeekPlan(off) { const k = getWeekKey(off); if (!state.weekPlans[k]) state.weekPlans[k] = { 0: [], 1: [], 2: [], 3: [], 4: [] }; return state.weekPlans[k]; }
 
-// ===================== NAVIGATION =====================
-document.querySelectorAll('.nav-btn').forEach(btn => {
+// ===================== iOS TAB BAR NAVIGATION =====================
+document.querySelectorAll('.ios-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.ios-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.getElementById(`view-${btn.dataset.view}`).classList.add('active');
     });
 });
 
-// ===================== MODALS =====================
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.body.style.overflow = ''; }
-document.querySelectorAll('.modal-close, .modal-cancel').forEach(b => {
-    b.addEventListener('click', () => { b.closest('.modal').classList.add('hidden'); document.body.style.overflow = ''; });
-});
-document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) { m.classList.add('hidden'); document.body.style.overflow = ''; } });
+// ===================== MODALS (iOS Sheet) =====================
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Close on backdrop tap
+document.querySelectorAll('.ios-sheet-backdrop').forEach(bd => {
+    bd.addEventListener('click', () => {
+        bd.closest('.ios-sheet, .ios-action-sheet').classList.add('hidden');
+        document.body.style.overflow = '';
+    });
 });
 
-// ===================== ALLERGEN HELPERS =====================
+// Close on cancel
+document.querySelectorAll('.ios-sheet-cancel, .modal-cancel').forEach(b => {
+    b.addEventListener('click', () => {
+        const sheet = b.closest('.ios-sheet, .ios-action-sheet');
+        if (sheet) { sheet.classList.add('hidden'); document.body.style.overflow = ''; }
+    });
+});
+
+// ===================== iOS ACTION SHEET (replaces confirm) =====================
+function showActionSheet(title, confirmLabel, onConfirm) {
+    const sheet = document.getElementById('ios-action-sheet');
+    document.getElementById('action-sheet-title').textContent = title;
+    const btn = document.getElementById('action-sheet-confirm');
+    btn.textContent = confirmLabel;
+    btn.onclick = () => { sheet.classList.add('hidden'); document.body.style.overflow = ''; onConfirm(); };
+    document.getElementById('action-sheet-cancel').onclick = () => { sheet.classList.add('hidden'); document.body.style.overflow = ''; };
+    sheet.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+// ===================== ALLERGEN HELPERS (iOS Toggle Switches) =====================
 function renderAllergenCB(id, sel = []) {
     document.getElementById(id).innerHTML = ALLERGENS.map(a =>
-        `<label><input type="checkbox" value="${a.id}" ${sel.includes(a.id) ? 'checked' : ''}> ${a.name}</label>`
+        `<div class="ios-allergen-row">
+            <span>${a.name}</span>
+            <label class="ios-toggle">
+                <input type="checkbox" value="${a.id}" ${sel.includes(a.id) ? 'checked' : ''}>
+                <div class="ios-toggle-track"></div>
+            </label>
+        </div>`
     ).join('');
 }
 function getCheckedAllergens(id) { return [...document.querySelectorAll(`#${id} input:checked`)].map(c => c.value); }
@@ -259,25 +276,26 @@ function renderMealsList(filter = 'alle') {
     const list = document.getElementById('meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
     const staff = isStaff();
-    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Keine Speisen.</p>'; return; }
+    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Keine Speisen vorhanden</p>'; return; }
     list.innerHTML = items.map(m => {
         const aNames = m.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ');
         return `<div class="meal-card">
             <div class="meal-card-info">
                 <div class="meal-title">${esc(m.name)} <span class="category-badge cat-${m.category}">${CATEGORIES[m.category]}</span></div>
-                <div class="meal-meta">${aNames ? 'Allergene: ' + aNames : 'Keine Allergene'}</div>
+                <div class="meal-meta">${aNames ? aNames : 'Keine Allergene'}</div>
             </div>
             ${staff ? `<div class="meal-card-actions">
-                <button class="btn-small btn-edit" onclick="editMeal('${m.id}')">Bearbeiten</button>
-                <button class="btn-small btn-delete" onclick="deleteMeal('${m.id}')">Löschen</button>
+                <button class="btn-small btn-edit" onclick="editMeal('${m.id}')">Bearb.</button>
+                <button class="btn-small btn-delete" onclick="deleteMeal('${m.id}')">Entf.</button>
             </div>` : ''}
         </div>`;
     }).join('');
 }
 
-document.querySelectorAll('.filter-btn').forEach(b => {
+// Segmented control for meals filter
+document.querySelectorAll('#meals-filter .ios-seg-btn').forEach(b => {
     b.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('#meals-filter .ios-seg-btn').forEach(x => x.classList.remove('active'));
         b.classList.add('active'); renderMealsList(b.dataset.filter);
     });
 });
@@ -303,16 +321,23 @@ window.editMeal = function (id) {
     openModal('modal-meal');
 };
 
-window.deleteMeal = async function (id) {
-    if (!isStaff() || !confirm('Speise wirklich löschen?')) return;
-    if (!state.demoMode) await db.collection('meals').doc(id).delete();
-    state.meals = state.meals.filter(m => m.id !== id);
-    for (const k of Object.keys(state.weekPlans)) {
-        const p = state.weekPlans[k]; let changed = false;
-        for (let d = 0; d < 5; d++) if (p[d] && p[d].includes(id)) { p[d] = p[d].filter(x => x !== id); changed = true; }
-        if (changed && !state.demoMode) await db.collection('weekPlans').doc(k).set(p);
-    }
-    renderMealsList(); renderWeekPlan();
+window.deleteMeal = function (id) {
+    if (!isStaff()) return;
+    const m = state.meals.find(x => x.id === id);
+    showActionSheet(
+        m ? `„${m.name}" wirklich löschen?` : 'Speise löschen?',
+        'Löschen',
+        async () => {
+            if (!state.demoMode) await db.collection('meals').doc(id).delete();
+            state.meals = state.meals.filter(m => m.id !== id);
+            for (const k of Object.keys(state.weekPlans)) {
+                const p = state.weekPlans[k]; let changed = false;
+                for (let d = 0; d < 5; d++) if (p[d] && p[d].includes(id)) { p[d] = p[d].filter(x => x !== id); changed = true; }
+                if (changed && !state.demoMode) await db.collection('weekPlans').doc(k).set(p);
+            }
+            renderMealsList(); renderWeekPlan();
+        }
+    );
 };
 
 document.getElementById('form-meal').addEventListener('submit', async (e) => {
@@ -336,18 +361,18 @@ document.getElementById('form-meal').addEventListener('submit', async (e) => {
 // ===================== KINDER =====================
 function renderChildrenList() {
     const list = document.getElementById('children-list');
-    if (!state.children.length) { list.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Noch keine Kinder.</p>'; return; }
+    if (!state.children.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Noch keine Kinder</p>'; return; }
     list.innerHTML = state.children.map(c => {
         const aNames = c.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id);
         return `<div class="child-card">
             <div class="child-card-info">
                 <div class="child-name">${esc(c.firstname)} ${esc(c.lastname)}</div>
-                <div class="child-meta">${c.group ? 'Gruppe: ' + esc(c.group) : ''}${c.notes ? ' | ' + esc(c.notes) : ''}</div>
-                <div class="child-allergies">${aNames.length ? aNames.map(n => `<span class="allergy-tag">${n}</span>`).join('') : '<span style="font-size:0.8rem;color:var(--text-light);">Keine Allergien</span>'}</div>
+                <div class="child-meta">${c.group ? esc(c.group) : ''}${c.notes ? ' · ' + esc(c.notes) : ''}</div>
+                <div class="child-allergies">${aNames.length ? aNames.map(n => `<span class="allergy-tag">${n}</span>`).join('') : ''}</div>
             </div>
             <div class="meal-card-actions">
-                <button class="btn-small btn-edit" onclick="editChild('${c.id}')">Bearbeiten</button>
-                <button class="btn-small btn-delete" onclick="deleteChild('${c.id}')">Löschen</button>
+                <button class="btn-small btn-edit" onclick="editChild('${c.id}')">Bearb.</button>
+                <button class="btn-small btn-delete" onclick="deleteChild('${c.id}')">Entf.</button>
             </div>
         </div>`;
     }).join('');
@@ -375,11 +400,18 @@ window.editChild = function (id) {
     openModal('modal-child');
 };
 
-window.deleteChild = async function (id) {
-    if (!isStaff() || !confirm('Kind wirklich löschen?')) return;
-    if (!state.demoMode) await db.collection('children').doc(id).delete();
-    state.children = state.children.filter(c => c.id !== id);
-    renderChildrenList();
+window.deleteChild = function (id) {
+    if (!isStaff()) return;
+    const c = state.children.find(x => x.id === id);
+    showActionSheet(
+        c ? `${c.firstname} ${c.lastname} entfernen?` : 'Kind entfernen?',
+        'Entfernen',
+        async () => {
+            if (!state.demoMode) await db.collection('children').doc(id).delete();
+            state.children = state.children.filter(c => c.id !== id);
+            renderChildrenList();
+        }
+    );
 };
 
 document.getElementById('form-child').addEventListener('submit', async (e) => {
@@ -419,15 +451,15 @@ function renderWeekPlan() {
         const mealsHtml = ids.map(mid => {
             const m = state.meals.find(x => x.id === mid); if (!m) return '';
             return `<div class="day-meal">
-                ${staff ? `<button class="btn-remove-meal" onclick="removeMealFromDay(${i},'${mid}')">&times;</button>` : ''}
                 <div class="meal-name">${esc(m.name)}</div>
                 <span class="category-badge cat-${m.category}">${CATEGORIES[m.category]}</span>
+                ${staff ? `<button class="btn-remove-meal" onclick="removeMealFromDay(${i},'${mid}')">&times;</button>` : ''}
                 ${getAllergyWarnings(m)}
             </div>`;
         }).join('');
         return `<div class="day-card">
-            <div class="day-card-header">${day}<span class="day-date">${dateStr}</span></div>
-            <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">+ Speise</button>` : ''}</div>
+            <div class="day-card-header">${day} <span class="day-date">${dateStr}</span></div>
+            <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">+ Speise hinzufügen</button>` : ''}</div>
         </div>`;
     }).join('');
     renderStats(); if (staff) checkVariety();
@@ -449,7 +481,7 @@ function getAllergyWarnings(meal) {
         const c = state.children.find(x => x.id === state.currentUser.childId); if (!c) return '';
         const common = meal.allergens.filter(a => c.allergens.includes(a));
         if (!common.length) return '';
-        return `<div class="allergy-warning"><strong>Achtung!</strong> Enthält: ${common.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ')}</div>`;
+        return `<div class="allergy-warning"><strong>Achtung!</strong> ${common.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ')}</div>`;
     }
     if (!state.children.length) return '';
     const aff = [];
@@ -457,7 +489,7 @@ function getAllergyWarnings(meal) {
         const common = meal.allergens.filter(a => c.allergens.includes(a));
         if (common.length) aff.push(`<strong>${esc(c.firstname)}</strong>: ${common.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ')}`);
     }
-    return aff.length ? `<div class="allergy-warning">Allergie-Hinweis:<br>${aff.join('<br>')}</div>` : '';
+    return aff.length ? `<div class="allergy-warning">${aff.join(' · ')}</div>` : '';
 }
 
 function renderStats() {
@@ -474,11 +506,11 @@ function checkVariety() {
     for (let d = 0; d < 5; d++) for (const mid of (plan[d] || [])) { const m = state.meals.find(x => x.id === mid); if (m) { cats[m.category]++; total++; } }
     if (total < 3) { el.classList.add('hidden'); return; }
     const msgs = [];
-    if (cats.fleisch / total > 0.5) msgs.push('Zu viele Fleischgerichte. Empfehlung: max. 2-3x/Woche.');
-    if (cats.fisch === 0 && total >= 4) msgs.push('Empfehlung: Mind. 1x Fisch/Woche.');
-    if ((cats.vegetarisch + cats.vegan) / total < 0.3 && total >= 4) msgs.push('Empfehlung: Mehr vegetarisch/vegan.');
-    if (msgs.length) { el.className = 'alert alert-warning'; el.innerHTML = '<strong>Abwechslungs-Check:</strong><br>' + msgs.join('<br>'); }
-    else if (total >= 5) { el.className = 'alert alert-success'; el.textContent = 'Gute Abwechslung!'; }
+    if (cats.fleisch / total > 0.5) msgs.push('Zu viele Fleischgerichte.');
+    if (cats.fisch === 0 && total >= 4) msgs.push('Mind. 1x Fisch/Woche empfohlen.');
+    if ((cats.vegetarisch + cats.vegan) / total < 0.3 && total >= 4) msgs.push('Mehr vegetarisch/vegan empfohlen.');
+    if (msgs.length) { el.className = 'ios-banner alert alert-warning'; el.innerHTML = '<strong>Tipp:</strong> ' + msgs.join(' '); }
+    else if (total >= 5) { el.className = 'ios-banner alert alert-success'; el.textContent = 'Gute Abwechslung!'; }
     else el.classList.add('hidden');
 }
 
@@ -487,7 +519,7 @@ document.getElementById('next-week').addEventListener('click', () => { state.cur
 
 window.pickMealForDay = function (i) {
     if (!isStaff()) return; state.pickingDay = i;
-    document.getElementById('modal-pick-title').textContent = `Speise für ${DAYS[i]} auswählen`;
+    document.getElementById('modal-pick-title').textContent = `${DAYS[i]} — Speise wählen`;
     renderPickList('alle');
     document.querySelectorAll('.pick-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.pick-filter-btn[data-filter="alle"]').classList.add('active');
@@ -497,13 +529,13 @@ window.pickMealForDay = function (i) {
 function renderPickList(filter) {
     const list = document.getElementById('pick-meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
-    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Keine Speisen.</p>'; return; }
+    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Keine Speisen</p>'; return; }
     list.innerHTML = items.map(m => {
         const aNames = m.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ');
         return `<div class="meal-card" onclick="selectMealForDay('${m.id}')">
             <div class="meal-card-info">
                 <div class="meal-title">${esc(m.name)} <span class="category-badge cat-${m.category}">${CATEGORIES[m.category]}</span></div>
-                <div class="meal-meta">${aNames ? 'Allergene: ' + aNames : 'Keine Allergene'}</div>
+                <div class="meal-meta">${aNames || 'Keine Allergene'}</div>
             </div>
         </div>`;
     }).join('');
@@ -536,16 +568,16 @@ window.removeMealFromDay = async function (di, mealId) {
 // ===================== BENUTZERVERWALTUNG =====================
 function renderUsersList() {
     const list = document.getElementById('users-list'); if (!list) return;
-    if (!state.users.length) { list.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Keine Benutzer.</p>'; return; }
+    if (!state.users.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Keine Benutzer</p>'; return; }
     list.innerHTML = state.users.map(u => {
         const childName = u.childId ? (() => { const c = state.children.find(x => x.id === u.childId); return c ? `${c.firstname} ${c.lastname}` : ''; })() : '';
         const isSelf = u.uid === state.currentUser?.uid;
         return `<div class="child-card">
             <div class="child-card-info">
                 <div class="child-name">${esc(u.name || u.email)} <span class="role-badge">${ROLE_LABELS[u.role] || u.role}</span></div>
-                <div class="child-meta">${esc(u.email)}${childName ? ' | Kind: ' + esc(childName) : ''}</div>
+                <div class="child-meta">${esc(u.email)}${childName ? ' · ' + esc(childName) : ''}</div>
             </div>
-            ${!isSelf ? `<div class="meal-card-actions"><button class="btn-small btn-delete" onclick="deleteUser('${u.uid}')">Löschen</button></div>` : ''}
+            ${!isSelf ? `<div class="meal-card-actions"><button class="btn-small btn-delete" onclick="deleteUser('${u.uid}')">Entf.</button></div>` : ''}
         </div>`;
     }).join('');
 }
@@ -555,7 +587,7 @@ document.getElementById('btn-add-user').addEventListener('click', () => {
     document.getElementById('user-form-error').classList.add('hidden');
     document.getElementById('user-child-assign').classList.add('hidden');
     const cs = document.getElementById('user-child-select');
-    cs.innerHTML = '<option value="">-- Kein Kind --</option>' +
+    cs.innerHTML = '<option value="">Kein Kind</option>' +
         state.children.map(c => `<option value="${c.id}">${esc(c.firstname)} ${esc(c.lastname)}</option>`).join('');
     openModal('modal-user');
 });
@@ -582,17 +614,18 @@ document.getElementById('form-user').addEventListener('submit', async (e) => {
         state.users.push({ uid, email, name, role, childId });
         closeModal('modal-user'); renderUsersList();
     } catch (err) {
-        const msgs = { 'auth/email-already-in-use': 'E-Mail wird bereits verwendet.', 'auth/weak-password': 'Passwort zu kurz (mind. 6 Zeichen).', 'auth/invalid-email': 'Ungültige E-Mail.' };
-        errEl.textContent = msgs[err.code] || 'Fehler: ' + err.message;
+        const msgs = { 'auth/email-already-in-use': 'E-Mail bereits verwendet.', 'auth/weak-password': 'Passwort zu kurz.', 'auth/invalid-email': 'Ungültige E-Mail.' };
+        errEl.textContent = msgs[err.code] || err.message;
         errEl.classList.remove('hidden');
     }
 });
 
-window.deleteUser = async function (uid) {
-    if (!confirm('Benutzer wirklich entfernen?')) return;
-    if (!state.demoMode) await db.collection('users').doc(uid).delete();
-    state.users = state.users.filter(u => u.uid !== uid);
-    renderUsersList();
+window.deleteUser = function (uid) {
+    showActionSheet('Benutzer wirklich entfernen?', 'Entfernen', async () => {
+        if (!state.demoMode) await db.collection('users').doc(uid).delete();
+        state.users = state.users.filter(u => u.uid !== uid);
+        renderUsersList();
+    });
 };
 
 // ===================== UTILITIES =====================
