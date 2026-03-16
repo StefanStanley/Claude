@@ -1,28 +1,14 @@
 // === KiTa Lummerland Essensplanung App (Firebase) ===
 
-// Debug-Hilfe: zeigt Status direkt auf der Seite
-function showDebug(msg, isError) {
-    let el = document.getElementById('debug-status');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'debug-status';
-        el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:8px 12px;font-size:12px;font-family:monospace;z-index:9999;max-height:40vh;overflow:auto;';
-        document.body.appendChild(el);
-    }
-    el.style.background = isError ? '#c0392b' : '#27ae60';
-    el.style.color = '#fff';
-    el.innerHTML += msg + '<br>';
-}
-
 let auth, db;
 try {
-    if (typeof firebase === 'undefined') throw new Error('Firebase SDK nicht geladen! Prüfe Internetverbindung oder Ad-Blocker.');
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
-    showDebug('✓ Firebase geladen', false);
+    if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+    }
 } catch (err) {
-    showDebug('✗ Firebase FEHLER: ' + err.message, true);
+    console.error('Firebase init:', err.message);
 }
 
 const ALLERGENS = [
@@ -49,53 +35,36 @@ if (auth) {
     auth.onAuthStateChanged(async (user) => {
         const errEl = document.getElementById('login-error');
         if (user) {
-            showDebug('onAuthStateChanged: user=' + user.email, false);
-            // Immer zuerst in die App lassen, auch wenn Firestore Probleme hat
             state.currentUser = { uid: user.uid, email: user.email, name: user.email.split('@')[0], role: 'admin', childId: null };
-            showDebug('showApp() wird aufgerufen...', true);
             showApp();
-            showDebug('showApp() fertig ✓', true);
-
             try {
-                showDebug('Firestore: Benutzerprofil laden...', true);
                 const doc = await db.collection('users').doc(user.uid).get();
                 if (doc.exists) {
                     state.currentUser = { uid: user.uid, ...doc.data() };
-                    showDebug('Firestore: Profil geladen ✓ (Rolle: ' + doc.data().role + ')', true);
                 } else {
-                    showDebug('Firestore: Kein Profil, erstelle neues...', true);
                     const snap = await db.collection('users').get();
                     const role = snap.empty ? 'admin' : 'eltern';
                     const data = { email: user.email, name: user.email.split('@')[0], role: role, childId: null };
                     await db.collection('users').doc(user.uid).set(data);
                     state.currentUser = { uid: user.uid, ...data };
-                    showDebug('Firestore: Profil erstellt ✓ (Rolle: ' + role + ')', true);
                 }
-                showApp(); // Nochmal mit richtiger Rolle
+                showApp();
                 await loadAllData();
                 renderAll();
-                showDebug('App vollständig geladen ✓', true);
             } catch (err) {
-                showDebug('✗ Firestore FEHLER: ' + err.message, true);
-                // App bleibt trotzdem offen, nur Daten fehlen
+                console.error('Firestore:', err.message);
                 renderAll();
             }
             errEl.classList.add('hidden');
         } else {
-            showDebug('onAuthStateChanged: kein User (ausgeloggt)', false);
             state.currentUser = null;
             showLogin();
         }
     });
-} else {
-    showDebug('✗ Firebase Auth nicht initialisiert!', true);
 }
-
-showDebug('5. Event-Listener werden registriert...', true);
 
 document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
-    showDebug('Form-Submit Handler aufgerufen ✓', true);
     const email = document.getElementById('login-email').value.trim();
     const pw = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
@@ -103,12 +72,9 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     errEl.classList.add('hidden');
     if (!auth) { errEl.textContent = 'Firebase nicht geladen. Bitte Seite neu laden.'; errEl.classList.remove('hidden'); return; }
     btn.disabled = true; btn.textContent = 'Anmelden...';
-    showDebug('Login-Versuch: ' + email, false);
     try {
-        const cred = await auth.signInWithEmailAndPassword(email, pw);
-        showDebug('✓ Auth OK: ' + cred.user.email, false);
+        await auth.signInWithEmailAndPassword(email, pw);
     } catch (err) {
-        showDebug('✗ Auth FEHLER: ' + err.code + ' — ' + err.message, true);
         const msgs = {
             'auth/user-not-found': 'Benutzer nicht gefunden.',
             'auth/wrong-password': 'Falsches Passwort.',

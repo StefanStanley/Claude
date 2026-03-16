@@ -303,13 +303,14 @@ body {
     width: 80px;
     height: 80px;
     margin: 0 auto 1rem;
-    background: linear-gradient(135deg, var(--island-green) 0%, var(--island-green-light) 100%);
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 32px rgba(46,125,50,0.3), inset 0 -3px 0 rgba(0,0,0,0.1);
+    box-shadow: 0 8px 32px rgba(46,125,50,0.25), inset 0 -3px 0 rgba(0,0,0,0.06);
     position: relative;
+    overflow: hidden;
 }
 
 .logo-island::after {
@@ -317,12 +318,7 @@ body {
     position: absolute;
     inset: -4px;
     border-radius: 50%;
-    border: 3px solid rgba(46,125,50,0.2);
-}
-
-.logo-emoji {
-    font-size: 2.5rem;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    border: 3px solid rgba(46,125,50,0.15);
 }
 
 .login-card h1 {
@@ -532,9 +528,14 @@ header {
 }
 
 .header-logo {
-    font-size: 1.8rem;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
     animation: islandBob 3s ease-in-out infinite;
+    flex-shrink: 0;
 }
 
 @keyframes islandBob {
@@ -716,6 +717,13 @@ main {
     font-weight: 800;
     color: var(--text);
     letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-icon {
+    flex-shrink: 0;
 }
 
 .view-subtitle {
@@ -1177,6 +1185,23 @@ main {
     box-shadow: 0 2px 8px rgba(46,125,50,0.25);
 }
 
+/* Category color dots on filter buttons */
+.filter-fleisch::before, .filter-fisch::before, .filter-veg::before, .filter-vegan::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.filter-fleisch::before { background: var(--cat-fleisch); }
+.filter-fisch::before { background: var(--cat-fisch); }
+.filter-veg::before { background: var(--cat-vegetarisch); }
+.filter-vegan::before { background: var(--cat-vegan); }
+.filter-fleisch.active::before, .filter-fisch.active::before,
+.filter-veg.active::before, .filter-vegan.active::before { background: white; }
+
 /* ============================================================
    MEALS LIST
    ============================================================ */
@@ -1496,37 +1521,6 @@ legend {
     margin-top: 0.5rem;
 }
 
-/* ============================================================
-   FOOTER
-   ============================================================ */
-.app-footer {
-    text-align: center;
-    padding: 1.5rem 1rem 2rem;
-    color: var(--text-muted);
-    font-size: 0.78rem;
-    font-weight: 600;
-}
-
-.footer-train {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    margin-bottom: 0.5rem;
-    opacity: 0.4;
-}
-
-.footer-train span:first-child {
-    font-size: 1.2rem;
-}
-
-.footer-track {
-    display: block;
-    width: 120px;
-    height: 3px;
-    background: repeating-linear-gradient(90deg, var(--text-muted) 0px, var(--text-muted) 6px, transparent 6px, transparent 10px);
-    border-radius: 2px;
-}
 
 /* ============================================================
    SEARCH (existing feature support)
@@ -1591,8 +1585,8 @@ legend {
    ============================================================ */
 @media print {
     header, .btn-add-day-meal, .btn-remove-meal, .view-header button,
-    .week-nav button, .stats-bar, #variety-alert, nav, .app-footer,
-    .btn-week-nav, .btn-accent, .btn-primary, #dbg, #debug-status {
+    .week-nav button, .stats-bar, #variety-alert, nav,
+    .btn-week-nav, .btn-accent, .btn-primary {
         display: none !important;
     }
 

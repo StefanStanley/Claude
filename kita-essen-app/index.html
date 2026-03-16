@@ -10,22 +10,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260316c">
+    <link rel="stylesheet" href="style.css?v=20260316d">
 </head>
 <body>
     <!-- === LOGIN === -->
     <div id="login-page" class="login-page">
         <div class="login-scene">
-            <!-- Decorative clouds -->
             <div class="cloud cloud-1"></div>
             <div class="cloud cloud-2"></div>
             <div class="cloud cloud-3"></div>
 
-            <!-- Locomotive Emma -->
+            <!-- Locomotive Emma (CSS) -->
             <div class="emma-locomotive">
-                <div class="emma-smoke">
-                    <span></span><span></span><span></span>
-                </div>
+                <div class="emma-smoke"><span></span><span></span><span></span></div>
                 <div class="emma-body">
                     <div class="emma-chimney"></div>
                     <div class="emma-cabin"></div>
@@ -42,23 +39,37 @@
 
             <div class="login-card">
                 <div class="login-logo">
+                    <!-- SVG Island Logo -->
                     <div class="logo-island">
-                        <span class="logo-emoji">&#x1F3DD;</span>
+                        <svg viewBox="0 0 80 80" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="40" cy="56" rx="28" ry="10" fill="#FFD54F"/>
+                            <ellipse cx="40" cy="52" rx="22" ry="8" fill="#4CAF50"/>
+                            <rect x="37" y="22" width="6" height="32" rx="3" fill="#795548"/>
+                            <ellipse cx="46" cy="22" rx="14" ry="12" fill="#66BB6A"/>
+                            <ellipse cx="34" cy="18" rx="10" ry="9" fill="#43A047"/>
+                            <ellipse cx="50" cy="26" rx="8" ry="7" fill="#81C784"/>
+                            <circle cx="58" cy="16" r="8" fill="#FFF176" opacity="0.9"/>
+                            <path d="M58 8 L60 14 L58 12 L56 14 Z" fill="#FFD54F"/>
+                        </svg>
                     </div>
                     <h1>KiTa Lummerland</h1>
                     <p class="login-tagline">Essensplanung f&uuml;r kleine Entdecker</p>
                 </div>
-                <form id="form-login" onsubmit="window.__dbg('Form submit ausgelöst ✓', true);">
+                <form id="form-login">
                     <div class="input-group">
-                        <span class="input-icon">&#x2709;</span>
+                        <span class="input-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        </span>
                         <input type="email" id="login-email" required placeholder="name@example.de">
                     </div>
                     <div class="input-group">
-                        <span class="input-icon">&#x1F512;</span>
+                        <span class="input-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </span>
                         <input type="password" id="login-password" required placeholder="Passwort">
                     </div>
                     <div id="login-error" class="login-error hidden"></div>
-                    <button type="submit" class="btn-primary btn-login" onclick="window.__dbg('Button geklickt ✓', true);">
+                    <button type="submit" class="btn-primary btn-login">
                         <span>Anmelden</span>
                         <span class="btn-arrow">&rarr;</span>
                     </button>
@@ -68,9 +79,10 @@
                 </form>
                 <div class="demo-divider"><span>oder</span></div>
                 <button type="button" id="btn-demo" class="btn-demo">
-                    &#x1F682; Demo-Modus starten
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-3px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Demo-Modus starten
                 </button>
-                <p class="login-hint">&#x1F4A1; Erster Account wird automatisch Admin.</p>
+                <p class="login-hint">Erster Account wird automatisch Admin.</p>
             </div>
         </div>
     </div>
@@ -80,7 +92,15 @@
         <header>
             <div class="header-top">
                 <div class="header-brand">
-                    <span class="header-logo">&#x1F3DD;</span>
+                    <div class="header-logo">
+                        <svg viewBox="0 0 36 36" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="18" cy="24" rx="12" ry="5" fill="#FFD54F" opacity="0.8"/>
+                            <ellipse cx="18" cy="22" rx="9" ry="4" fill="#66BB6A"/>
+                            <rect x="16.5" y="10" width="3" height="13" rx="1.5" fill="#8D6E63"/>
+                            <ellipse cx="21" cy="10" rx="6" ry="5.5" fill="#43A047"/>
+                            <ellipse cx="15" cy="8" rx="5" ry="4.5" fill="#2E7D32"/>
+                        </svg>
+                    </div>
                     <div>
                         <h1>KiTa Lummerland</h1>
                         <p class="header-sub">Essensplanung &middot; F&ouml;rderverein</p>
@@ -129,7 +149,10 @@
             <section id="view-wochenplan" class="view active">
                 <div class="view-header">
                     <div class="view-title-group">
-                        <h2>&#x1F4CB; Wochenplan</h2>
+                        <h2>
+                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--island-green)" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            Wochenplan
+                        </h2>
                         <p class="view-subtitle">Mahlzeiten f&uuml;r die Woche planen</p>
                     </div>
                     <button class="btn-accent" onclick="window.print()">
@@ -153,7 +176,10 @@
             <section id="view-speisen" class="view">
                 <div class="view-header">
                     <div class="view-title-group">
-                        <h2>&#x1F372; Speisen verwalten</h2>
+                        <h2>
+                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--emma-red)" stroke-width="2.5"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                            Speisen verwalten
+                        </h2>
                         <p class="view-subtitle">Alle verf&uuml;gbaren Gerichte</p>
                     </div>
                     <button id="btn-add-meal" class="btn-primary btn-role-staff">
@@ -163,10 +189,10 @@
                 </div>
                 <div class="filter-bar">
                     <button class="filter-btn active" data-filter="alle">Alle</button>
-                    <button class="filter-btn" data-filter="fleisch">&#x1F356; Fleisch</button>
-                    <button class="filter-btn" data-filter="fisch">&#x1F41F; Fisch</button>
-                    <button class="filter-btn" data-filter="vegetarisch">&#x1F966; Vegetarisch</button>
-                    <button class="filter-btn" data-filter="vegan">&#x1F331; Vegan</button>
+                    <button class="filter-btn filter-fleisch" data-filter="fleisch">Fleisch</button>
+                    <button class="filter-btn filter-fisch" data-filter="fisch">Fisch</button>
+                    <button class="filter-btn filter-veg" data-filter="vegetarisch">Vegetarisch</button>
+                    <button class="filter-btn filter-vegan" data-filter="vegan">Vegan</button>
                 </div>
                 <div id="meals-list" class="meals-list"></div>
             </section>
@@ -175,7 +201,10 @@
             <section id="view-kinder" class="view">
                 <div class="view-header">
                     <div class="view-title-group">
-                        <h2>&#x1F9D2; Kinder &amp; Allergien</h2>
+                        <h2>
+                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ocean-blue)" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Kinder &amp; Allergien
+                        </h2>
                         <p class="view-subtitle">Kinder und Unvertr&auml;glichkeiten verwalten</p>
                     </div>
                     <button id="btn-add-child" class="btn-primary">
@@ -190,7 +219,10 @@
             <section id="view-benutzer" class="view">
                 <div class="view-header">
                     <div class="view-title-group">
-                        <h2>&#x1F511; Benutzerverwaltung</h2>
+                        <h2>
+                            <svg class="section-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--sunshine)" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Benutzerverwaltung
+                        </h2>
                         <p class="view-subtitle">Zug&auml;nge und Rollen verwalten</p>
                     </div>
                     <button id="btn-add-user" class="btn-primary">
@@ -201,14 +233,6 @@
                 <div id="users-list" class="children-list"></div>
             </section>
         </main>
-
-        <footer class="app-footer">
-            <div class="footer-train">
-                <span>&#x1F682;</span>
-                <span class="footer-track"></span>
-            </div>
-            <p>&copy; F&ouml;rderverein KiTa Lummerland</p>
-        </footer>
     </div>
 
     <!-- Modal: Speise -->
@@ -216,17 +240,17 @@
         <div class="modal-backdrop"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-meal-title">&#x1F372; Neue Speise</h3>
+                <h3 id="modal-meal-title">Neue Speise</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <form id="form-meal">
                 <label>Name der Speise <input type="text" id="meal-name" required></label>
                 <label>Kategorie
                     <select id="meal-category" required>
-                        <option value="fleisch">&#x1F356; Fleisch</option>
-                        <option value="fisch">&#x1F41F; Fisch</option>
-                        <option value="vegetarisch">&#x1F966; Vegetarisch</option>
-                        <option value="vegan">&#x1F331; Vegan</option>
+                        <option value="fleisch">Fleisch</option>
+                        <option value="fisch">Fisch</option>
+                        <option value="vegetarisch">Vegetarisch</option>
+                        <option value="vegan">Vegan</option>
                     </select>
                 </label>
                 <fieldset>
@@ -247,7 +271,7 @@
         <div class="modal-backdrop"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-child-title">&#x1F9D2; Kind hinzuf&uuml;gen</h3>
+                <h3 id="modal-child-title">Kind hinzuf&uuml;gen</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <form id="form-child">
@@ -272,15 +296,15 @@
         <div class="modal-backdrop"></div>
         <div class="modal-content modal-wide">
             <div class="modal-header">
-                <h3 id="modal-pick-title">&#x1F37D; Speise ausw&auml;hlen</h3>
+                <h3 id="modal-pick-title">Speise ausw&auml;hlen</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="filter-bar" style="padding:0.75rem 1.25rem 0;">
                 <button class="pick-filter-btn active" data-filter="alle">Alle</button>
-                <button class="pick-filter-btn" data-filter="fleisch">&#x1F356; Fleisch</button>
-                <button class="pick-filter-btn" data-filter="fisch">&#x1F41F; Fisch</button>
-                <button class="pick-filter-btn" data-filter="vegetarisch">&#x1F966; Vegetarisch</button>
-                <button class="pick-filter-btn" data-filter="vegan">&#x1F331; Vegan</button>
+                <button class="pick-filter-btn" data-filter="fleisch">Fleisch</button>
+                <button class="pick-filter-btn" data-filter="fisch">Fisch</button>
+                <button class="pick-filter-btn" data-filter="vegetarisch">Vegetarisch</button>
+                <button class="pick-filter-btn" data-filter="vegan">Vegan</button>
             </div>
             <div id="pick-meals-list" class="meals-list pick-list" style="padding:0.75rem 1.25rem 1.25rem;"></div>
         </div>
@@ -291,7 +315,7 @@
         <div class="modal-backdrop"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3>&#x1F464; Benutzer anlegen</h3>
+                <h3>Benutzer anlegen</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <form id="form-user">
@@ -317,27 +341,11 @@
         </div>
     </div>
 
-    <!-- Debug -->
-    <script>
-    window.__dbg = function(msg, ok) {
-        var el = document.getElementById('dbg');
-        if (!el) { el = document.createElement('div'); el.id='dbg';
-            el.style.cssText='position:fixed;bottom:0;left:0;right:0;padding:8px 12px;font-size:13px;font-family:monospace;background:#222;color:#0f0;z-index:99999;max-height:50vh;overflow:auto;';
-            document.body.appendChild(el); }
-        el.innerHTML += '<div style="color:'+(ok?'#2ecc71':'#e74c3c')+'">'+msg+'</div>';
-    };
-    window.__dbg('1. Seite geladen ✓', true);
-    window.onerror = function(msg, src, line) { window.__dbg('JS FEHLER: '+msg+' ('+src+':'+line+')', false); };
-    </script>
-
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="window.__dbg('Firebase App SDK NICHT geladen ✗', false)"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="window.__dbg('Firebase Auth SDK NICHT geladen ✗', false)"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="window.__dbg('Firebase Firestore SDK NICHT geladen ✗', false)"></script>
-    <script>window.__dbg('2. Firebase SDKs geladen: ' + (typeof firebase !== 'undefined' ? '✓' : '✗ FEHLT!'), typeof firebase !== 'undefined');</script>
-    <script src="firebase-config.js?v=20260316c" onerror="window.__dbg('firebase-config.js NICHT geladen ✗', false)"></script>
-    <script>window.__dbg('3. Config geladen: ' + (typeof firebaseConfig !== 'undefined' ? '✓' : '✗ FEHLT!'), typeof firebaseConfig !== 'undefined');</script>
-    <script src="app.js?v=20260316c" onerror="window.__dbg('app.js NICHT geladen ✗', false)"></script>
-    <script>window.__dbg('4. app.js geladen ✓', true);</script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js?v=20260316d"></script>
+    <script src="app.js?v=20260316d"></script>
 </body>
 </html>
