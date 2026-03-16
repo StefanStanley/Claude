@@ -26,6 +26,7 @@ let state = {
 // ===================== AUTH =====================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
+        const errEl = document.getElementById('login-error');
         try {
             const doc = await db.collection('users').doc(user.uid).get();
             if (doc.exists) {
@@ -40,7 +41,12 @@ auth.onAuthStateChanged(async (user) => {
             showApp();
             await loadAllData();
             renderAll();
-        } catch (err) { console.error('Auth error:', err); }
+        } catch (err) {
+            console.error('Auth error:', err);
+            errEl.textContent = 'Firestore-Fehler: ' + err.message + ' — Bitte Firestore-Datenbank in der Firebase Console erstellen!';
+            errEl.classList.remove('hidden');
+            await auth.signOut();
+        }
     } else {
         state.currentUser = null;
         showLogin();
