@@ -50,31 +50,37 @@ if (auth) {
         const errEl = document.getElementById('login-error');
         if (user) {
             showDebug('onAuthStateChanged: user=' + user.email, false);
+            // Immer zuerst in die App lassen, auch wenn Firestore Probleme hat
+            state.currentUser = { uid: user.uid, email: user.email, name: user.email.split('@')[0], role: 'admin', childId: null };
+            showDebug('showApp() wird aufgerufen...', true);
+            showApp();
+            showDebug('showApp() fertig ✓', true);
+
             try {
+                showDebug('Firestore: Benutzerprofil laden...', true);
                 const doc = await db.collection('users').doc(user.uid).get();
                 if (doc.exists) {
                     state.currentUser = { uid: user.uid, ...doc.data() };
+                    showDebug('Firestore: Profil geladen ✓ (Rolle: ' + doc.data().role + ')', true);
                 } else {
+                    showDebug('Firestore: Kein Profil, erstelle neues...', true);
                     const snap = await db.collection('users').get();
                     const role = snap.empty ? 'admin' : 'eltern';
                     const data = { email: user.email, name: user.email.split('@')[0], role: role, childId: null };
                     await db.collection('users').doc(user.uid).set(data);
                     state.currentUser = { uid: user.uid, ...data };
+                    showDebug('Firestore: Profil erstellt ✓ (Rolle: ' + role + ')', true);
                 }
-                errEl.classList.add('hidden');
-                showApp();
+                showApp(); // Nochmal mit richtiger Rolle
                 await loadAllData();
                 renderAll();
+                showDebug('App vollständig geladen ✓', true);
             } catch (err) {
                 showDebug('✗ Firestore FEHLER: ' + err.message, true);
-                // Don't sign out — show the error and let user see what went wrong
-                errEl.innerHTML = '<strong>Firestore-Fehler:</strong> ' + err.message +
-                    '<br><br>Mögliche Ursachen:<br>' +
-                    '1. Firestore-Datenbank wurde noch nicht in der Firebase Console erstellt<br>' +
-                    '2. Firestore-Sicherheitsregeln blockieren den Zugriff<br><br>' +
-                    '<a href="https://console.firebase.google.com/project/kita-lummerland/firestore" target="_blank" style="color:#fff;text-decoration:underline;">Firebase Console öffnen</a>';
-                errEl.classList.remove('hidden');
+                // App bleibt trotzdem offen, nur Daten fehlen
+                renderAll();
             }
+            errEl.classList.add('hidden');
         } else {
             showDebug('onAuthStateChanged: kein User (ausgeloggt)', false);
             state.currentUser = null;
