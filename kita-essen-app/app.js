@@ -1,15 +1,28 @@
 // === KiTa Lummerland Essensplanung App (Firebase) ===
 
+// Debug-Hilfe: zeigt Status direkt auf der Seite
+function showDebug(msg, isError) {
+    let el = document.getElementById('debug-status');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'debug-status';
+        el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;padding:8px 12px;font-size:12px;font-family:monospace;z-index:9999;max-height:40vh;overflow:auto;';
+        document.body.appendChild(el);
+    }
+    el.style.background = isError ? '#c0392b' : '#27ae60';
+    el.style.color = '#fff';
+    el.innerHTML += msg + '<br>';
+}
+
 let auth, db;
 try {
+    if (typeof firebase === 'undefined') throw new Error('Firebase SDK nicht geladen! Prüfe Internetverbindung oder Ad-Blocker.');
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
+    showDebug('✓ Firebase geladen', false);
 } catch (err) {
-    document.addEventListener('DOMContentLoaded', () => {
-        const errEl = document.getElementById('login-error');
-        if (errEl) { errEl.textContent = 'Firebase konnte nicht geladen werden: ' + err.message; errEl.classList.remove('hidden'); }
-    });
+    showDebug('✗ Firebase FEHLER: ' + err.message, true);
 }
 
 const ALLERGENS = [
@@ -36,7 +49,7 @@ if (auth) {
     auth.onAuthStateChanged(async (user) => {
         const errEl = document.getElementById('login-error');
         if (user) {
-            console.log('Firebase Auth: Benutzer angemeldet:', user.email);
+            showDebug('onAuthStateChanged: user=' + user.email, false);
             try {
                 const doc = await db.collection('users').doc(user.uid).get();
                 if (doc.exists) {
@@ -53,7 +66,7 @@ if (auth) {
                 await loadAllData();
                 renderAll();
             } catch (err) {
-                console.error('Firestore error:', err);
+                showDebug('✗ Firestore FEHLER: ' + err.message, true);
                 // Don't sign out — show the error and let user see what went wrong
                 errEl.innerHTML = '<strong>Firestore-Fehler:</strong> ' + err.message +
                     '<br><br>Mögliche Ursachen:<br>' +
@@ -63,12 +76,13 @@ if (auth) {
                 errEl.classList.remove('hidden');
             }
         } else {
+            showDebug('onAuthStateChanged: kein User (ausgeloggt)', false);
             state.currentUser = null;
             showLogin();
         }
     });
 } else {
-    console.error('Firebase Auth nicht initialisiert!');
+    showDebug('✗ Firebase Auth nicht initialisiert!', true);
 }
 
 document.getElementById('form-login').addEventListener('submit', async (e) => {
@@ -80,17 +94,21 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     errEl.classList.add('hidden');
     if (!auth) { errEl.textContent = 'Firebase nicht geladen. Bitte Seite neu laden.'; errEl.classList.remove('hidden'); return; }
     btn.disabled = true; btn.textContent = 'Anmelden...';
+    showDebug('Login-Versuch: ' + email, false);
     try {
-        await auth.signInWithEmailAndPassword(email, pw);
+        const cred = await auth.signInWithEmailAndPassword(email, pw);
+        showDebug('✓ Auth OK: ' + cred.user.email, false);
     } catch (err) {
+        showDebug('✗ Auth FEHLER: ' + err.code + ' — ' + err.message, true);
         const msgs = {
             'auth/user-not-found': 'Benutzer nicht gefunden.',
             'auth/wrong-password': 'Falsches Passwort.',
             'auth/invalid-email': 'Ungültige E-Mail.',
             'auth/invalid-credential': 'E-Mail oder Passwort falsch.',
             'auth/too-many-requests': 'Zu viele Versuche. Bitte warten.',
+            'auth/network-request-failed': 'Netzwerk-Fehler. Bitte Internetverbindung prüfen.',
         };
-        errEl.textContent = msgs[err.code] || 'Anmeldung fehlgeschlagen: ' + (err.code || err.message);
+        errEl.textContent = msgs[err.code] || 'Fehler: ' + err.code + ' — ' + err.message;
         errEl.classList.remove('hidden');
     } finally {
         btn.disabled = false; btn.textContent = 'Anmelden';
