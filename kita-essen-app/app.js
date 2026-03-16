@@ -30,11 +30,11 @@ const CATEGORIES = {
 let state = {
     meals: [],
     children: [],
-    weekPlans: {}, // key: 'YYYY-WW', value: { mon: [mealId], tue: [mealId], ... }
+    weekPlans: {},
     currentWeekOffset: 0,
     editingMealId: null,
     editingChildId: null,
-    pickingDay: null, // dayIndex for meal picking
+    pickingDay: null,
     parentChildId: null,
     parentWeekOffset: 0,
 };
@@ -109,6 +109,13 @@ function getWeekLabel(offset) {
     return `KW ${getWeekKey(offset).split('-')[1]} (${fmt(mon)} - ${fmt(fri)}${mon.getFullYear()})`;
 }
 
+function getDayDate(offset, dayIndex) {
+    const mon = getMonday(offset);
+    const d = new Date(mon);
+    d.setDate(d.getDate() + dayIndex);
+    return `${d.getDate()}.${d.getMonth() + 1}.`;
+}
+
 function getWeekPlan(offset) {
     const key = getWeekKey(offset);
     if (!state.weekPlans[key]) {
@@ -131,21 +138,27 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 // --- Modals ---
 function openModal(id) {
     document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeModal(id) {
     document.getElementById(id).classList.add('hidden');
+    document.body.style.overflow = '';
 }
 
 document.querySelectorAll('.modal-close, .modal-cancel').forEach(btn => {
     btn.addEventListener('click', () => {
         btn.closest('.modal').classList.add('hidden');
+        document.body.style.overflow = '';
     });
 });
 
 document.querySelectorAll('.modal').forEach(modal => {
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.add('hidden');
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
     });
 });
 
@@ -173,7 +186,7 @@ function renderMealsList(filter = 'alle') {
         : state.meals.filter(m => m.category === filter);
 
     if (filtered.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Keine Speisen vorhanden.</p>';
+        list.innerHTML = '<div class="empty-state empty-meals"><p>Keine Speisen vorhanden.</p><p class="hint">Erstelle eine neue Speise mit dem Button oben.</p></div>';
         return;
     }
 
@@ -187,7 +200,7 @@ function renderMealsList(filter = 'alle') {
             </div>
             <div class="meal-card-actions">
                 <button class="btn-small btn-edit" onclick="editMeal('${m.id}')">Bearbeiten</button>
-                <button class="btn-small btn-delete" onclick="deleteMeal('${m.id}')">Löschen</button>
+                <button class="btn-small btn-delete" onclick="deleteMeal('${m.id}')">L\u00f6schen</button>
             </div>
         </div>`;
     }).join('');
@@ -222,9 +235,8 @@ window.editMeal = function(id) {
 };
 
 window.deleteMeal = function(id) {
-    if (!confirm('Speise wirklich löschen?')) return;
+    if (!confirm('Speise wirklich l\u00f6schen?')) return;
     state.meals = state.meals.filter(m => m.id !== id);
-    // Remove from week plans
     for (const key of Object.keys(state.weekPlans)) {
         const plan = state.weekPlans[key];
         for (let d = 0; d < 5; d++) {
@@ -264,7 +276,7 @@ document.getElementById('form-meal').addEventListener('submit', (e) => {
 function renderChildrenList() {
     const list = document.getElementById('children-list');
     if (state.children.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Noch keine Kinder eingetragen.</p>';
+        list.innerHTML = '<div class="empty-state empty-children"><p>Noch keine Kinder eingetragen.</p><p class="hint">F\u00fcge Kinder hinzu, um Allergie-Warnungen im Speiseplan zu sehen.</p></div>';
         return;
     }
 
@@ -284,7 +296,7 @@ function renderChildrenList() {
             </div>
             <div class="meal-card-actions">
                 <button class="btn-small btn-edit" onclick="editChild('${c.id}')">Bearbeiten</button>
-                <button class="btn-small btn-delete" onclick="deleteChild('${c.id}')">Löschen</button>
+                <button class="btn-small btn-delete" onclick="deleteChild('${c.id}')">L\u00f6schen</button>
             </div>
         </div>`;
     }).join('');
@@ -292,7 +304,7 @@ function renderChildrenList() {
 
 document.getElementById('btn-add-child').addEventListener('click', () => {
     state.editingChildId = null;
-    document.getElementById('modal-child-title').textContent = 'Kind hinzufügen';
+    document.getElementById('modal-child-title').textContent = 'Kind hinzuf\u00fcgen';
     document.getElementById('form-child').reset();
     renderAllergenCheckboxes('child-allergens');
     openModal('modal-child');
@@ -312,7 +324,7 @@ window.editChild = function(id) {
 };
 
 window.deleteChild = function(id) {
-    if (!confirm('Kind wirklich löschen?')) return;
+    if (!confirm('Kind wirklich l\u00f6schen?')) return;
     state.children = state.children.filter(c => c.id !== id);
     save();
     renderChildrenList();
@@ -349,14 +361,19 @@ document.getElementById('form-child').addEventListener('submit', (e) => {
 function renderWeekPlan() {
     const grid = document.getElementById('weekplan-grid');
     const plan = getWeekPlan(state.currentWeekOffset);
-    document.getElementById('current-week').textContent = getWeekLabel(state.currentWeekOffset);
+    const weekLabel = getWeekLabel(state.currentWeekOffset);
+    document.getElementById('current-week').textContent = weekLabel;
+
+    // Print header
+    const printLabel = document.getElementById('print-week-label');
+    if (printLabel) printLabel.textContent = weekLabel;
 
     grid.innerHTML = DAYS.map((day, i) => {
         const mealIds = plan[i] || [];
+        const dateStr = getDayDate(state.currentWeekOffset, i);
         const mealsHtml = mealIds.map(mid => {
             const meal = state.meals.find(m => m.id === mid);
             if (!meal) return '';
-            // Check allergies
             const warnings = getAllergyWarnings(meal);
             return `
                 <div class="day-meal">
@@ -369,15 +386,49 @@ function renderWeekPlan() {
 
         return `
         <div class="day-card">
-            <div class="day-card-header">${day}</div>
+            <div class="day-card-header">${day}<span class="day-date">${dateStr}</span></div>
             <div class="day-card-body">
                 ${mealsHtml}
-                <button class="btn-add-day-meal" onclick="pickMealForDay(${i})">+ Speise hinzufügen</button>
+                <button class="btn-add-day-meal" onclick="pickMealForDay(${i})">+ Speise</button>
             </div>
         </div>`;
     }).join('');
 
+    renderStats();
     checkVariety();
+}
+
+// === STATISTIK-BAR ===
+function renderStats() {
+    const plan = getWeekPlan(state.currentWeekOffset);
+    const categories = { fleisch: 0, fisch: 0, vegetarisch: 0, vegan: 0 };
+
+    for (let d = 0; d < 5; d++) {
+        for (const mid of (plan[d] || [])) {
+            const meal = state.meals.find(m => m.id === mid);
+            if (meal) categories[meal.category]++;
+        }
+    }
+
+    const bar = document.getElementById('stats-bar');
+    bar.innerHTML = `
+        <div class="stat-card stat-fleisch">
+            <div class="stat-value" style="color:var(--cat-fleisch)">${categories.fleisch}</div>
+            <div class="stat-label">Fleisch</div>
+        </div>
+        <div class="stat-card stat-fisch">
+            <div class="stat-value" style="color:var(--cat-fisch)">${categories.fisch}</div>
+            <div class="stat-label">Fisch</div>
+        </div>
+        <div class="stat-card stat-vegetarisch">
+            <div class="stat-value" style="color:var(--cat-vegetarisch)">${categories.vegetarisch}</div>
+            <div class="stat-label">Vegetarisch</div>
+        </div>
+        <div class="stat-card stat-vegan">
+            <div class="stat-value" style="color:var(--cat-vegan)">${categories.vegan}</div>
+            <div class="stat-label">Vegan</div>
+        </div>
+    `;
 }
 
 function getAllergyWarnings(meal) {
@@ -396,13 +447,12 @@ function getAllergyWarnings(meal) {
 
 function checkVariety() {
     const plan = getWeekPlan(state.currentWeekOffset);
-    const alert = document.getElementById('variety-alert');
+    const alertEl = document.getElementById('variety-alert');
     const categories = { fleisch: 0, fisch: 0, vegetarisch: 0, vegan: 0 };
     let totalMeals = 0;
 
     for (let d = 0; d < 5; d++) {
-        const mealIds = plan[d] || [];
-        for (const mid of mealIds) {
+        for (const mid of (plan[d] || [])) {
             const meal = state.meals.find(m => m.id === mid);
             if (meal) {
                 categories[meal.category]++;
@@ -412,7 +462,7 @@ function checkVariety() {
     }
 
     if (totalMeals < 3) {
-        alert.classList.add('hidden');
+        alertEl.classList.add('hidden');
         return;
     }
 
@@ -427,13 +477,13 @@ function checkVariety() {
         messages.push('Empfehlung: Mindestens 1x Fisch pro Woche einplanen.');
     }
     if (vegAnteil < 0.3 && totalMeals >= 4) {
-        messages.push('Empfehlung: Mehr vegetarische/vegane Gerichte für eine ausgewogene Ernährung.');
+        messages.push('Empfehlung: Mehr vegetarische/vegane Gerichte f\u00fcr eine ausgewogene Ern\u00e4hrung.');
     }
     if (categories.vegetarisch === 0 && categories.vegan === 0 && totalMeals >= 3) {
-        messages.push('Kein vegetarisches oder veganes Gericht geplant. Bitte für Abwechslung sorgen.');
+        messages.push('Kein vegetarisches oder veganes Gericht geplant.');
     }
 
-    // Check for same meal appearing multiple times
+    // Doppelte Speisen prüfen
     const allMealIds = [];
     for (let d = 0; d < 5; d++) {
         allMealIds.push(...(plan[d] || []));
@@ -445,18 +495,18 @@ function checkVariety() {
             return m ? m.name : '';
         }).filter(Boolean);
         if (dupNames.length > 0) {
-            messages.push(`Doppelte Speisen: ${dupNames.join(', ')}. Mehr Abwechslung einplanen.`);
+            messages.push(`Doppelte Speisen: ${dupNames.join(', ')}.`);
         }
     }
 
     if (messages.length > 0) {
-        alert.className = 'alert alert-warning';
-        alert.innerHTML = '<strong>Abwechslungs-Check:</strong><br>' + messages.join('<br>');
+        alertEl.className = 'alert alert-warning';
+        alertEl.innerHTML = '<strong>Abwechslungs-Check:</strong><br>' + messages.join('<br>');
     } else if (totalMeals >= 5) {
-        alert.className = 'alert alert-success';
-        alert.textContent = 'Gute Abwechslung! Der Speiseplan ist ausgewogen.';
+        alertEl.className = 'alert alert-success';
+        alertEl.textContent = 'Gute Abwechslung! Der Speiseplan ist ausgewogen.';
     } else {
-        alert.classList.add('hidden');
+        alertEl.classList.add('hidden');
     }
 }
 
@@ -472,8 +522,11 @@ document.getElementById('next-week').addEventListener('click', () => {
 
 window.pickMealForDay = function(dayIndex) {
     state.pickingDay = dayIndex;
-    document.getElementById('modal-pick-title').textContent = `Speise für ${DAYS[dayIndex]} auswählen`;
+    document.getElementById('modal-pick-title').textContent = `Speise f\u00fcr ${DAYS[dayIndex]} ausw\u00e4hlen`;
     renderPickList('alle');
+    // Reset filter buttons
+    document.querySelectorAll('.pick-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.pick-filter-btn[data-filter="alle"]').classList.add('active');
     openModal('modal-pick-meal');
 };
 
@@ -484,7 +537,7 @@ function renderPickList(filter) {
         : state.meals.filter(m => m.category === filter);
 
     if (filtered.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Keine Speisen verfügbar. Bitte zuerst Speisen anlegen.</p>';
+        list.innerHTML = '<div class="empty-state empty-meals"><p>Keine Speisen verf\u00fcgbar.</p><p class="hint">Bitte zuerst unter "Speisen" neue Gerichte anlegen.</p></div>';
         return;
     }
 
@@ -531,7 +584,7 @@ window.removeMealFromDay = function(dayIndex, mealId) {
 function renderParentView() {
     const select = document.getElementById('parent-child-select');
     const currentVal = select.value;
-    select.innerHTML = '<option value="">-- Kind auswählen --</option>' +
+    select.innerHTML = '<option value="">-- Kind ausw\u00e4hlen --</option>' +
         state.children.map(c =>
             `<option value="${c.id}">${escHtml(c.firstname)} ${escHtml(c.lastname)}</option>`
         ).join('');
@@ -578,6 +631,7 @@ function renderParentPlan() {
 
     grid.innerHTML = DAYS.map((day, i) => {
         const mealIds = plan[i] || [];
+        const dateStr = getDayDate(state.parentWeekOffset, i);
         const mealsHtml = mealIds.map(mid => {
             const meal = state.meals.find(m => m.id === mid);
             if (!meal) return '';
@@ -588,13 +642,13 @@ function renderParentPlan() {
                 <div class="day-meal" ${hasWarning ? 'style="border:2px solid var(--danger);"' : ''}>
                     <div class="meal-name">${escHtml(meal.name)}</div>
                     <span class="category-badge cat-${meal.category}">${CATEGORIES[meal.category]}</span>
-                    ${hasWarning ? `<div class="allergy-warning"><strong>Achtung!</strong> Enthält: ${warningNames.join(', ')}</div>` : ''}
+                    ${hasWarning ? `<div class="allergy-warning"><strong>Achtung!</strong> Enth\u00e4lt: ${warningNames.join(', ')}</div>` : ''}
                 </div>`;
         }).join('');
 
         return `
         <div class="day-card">
-            <div class="day-card-header">${day}</div>
+            <div class="day-card-header">${day}<span class="day-date">${dateStr}</span></div>
             <div class="day-card-body">
                 ${mealsHtml || '<span style="color:var(--text-light);font-size:0.85rem;">Noch nicht geplant</span>'}
             </div>

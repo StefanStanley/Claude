@@ -2,7 +2,10 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2c3e50">
     <title>KiTa Lummerland - Essensplanung</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -10,13 +13,25 @@
     <header>
         <div class="header-content">
             <h1>KiTa Lummerland</h1>
-            <p class="subtitle">Essensplanung</p>
+            <p class="subtitle">Essensplanung &middot; F&ouml;rderverein Lummerland</p>
         </div>
         <nav id="main-nav">
-            <button class="nav-btn active" data-view="wochenplan">Wochenplan</button>
-            <button class="nav-btn" data-view="speisen">Speisen</button>
-            <button class="nav-btn" data-view="kinder">Kinder &amp; Allergien</button>
-            <button class="nav-btn" data-view="eltern">Eltern-Ansicht</button>
+            <button class="nav-btn active" data-view="wochenplan">
+                <span class="nav-icon">&#x1F4CB;</span>
+                Wochenplan
+            </button>
+            <button class="nav-btn" data-view="speisen">
+                <span class="nav-icon">&#x1F372;</span>
+                Speisen
+            </button>
+            <button class="nav-btn" data-view="kinder">
+                <span class="nav-icon">&#x1F9D2;</span>
+                Kinder
+            </button>
+            <button class="nav-btn" data-view="eltern">
+                <span class="nav-icon">&#x1F468;&#x200D;&#x1F469;&#x200D;&#x1F467;</span>
+                Eltern
+            </button>
         </nav>
     </header>
 
@@ -25,13 +40,21 @@
         <section id="view-wochenplan" class="view active">
             <div class="view-header">
                 <h2>Wochenplan</h2>
-                <div class="week-nav">
-                    <button id="prev-week" class="btn-icon" title="Vorherige Woche">&larr;</button>
-                    <span id="current-week"></span>
-                    <button id="next-week" class="btn-icon" title="Nächste Woche">&rarr;</button>
+                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                    <button id="btn-print" class="btn-print" onclick="window.print()">Drucken</button>
                 </div>
             </div>
+            <div class="week-nav" style="margin-bottom:0.75rem;">
+                <button id="prev-week" class="btn-icon" title="Vorherige Woche">&larr;</button>
+                <span id="current-week"></span>
+                <button id="next-week" class="btn-icon" title="N&auml;chste Woche">&rarr;</button>
+            </div>
+            <div id="stats-bar" class="stats-bar"></div>
             <div id="variety-alert" class="alert hidden"></div>
+            <div class="print-header">
+                <h2>KiTa Lummerland - Speiseplan</h2>
+                <p id="print-week-label"></p>
+            </div>
             <div id="weekplan-grid" class="weekplan-grid"></div>
         </section>
 
@@ -55,7 +78,7 @@
         <section id="view-kinder" class="view">
             <div class="view-header">
                 <h2>Kinder &amp; Allergien</h2>
-                <button id="btn-add-child" class="btn-primary">+ Kind hinzufügen</button>
+                <button id="btn-add-child" class="btn-primary">+ Kind hinzuf&uuml;gen</button>
             </div>
             <div id="children-list" class="children-list"></div>
         </section>
@@ -66,13 +89,13 @@
                 <h2>Eltern-Ansicht</h2>
             </div>
             <div class="parent-login" id="parent-login">
-                <p>Wählen Sie Ihr Kind aus, um den Speiseplan mit Allergie-Hinweisen zu sehen:</p>
+                <p>W&auml;hlen Sie Ihr Kind aus, um den Speiseplan mit Allergie-Hinweisen zu sehen:</p>
                 <select id="parent-child-select">
-                    <option value="">-- Kind auswählen --</option>
+                    <option value="">-- Kind ausw&auml;hlen --</option>
                 </select>
             </div>
             <div id="parent-weekplan" class="hidden">
-                <div class="week-nav">
+                <div class="week-nav" style="margin-bottom:0.75rem;">
                     <button id="parent-prev-week" class="btn-icon">&larr;</button>
                     <span id="parent-current-week"></span>
                     <button id="parent-next-week" class="btn-icon">&rarr;</button>
@@ -83,7 +106,7 @@
         </section>
     </main>
 
-    <!-- Modal: Speise hinzufügen/bearbeiten -->
+    <!-- Modal: Speise hinzuf&uuml;gen/bearbeiten -->
     <div id="modal-meal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -117,11 +140,11 @@
         </div>
     </div>
 
-    <!-- Modal: Kind hinzufügen/bearbeiten -->
+    <!-- Modal: Kind hinzuf&uuml;gen/bearbeiten -->
     <div id="modal-child" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-child-title">Kind hinzufügen</h3>
+                <h3 id="modal-child-title">Kind hinzuf&uuml;gen</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <form id="form-child">
@@ -132,10 +155,10 @@
                     <input type="text" id="child-lastname" required>
                 </label>
                 <label>Gruppe
-                    <input type="text" id="child-group" placeholder="z.B. Sonnenschein">
+                    <input type="text" id="child-group" placeholder="z.B. Lummerland, Jim Knopf">
                 </label>
                 <fieldset>
-                    <legend>Allergien / Unverträglichkeiten</legend>
+                    <legend>Allergien / Unvertr&auml;glichkeiten</legend>
                     <div class="allergen-checkboxes" id="child-allergens"></div>
                 </fieldset>
                 <label>Sonstige Hinweise
@@ -149,21 +172,21 @@
         </div>
     </div>
 
-    <!-- Modal: Speise für Tag auswählen -->
+    <!-- Modal: Speise f&uuml;r Tag ausw&auml;hlen -->
     <div id="modal-pick-meal" class="modal hidden">
         <div class="modal-content modal-wide">
             <div class="modal-header">
-                <h3 id="modal-pick-title">Speise auswählen</h3>
+                <h3 id="modal-pick-title">Speise ausw&auml;hlen</h3>
                 <button class="modal-close">&times;</button>
             </div>
-            <div class="filter-bar">
+            <div class="filter-bar" style="padding:0.75rem 1rem 0;">
                 <button class="pick-filter-btn active" data-filter="alle">Alle</button>
                 <button class="pick-filter-btn" data-filter="fleisch">Fleisch</button>
                 <button class="pick-filter-btn" data-filter="fisch">Fisch</button>
                 <button class="pick-filter-btn" data-filter="vegetarisch">Vegetarisch</button>
                 <button class="pick-filter-btn" data-filter="vegan">Vegan</button>
             </div>
-            <div id="pick-meals-list" class="meals-list pick-list"></div>
+            <div id="pick-meals-list" class="meals-list pick-list" style="padding:0.75rem 1rem 1rem;"></div>
         </div>
     </div>
 
