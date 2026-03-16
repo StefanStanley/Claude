@@ -68,6 +68,26 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     }
 });
 
+document.getElementById('btn-register').addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const pw = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    errEl.classList.add('hidden');
+    if (!email || !pw) { errEl.textContent = 'Bitte E-Mail und Passwort eingeben.'; errEl.classList.remove('hidden'); return; }
+    if (pw.length < 6) { errEl.textContent = 'Passwort muss mind. 6 Zeichen haben.'; errEl.classList.remove('hidden'); return; }
+    try {
+        await auth.createUserWithEmailAndPassword(email, pw);
+    } catch (err) {
+        const msgs = {
+            'auth/email-already-in-use': 'Diese E-Mail ist bereits registriert.',
+            'auth/weak-password': 'Passwort zu kurz (mind. 6 Zeichen).',
+            'auth/invalid-email': 'Ungültige E-Mail-Adresse.',
+        };
+        errEl.textContent = msgs[err.code] || 'Registrierung fehlgeschlagen: ' + err.message;
+        errEl.classList.remove('hidden');
+    }
+});
+
 document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
 
 function showLogin() {
