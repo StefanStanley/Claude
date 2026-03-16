@@ -10,103 +10,112 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="header-content">
+    <!-- === LOGIN === -->
+    <div id="login-page" class="login-page">
+        <div class="login-card">
             <h1>KiTa Lummerland</h1>
-            <p class="subtitle">Essensplanung &middot; F&ouml;rderverein Lummerland</p>
+            <p class="subtitle">Essensplanung</p>
+            <form id="form-login">
+                <label>E-Mail
+                    <input type="email" id="login-email" required placeholder="name@example.de">
+                </label>
+                <label>Passwort
+                    <input type="password" id="login-password" required placeholder="Passwort">
+                </label>
+                <div id="login-error" class="login-error hidden"></div>
+                <button type="submit" class="btn-primary" style="width:100%;padding:0.7rem;">Anmelden</button>
+            </form>
+            <p class="login-hint">Zugangsdaten erhalten Sie von der KiTa-Leitung.</p>
         </div>
-        <nav id="main-nav">
-            <button class="nav-btn active" data-view="wochenplan">
-                <span class="nav-icon">&#x1F4CB;</span>
-                Wochenplan
-            </button>
-            <button class="nav-btn" data-view="speisen">
-                <span class="nav-icon">&#x1F372;</span>
-                Speisen
-            </button>
-            <button class="nav-btn" data-view="kinder">
-                <span class="nav-icon">&#x1F9D2;</span>
-                Kinder
-            </button>
-            <button class="nav-btn" data-view="eltern">
-                <span class="nav-icon">&#x1F468;&#x200D;&#x1F469;&#x200D;&#x1F467;</span>
-                Eltern
-            </button>
-        </nav>
-    </header>
+    </div>
 
-    <main>
-        <!-- Wochenplan Ansicht -->
-        <section id="view-wochenplan" class="view active">
-            <div class="view-header">
-                <h2>Wochenplan</h2>
-                <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                    <button id="btn-print" class="btn-print" onclick="window.print()">Drucken</button>
+    <!-- === APP (nach Login) === -->
+    <div id="app-container" class="hidden">
+        <header>
+            <div class="header-content">
+                <h1>KiTa Lummerland</h1>
+                <p class="subtitle">Essensplanung &middot; F&ouml;rderverein Lummerland</p>
+            </div>
+            <div class="user-bar">
+                <span id="user-info"></span>
+                <button id="btn-logout" class="btn-logout">Abmelden</button>
+            </div>
+            <nav id="main-nav">
+                <button class="nav-btn active" data-view="wochenplan">
+                    <span class="nav-icon">&#x1F4CB;</span>
+                    Wochenplan
+                </button>
+                <button class="nav-btn" data-view="speisen">
+                    <span class="nav-icon">&#x1F372;</span>
+                    Speisen
+                </button>
+                <button class="nav-btn nav-role-staff" data-view="kinder">
+                    <span class="nav-icon">&#x1F9D2;</span>
+                    Kinder
+                </button>
+                <button class="nav-btn nav-role-admin" data-view="benutzer">
+                    <span class="nav-icon">&#x1F511;</span>
+                    Benutzer
+                </button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Wochenplan -->
+            <section id="view-wochenplan" class="view active">
+                <div class="view-header">
+                    <h2>Wochenplan</h2>
+                    <button class="btn-print" onclick="window.print()">Drucken</button>
                 </div>
-            </div>
-            <div class="week-nav" style="margin-bottom:0.75rem;">
-                <button id="prev-week" class="btn-icon" title="Vorherige Woche">&larr;</button>
-                <span id="current-week"></span>
-                <button id="next-week" class="btn-icon" title="N&auml;chste Woche">&rarr;</button>
-            </div>
-            <div id="stats-bar" class="stats-bar"></div>
-            <div id="variety-alert" class="alert hidden"></div>
-            <div class="print-header">
-                <h2>KiTa Lummerland - Speiseplan</h2>
-                <p id="print-week-label"></p>
-            </div>
-            <div id="weekplan-grid" class="weekplan-grid"></div>
-        </section>
-
-        <!-- Speisen Verwaltung -->
-        <section id="view-speisen" class="view">
-            <div class="view-header">
-                <h2>Speisen verwalten</h2>
-                <button id="btn-add-meal" class="btn-primary">+ Neue Speise</button>
-            </div>
-            <div class="filter-bar">
-                <button class="filter-btn active" data-filter="alle">Alle</button>
-                <button class="filter-btn" data-filter="fleisch">Fleisch</button>
-                <button class="filter-btn" data-filter="fisch">Fisch</button>
-                <button class="filter-btn" data-filter="vegetarisch">Vegetarisch</button>
-                <button class="filter-btn" data-filter="vegan">Vegan</button>
-            </div>
-            <div id="meals-list" class="meals-list"></div>
-        </section>
-
-        <!-- Kinder & Allergien -->
-        <section id="view-kinder" class="view">
-            <div class="view-header">
-                <h2>Kinder &amp; Allergien</h2>
-                <button id="btn-add-child" class="btn-primary">+ Kind hinzuf&uuml;gen</button>
-            </div>
-            <div id="children-list" class="children-list"></div>
-        </section>
-
-        <!-- Eltern-Ansicht -->
-        <section id="view-eltern" class="view">
-            <div class="view-header">
-                <h2>Eltern-Ansicht</h2>
-            </div>
-            <div class="parent-login" id="parent-login">
-                <p>W&auml;hlen Sie Ihr Kind aus, um den Speiseplan mit Allergie-Hinweisen zu sehen:</p>
-                <select id="parent-child-select">
-                    <option value="">-- Kind ausw&auml;hlen --</option>
-                </select>
-            </div>
-            <div id="parent-weekplan" class="hidden">
                 <div class="week-nav" style="margin-bottom:0.75rem;">
-                    <button id="parent-prev-week" class="btn-icon">&larr;</button>
-                    <span id="parent-current-week"></span>
-                    <button id="parent-next-week" class="btn-icon">&rarr;</button>
+                    <button id="prev-week" class="btn-icon">&larr;</button>
+                    <span id="current-week"></span>
+                    <button id="next-week" class="btn-icon">&rarr;</button>
                 </div>
-                <div id="parent-plan-grid" class="weekplan-grid"></div>
-                <div id="child-allergies-info" class="allergy-info-box"></div>
-            </div>
-        </section>
-    </main>
+                <div id="parent-allergy-banner" class="alert alert-warning hidden"></div>
+                <div id="stats-bar" class="stats-bar"></div>
+                <div id="variety-alert" class="alert hidden"></div>
+                <div class="print-header"><h2>KiTa Lummerland - Speiseplan</h2><p id="print-week-label"></p></div>
+                <div id="weekplan-grid" class="weekplan-grid"></div>
+            </section>
 
-    <!-- Modal: Speise hinzuf&uuml;gen/bearbeiten -->
+            <!-- Speisen -->
+            <section id="view-speisen" class="view">
+                <div class="view-header">
+                    <h2>Speisen verwalten</h2>
+                    <button id="btn-add-meal" class="btn-primary btn-role-staff">+ Neue Speise</button>
+                </div>
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-filter="alle">Alle</button>
+                    <button class="filter-btn" data-filter="fleisch">Fleisch</button>
+                    <button class="filter-btn" data-filter="fisch">Fisch</button>
+                    <button class="filter-btn" data-filter="vegetarisch">Vegetarisch</button>
+                    <button class="filter-btn" data-filter="vegan">Vegan</button>
+                </div>
+                <div id="meals-list" class="meals-list"></div>
+            </section>
+
+            <!-- Kinder -->
+            <section id="view-kinder" class="view">
+                <div class="view-header">
+                    <h2>Kinder &amp; Allergien</h2>
+                    <button id="btn-add-child" class="btn-primary">+ Kind hinzuf&uuml;gen</button>
+                </div>
+                <div id="children-list" class="children-list"></div>
+            </section>
+
+            <!-- Benutzer (Admin) -->
+            <section id="view-benutzer" class="view">
+                <div class="view-header">
+                    <h2>Benutzerverwaltung</h2>
+                    <button id="btn-add-user" class="btn-primary">+ Benutzer anlegen</button>
+                </div>
+                <div id="users-list" class="children-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Speise -->
     <div id="modal-meal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -114,9 +123,7 @@
                 <button class="modal-close">&times;</button>
             </div>
             <form id="form-meal">
-                <label>Name der Speise
-                    <input type="text" id="meal-name" required>
-                </label>
+                <label>Name der Speise <input type="text" id="meal-name" required></label>
                 <label>Kategorie
                     <select id="meal-category" required>
                         <option value="fleisch">Fleisch</option>
@@ -129,9 +136,7 @@
                     <legend>Enthaltene Allergene</legend>
                     <div class="allergen-checkboxes" id="meal-allergens"></div>
                 </fieldset>
-                <label>Beschreibung (optional)
-                    <textarea id="meal-description" rows="2"></textarea>
-                </label>
+                <label>Beschreibung (optional) <textarea id="meal-description" rows="2"></textarea></label>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary modal-cancel">Abbrechen</button>
                     <button type="submit" class="btn-primary">Speichern</button>
@@ -140,7 +145,7 @@
         </div>
     </div>
 
-    <!-- Modal: Kind hinzuf&uuml;gen/bearbeiten -->
+    <!-- Modal: Kind -->
     <div id="modal-child" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -148,22 +153,14 @@
                 <button class="modal-close">&times;</button>
             </div>
             <form id="form-child">
-                <label>Vorname
-                    <input type="text" id="child-firstname" required>
-                </label>
-                <label>Nachname
-                    <input type="text" id="child-lastname" required>
-                </label>
-                <label>Gruppe
-                    <input type="text" id="child-group" placeholder="z.B. Lummerland, Jim Knopf">
-                </label>
+                <label>Vorname <input type="text" id="child-firstname" required></label>
+                <label>Nachname <input type="text" id="child-lastname" required></label>
+                <label>Gruppe <input type="text" id="child-group" placeholder="z.B. Lummerland, Jim Knopf"></label>
                 <fieldset>
                     <legend>Allergien / Unvertr&auml;glichkeiten</legend>
                     <div class="allergen-checkboxes" id="child-allergens"></div>
                 </fieldset>
-                <label>Sonstige Hinweise
-                    <textarea id="child-notes" rows="2" placeholder="z.B. kein Schweinefleisch"></textarea>
-                </label>
+                <label>Sonstige Hinweise <textarea id="child-notes" rows="2" placeholder="z.B. kein Schweinefleisch"></textarea></label>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary modal-cancel">Abbrechen</button>
                     <button type="submit" class="btn-primary">Speichern</button>
@@ -172,7 +169,7 @@
         </div>
     </div>
 
-    <!-- Modal: Speise f&uuml;r Tag ausw&auml;hlen -->
+    <!-- Modal: Speise ausw&auml;hlen -->
     <div id="modal-pick-meal" class="modal hidden">
         <div class="modal-content modal-wide">
             <div class="modal-header">
@@ -190,6 +187,41 @@
         </div>
     </div>
 
+    <!-- Modal: Benutzer anlegen -->
+    <div id="modal-user" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Benutzer anlegen</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="form-user">
+                <label>Name <input type="text" id="user-name" required placeholder="Vorname Nachname"></label>
+                <label>E-Mail <input type="email" id="user-email" required placeholder="name@example.de"></label>
+                <label>Passwort (mind. 6 Zeichen) <input type="password" id="user-password" required minlength="6"></label>
+                <label>Rolle
+                    <select id="user-role" required>
+                        <option value="eltern">Eltern</option>
+                        <option value="kueche">K&uuml;che</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </label>
+                <div id="user-child-assign" class="hidden">
+                    <label>Kind zuweisen <select id="user-child-select"><option value="">-- Kein Kind --</option></select></label>
+                </div>
+                <div id="user-form-error" class="login-error hidden"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn-primary">Anlegen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs (compat version for simple script tags) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
