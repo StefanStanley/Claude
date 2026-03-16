@@ -85,8 +85,11 @@ if (auth) {
     showDebug('✗ Firebase Auth nicht initialisiert!', true);
 }
 
+showDebug('5. Event-Listener werden registriert...', true);
+
 document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
+    showDebug('Form-Submit Handler aufgerufen ✓', true);
     const email = document.getElementById('login-email').value.trim();
     const pw = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');

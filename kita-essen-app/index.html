@@ -15,7 +15,7 @@
         <div class="login-card">
             <h1>KiTa Lummerland</h1>
             <p class="subtitle">Essensplanung</p>
-            <form id="form-login">
+            <form id="form-login" onsubmit="window.__dbg('Form submit ausgelöst ✓', true);">
                 <label>E-Mail
                     <input type="email" id="login-email" required placeholder="name@example.de">
                 </label>
@@ -23,7 +23,7 @@
                     <input type="password" id="login-password" required placeholder="Passwort">
                 </label>
                 <div id="login-error" class="login-error hidden"></div>
-                <button type="submit" class="btn-primary" style="width:100%;padding:0.7rem;">Anmelden</button>
+                <button type="submit" class="btn-primary" style="width:100%;padding:0.7rem;" onclick="window.__dbg('Button geklickt ✓', true);">Anmelden</button>
                 <button type="button" id="btn-register" class="btn-secondary" style="width:100%;padding:0.7rem;margin-top:0.5rem;">Registrieren</button>
             </form>
             <p class="login-hint">Erster Account wird automatisch Admin. Weitere Accounts werden von der KiTa-Leitung angelegt.</p>
