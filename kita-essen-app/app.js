@@ -32,34 +32,44 @@ let state = {
 };
 
 // ===================== AUTH =====================
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
+if (auth) {
+    auth.onAuthStateChanged(async (user) => {
         const errEl = document.getElementById('login-error');
-        try {
-            const doc = await db.collection('users').doc(user.uid).get();
-            if (doc.exists) {
-                state.currentUser = { uid: user.uid, ...doc.data() };
-            } else {
-                const snap = await db.collection('users').get();
-                const role = snap.empty ? 'admin' : 'eltern';
-                const data = { email: user.email, name: user.email.split('@')[0], role: role, childId: null };
-                await db.collection('users').doc(user.uid).set(data);
-                state.currentUser = { uid: user.uid, ...data };
+        if (user) {
+            console.log('Firebase Auth: Benutzer angemeldet:', user.email);
+            try {
+                const doc = await db.collection('users').doc(user.uid).get();
+                if (doc.exists) {
+                    state.currentUser = { uid: user.uid, ...doc.data() };
+                } else {
+                    const snap = await db.collection('users').get();
+                    const role = snap.empty ? 'admin' : 'eltern';
+                    const data = { email: user.email, name: user.email.split('@')[0], role: role, childId: null };
+                    await db.collection('users').doc(user.uid).set(data);
+                    state.currentUser = { uid: user.uid, ...data };
+                }
+                errEl.classList.add('hidden');
+                showApp();
+                await loadAllData();
+                renderAll();
+            } catch (err) {
+                console.error('Firestore error:', err);
+                // Don't sign out — show the error and let user see what went wrong
+                errEl.innerHTML = '<strong>Firestore-Fehler:</strong> ' + err.message +
+                    '<br><br>Mögliche Ursachen:<br>' +
+                    '1. Firestore-Datenbank wurde noch nicht in der Firebase Console erstellt<br>' +
+                    '2. Firestore-Sicherheitsregeln blockieren den Zugriff<br><br>' +
+                    '<a href="https://console.firebase.google.com/project/kita-lummerland/firestore" target="_blank" style="color:#fff;text-decoration:underline;">Firebase Console öffnen</a>';
+                errEl.classList.remove('hidden');
             }
-            showApp();
-            await loadAllData();
-            renderAll();
-        } catch (err) {
-            console.error('Auth error:', err);
-            errEl.textContent = 'Firestore-Fehler: ' + err.message + ' — Bitte Firestore-Datenbank in der Firebase Console erstellen!';
-            errEl.classList.remove('hidden');
-            await auth.signOut();
+        } else {
+            state.currentUser = null;
+            showLogin();
         }
-    } else {
-        state.currentUser = null;
-        showLogin();
-    }
-});
+    });
+} else {
+    console.error('Firebase Auth nicht initialisiert!');
+}
 
 document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
