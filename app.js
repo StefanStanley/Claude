@@ -162,6 +162,8 @@ function showApp() {
     const u = state.currentUser;
     document.getElementById('user-info').innerHTML =
         `${esc(u.name)} <span class="role-badge">${ROLE_LABELS[u.role] || u.role}</span>`;
+    const avatar = document.getElementById('user-avatar');
+    if (avatar) avatar.textContent = (u.name || u.email || '?').charAt(0).toUpperCase();
     applyRole();
 }
 
