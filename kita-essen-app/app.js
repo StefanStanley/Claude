@@ -1,8 +1,16 @@
 // === KiTa Lummerland Essensplanung App (Firebase) ===
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+let auth, db;
+try {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+} catch (err) {
+    document.addEventListener('DOMContentLoaded', () => {
+        const errEl = document.getElementById('login-error');
+        if (errEl) { errEl.textContent = 'Firebase konnte nicht geladen werden: ' + err.message; errEl.classList.remove('hidden'); }
+    });
+}
 
 const ALLERGENS = [
     { id: 'gluten', name: 'Gluten' }, { id: 'krebstiere', name: 'Krebstiere' },
@@ -58,7 +66,10 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     const email = document.getElementById('login-email').value.trim();
     const pw = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
+    const btn = e.target.querySelector('button[type="submit"]');
     errEl.classList.add('hidden');
+    if (!auth) { errEl.textContent = 'Firebase nicht geladen. Bitte Seite neu laden.'; errEl.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'Anmelden...';
     try {
         await auth.signInWithEmailAndPassword(email, pw);
     } catch (err) {
@@ -69,8 +80,10 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
             'auth/invalid-credential': 'E-Mail oder Passwort falsch.',
             'auth/too-many-requests': 'Zu viele Versuche. Bitte warten.',
         };
-        errEl.textContent = msgs[err.code] || 'Anmeldung fehlgeschlagen.';
+        errEl.textContent = msgs[err.code] || 'Anmeldung fehlgeschlagen: ' + (err.code || err.message);
         errEl.classList.remove('hidden');
+    } finally {
+        btn.disabled = false; btn.textContent = 'Anmelden';
     }
 });
 
@@ -78,19 +91,24 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
     const pw = document.getElementById('login-password').value;
     const errEl = document.getElementById('login-error');
+    const btn = document.getElementById('btn-register');
     errEl.classList.add('hidden');
+    if (!auth) { errEl.textContent = 'Firebase nicht geladen. Bitte Seite neu laden.'; errEl.classList.remove('hidden'); return; }
     if (!email || !pw) { errEl.textContent = 'Bitte E-Mail und Passwort eingeben.'; errEl.classList.remove('hidden'); return; }
     if (pw.length < 6) { errEl.textContent = 'Passwort muss mind. 6 Zeichen haben.'; errEl.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'Registrieren...';
     try {
         await auth.createUserWithEmailAndPassword(email, pw);
     } catch (err) {
         const msgs = {
-            'auth/email-already-in-use': 'Diese E-Mail ist bereits registriert.',
+            'auth/email-already-in-use': 'Diese E-Mail ist bereits registriert. Bitte "Anmelden" klicken.',
             'auth/weak-password': 'Passwort zu kurz (mind. 6 Zeichen).',
             'auth/invalid-email': 'Ungültige E-Mail-Adresse.',
         };
-        errEl.textContent = msgs[err.code] || 'Registrierung fehlgeschlagen: ' + err.message;
+        errEl.textContent = msgs[err.code] || 'Registrierung fehlgeschlagen: ' + (err.code || err.message);
         errEl.classList.remove('hidden');
+    } finally {
+        btn.disabled = false; btn.textContent = 'Registrieren';
     }
 });
 
