@@ -1,0 +1,603 @@
+/* === Reset & Basis === */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #4a90d9;
+    --primary-dark: #357abd;
+    --success: #5cb85c;
+    --warning: #f0ad4e;
+    --danger: #d9534f;
+    --bg: #f5f7fa;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --text-light: #666666;
+    --border: #e0e0e0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.1);
+    --radius: 8px;
+
+    --cat-fleisch: #e74c3c;
+    --cat-fisch: #3498db;
+    --cat-vegetarisch: #27ae60;
+    --cat-vegan: #2ecc71;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+/* === Header === */
+header {
+    background: linear-gradient(135deg, var(--primary), #6bb3f0);
+    color: white;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    text-align: center;
+    margin-bottom: 0.75rem;
+}
+
+.header-content h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.subtitle {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+nav {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.nav-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.5rem;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.nav-btn.active {
+    background: rgba(255,255,255,0.35);
+    font-weight: 700;
+}
+
+.nav-btn:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+/* === Main === */
+main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+}
+
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.view-header h2 {
+    font-size: 1.3rem;
+}
+
+/* === Buttons === */
+.btn-primary {
+    padding: 0.5rem 1rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-secondary {
+    padding: 0.5rem 1rem;
+    background: var(--border);
+    color: var(--text);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-icon:hover {
+    background: var(--bg);
+}
+
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-edit {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-delete {
+    background: var(--danger);
+    color: white;
+}
+
+/* === Week Navigation === */
+.week-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+}
+
+/* === Wochenplan Grid === */
+.weekplan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+}
+
+.day-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.day-card-header {
+    padding: 0.6rem 0.75rem;
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.day-card-body {
+    padding: 0.75rem;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.day-meal {
+    padding: 0.5rem;
+    border-radius: 4px;
+    background: var(--bg);
+    font-size: 0.85rem;
+    position: relative;
+}
+
+.day-meal .meal-name {
+    font-weight: 600;
+}
+
+.day-meal .category-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    color: white;
+    margin-top: 2px;
+}
+
+.day-meal .btn-remove-meal {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.btn-add-day-meal {
+    padding: 0.4rem;
+    border: 2px dashed var(--border);
+    background: none;
+    border-radius: var(--radius);
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+.btn-add-day-meal:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* === Allergie-Warnung in Wochenplan === */
+.allergy-warning {
+    background: #fff3cd;
+    border: 1px solid var(--warning);
+    border-radius: 4px;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+    color: #856404;
+    margin-top: 0.25rem;
+}
+
+.allergy-warning strong {
+    color: var(--danger);
+}
+
+/* === Alert === */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border: 1px solid var(--warning);
+    color: #856404;
+}
+
+.alert-success {
+    background: #d4edda;
+    border: 1px solid var(--success);
+    color: #155724;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* === Filter Bar === */
+.filter-bar {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn, .pick-filter-btn {
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.filter-btn.active, .pick-filter-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* === Speisen-Liste === */
+.meals-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.meal-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.meal-card-info {
+    flex: 1;
+}
+
+.meal-card-info .meal-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.meal-card-info .meal-meta {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 2px;
+}
+
+.meal-card-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.category-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    color: white;
+}
+
+.cat-fleisch { background: var(--cat-fleisch); }
+.cat-fisch { background: var(--cat-fisch); }
+.cat-vegetarisch { background: var(--cat-vegetarisch); }
+.cat-vegan { background: var(--cat-vegan); }
+
+/* === Kinder-Liste === */
+.children-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.child-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.child-card-info {
+    flex: 1;
+}
+
+.child-card-info .child-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.child-card-info .child-meta {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 2px;
+}
+
+.child-allergies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
+}
+
+.allergy-tag {
+    background: #ffeaa7;
+    color: #856404;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* === Eltern-Ansicht === */
+.parent-login {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.parent-login select {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 300px;
+}
+
+.allergy-info-box {
+    margin-top: 1rem;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+}
+
+.allergy-info-box h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+/* === Pick List (Auswahl im Modal) === */
+.pick-list .meal-card {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.pick-list .meal-card:hover {
+    background: #eef4fc;
+}
+
+/* === Modal === */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+
+.modal-wide {
+    max-width: 600px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    font-size: 1.1rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 0 0.25rem;
+}
+
+form {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+input, select, textarea {
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+fieldset {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+}
+
+legend {
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0 0.25rem;
+}
+
+.allergen-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+}
+
+.allergen-checkboxes label {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 400;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.allergen-checkboxes input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+}
+
+/* === Responsive === */
+@media (max-width: 600px) {
+    .weekplan-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-content h1 {
+        font-size: 1.2rem;
+    }
+
+    .nav-btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.3rem;
+    }
+
+    .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
