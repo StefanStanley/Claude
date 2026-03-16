@@ -218,11 +218,27 @@
         </div>
     </div>
 
+    <!-- Debug: zeigt sofort ob Scripts laden -->
+    <script>
+    window.__dbg = function(msg, ok) {
+        var el = document.getElementById('dbg');
+        if (!el) { el = document.createElement('div'); el.id='dbg';
+            el.style.cssText='position:fixed;bottom:0;left:0;right:0;padding:8px 12px;font-size:13px;font-family:monospace;background:#222;color:#0f0;z-index:99999;max-height:50vh;overflow:auto;';
+            document.body.appendChild(el); }
+        el.innerHTML += '<div style="color:'+(ok?'#2ecc71':'#e74c3c')+'">'+msg+'</div>';
+    };
+    window.__dbg('1. Seite geladen ✓', true);
+    window.onerror = function(msg, src, line) { window.__dbg('JS FEHLER: '+msg+' ('+src+':'+line+')', false); };
+    </script>
+
     <!-- Firebase SDKs (compat version for simple script tags) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onerror="window.__dbg('Firebase App SDK NICHT geladen ✗', false)"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js" onerror="window.__dbg('Firebase Auth SDK NICHT geladen ✗', false)"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onerror="window.__dbg('Firebase Firestore SDK NICHT geladen ✗', false)"></script>
+    <script>window.__dbg('2. Firebase SDKs geladen: ' + (typeof firebase !== 'undefined' ? '✓' : '✗ FEHLT!'), typeof firebase !== 'undefined');</script>
+    <script src="firebase-config.js" onerror="window.__dbg('firebase-config.js NICHT geladen ✗', false)"></script>
+    <script>window.__dbg('3. Config geladen: ' + (typeof firebaseConfig !== 'undefined' ? '✓' : '✗ FEHLT!'), typeof firebaseConfig !== 'undefined');</script>
+    <script src="app.js" onerror="window.__dbg('app.js NICHT geladen ✗', false)"></script>
+    <script>window.__dbg('4. app.js geladen ✓', true);</script>
 </body>
 </html>
