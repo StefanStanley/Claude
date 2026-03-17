@@ -103,14 +103,14 @@ const ALLERGENS = [
     { id: 'lupinen', name: 'Lupinen' }, { id: 'weichtiere', name: 'Weichtiere' },
 ];
 
-/** @type {string[]} Wochentage (Mo-Fr) */
-const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+/** @type {string[]} Wochentage Keys (für tDay()) */
+const DAY_KEYS = [0, 1, 2, 3, 4];
 
-/** @type {Object.<string, string>} Kategorie-ID → Anzeigename */
-const CATEGORIES = { fleisch: 'Fleisch', fisch: 'Fisch', vegetarisch: 'Vegetarisch', vegan: 'Vegan' };
+/** @type {Object.<string, string>} Kategorie-ID → i18n-Key */
+const CATEGORY_KEYS = { fleisch: 'catMeat', fisch: 'catFish', vegetarisch: 'catVegetarian', vegan: 'catVegan' };
 
-/** @type {Object.<string, string>} Rollen-ID → Anzeigename */
-const ROLE_LABELS = { admin: 'Admin', kueche: 'Küche', eltern: 'Eltern' };
+/** @type {Object.<string, string>} Rollen-ID → i18n-Key */
+const ROLE_KEYS = { admin: 'roleAdmin', kueche: 'roleKitchen', eltern: 'roleParent' };
 
 // ═══════════════════════════════════════════════════════════════
 //  Application State
@@ -178,23 +178,15 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     const errEl = document.getElementById('login-error');
     const btn = e.target.querySelector('button[type="submit"]');
     errEl.classList.add('hidden');
-    if (!auth) { errEl.textContent = 'Firebase nicht geladen.'; errEl.classList.remove('hidden'); return; }
-    btn.disabled = true; btn.textContent = 'Anmelden...';
+    if (!auth) { errEl.textContent = t('firebaseNotLoaded'); errEl.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = t('loggingIn');
     try {
         await auth.signInWithEmailAndPassword(email, pw);
     } catch (err) {
-        const msgs = {
-            'auth/user-not-found': 'Benutzer nicht gefunden.',
-            'auth/wrong-password': 'Falsches Passwort.',
-            'auth/invalid-email': 'Ungültige E-Mail.',
-            'auth/invalid-credential': 'E-Mail oder Passwort falsch.',
-            'auth/too-many-requests': 'Zu viele Versuche. Bitte warten.',
-            'auth/network-request-failed': 'Netzwerk-Fehler.',
-        };
-        errEl.textContent = msgs[err.code] || err.code + ' — ' + err.message;
+        errEl.textContent = t(err.code) !== err.code ? t(err.code) : (err.code + ' — ' + err.message);
         errEl.classList.remove('hidden');
     } finally {
-        btn.disabled = false; btn.textContent = 'Anmelden';
+        btn.disabled = false; btn.textContent = t('login');
     }
 });
 
@@ -209,18 +201,17 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     const errEl = document.getElementById('login-error');
     const btn = document.getElementById('btn-register');
     errEl.classList.add('hidden');
-    if (!auth) { errEl.textContent = 'Firebase nicht geladen.'; errEl.classList.remove('hidden'); return; }
-    if (!email || !pw) { errEl.textContent = 'E-Mail und Passwort eingeben.'; errEl.classList.remove('hidden'); return; }
-    if (pw.length < 6) { errEl.textContent = 'Passwort: mind. 6 Zeichen.'; errEl.classList.remove('hidden'); return; }
-    btn.disabled = true; btn.textContent = 'Registrieren...';
+    if (!auth) { errEl.textContent = t('firebaseNotLoaded'); errEl.classList.remove('hidden'); return; }
+    if (!email || !pw) { errEl.textContent = t('emailAndPwRequired'); errEl.classList.remove('hidden'); return; }
+    if (pw.length < 6) { errEl.textContent = t('pwMinLength'); errEl.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = t('registering');
     try {
         await auth.createUserWithEmailAndPassword(email, pw);
     } catch (err) {
-        const msgs = { 'auth/email-already-in-use': 'E-Mail bereits registriert.', 'auth/weak-password': 'Passwort zu kurz.', 'auth/invalid-email': 'Ungültige E-Mail.' };
-        errEl.textContent = msgs[err.code] || err.code || err.message;
+        errEl.textContent = t(err.code) !== err.code ? t(err.code) : (err.code || err.message);
         errEl.classList.remove('hidden');
     } finally {
-        btn.disabled = false; btn.textContent = 'Neuen Account erstellen';
+        btn.disabled = false; btn.textContent = t('register');
     }
 });
 
@@ -294,7 +285,7 @@ function showApp() {
     document.getElementById('app-container').classList.remove('hidden');
     const u = state.currentUser;
     document.getElementById('user-info').innerHTML =
-        `${esc(u.name)} <span class="role-badge">${ROLE_LABELS[u.role] || u.role}</span>`;
+        `${esc(u.name)} <span class="role-badge">${tRole(u.role)}</span>`;
     applyRole();
 }
 
@@ -382,7 +373,7 @@ function getWeekKey(off) {
 function getWeekLabel(off) {
     const m = getMonday(off), f = new Date(m); f.setDate(f.getDate() + 4);
     const fmt = d => `${d.getDate()}.${d.getMonth() + 1}.`;
-    return `KW ${getWeekKey(off).split('-')[1]}  ·  ${fmt(m)} – ${fmt(f)}${m.getFullYear()}`;
+    return `${t('weekLabel')} ${getWeekKey(off).split('-')[1]}  \u00b7  ${fmt(m)} \u2013 ${fmt(f)}${m.getFullYear()}`;
 }
 
 /**
@@ -493,7 +484,7 @@ function showActionSheet(title, confirmLabel, onConfirm) {
 function renderAllergenCB(id, sel = []) {
     document.getElementById(id).innerHTML = ALLERGENS.map(a =>
         `<div class="ios-allergen-row">
-            <span>${a.name}</span>
+            <span>${tAllergen(a.id)}</span>
             <label class="ios-toggle">
                 <input type="checkbox" value="${a.id}" ${sel.includes(a.id) ? 'checked' : ''}>
                 <div class="ios-toggle-track"></div>
@@ -522,17 +513,17 @@ function renderMealsList(filter = 'alle') {
     const list = document.getElementById('meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
     const staff = isStaff();
-    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Gleis leer &ndash; Emma wartet auf Kohle!</p>'; return; }
+    if (!items.length) { list.innerHTML = `<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">${t('emptyMeals')}</p>`; return; }
     list.innerHTML = items.map(m => {
-        const aNames = m.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ');
+        const aNames = m.allergens.map(id => tAllergen(id)).join(', ');
         return `<div class="meal-card">
             <div class="meal-card-info">
-                <div class="meal-title">${esc(m.name)} <span class="category-badge cat-${m.category}">${CATEGORIES[m.category]}</span></div>
-                <div class="meal-meta">${aNames ? aNames : 'Keine Allergene'}</div>
+                <div class="meal-title">${esc(m.name)} <span class="category-badge cat-${m.category}">${tCategory(m.category)}</span></div>
+                <div class="meal-meta">${aNames ? aNames : t('noAllergens')}</div>
             </div>
             ${staff ? `<div class="meal-card-actions">
-                <button class="btn-small btn-edit" onclick="editMeal('${m.id}')">Bearb.</button>
-                <button class="btn-small btn-delete" onclick="deleteMeal('${m.id}')">Entf.</button>
+                <button class="btn-small btn-edit" onclick="editMeal('${m.id}')">${t('edit')}</button>
+                <button class="btn-small btn-delete" onclick="deleteMeal('${m.id}')">${t('delete')}</button>
             </div>` : ''}
         </div>`;
     }).join('');
@@ -550,7 +541,7 @@ document.querySelectorAll('#meals-filter .ios-seg-btn').forEach(b => {
 document.getElementById('btn-add-meal').addEventListener('click', () => {
     if (!isStaff()) return;
     state.editingMealId = null;
-    document.getElementById('modal-meal-title').textContent = 'Neue Speise';
+    document.getElementById('modal-meal-title').textContent = t('newMeal');
     document.getElementById('form-meal').reset();
     renderAllergenCB('meal-allergens');
     openModal('modal-meal');
@@ -565,7 +556,7 @@ window.editMeal = function (id) {
     if (!isStaff()) return;
     const m = state.meals.find(x => x.id === id); if (!m) return;
     state.editingMealId = id;
-    document.getElementById('modal-meal-title').textContent = 'Speise bearbeiten';
+    document.getElementById('modal-meal-title').textContent = t('editMeal');
     document.getElementById('meal-name').value = m.name;
     document.getElementById('meal-category').value = m.category;
     document.getElementById('meal-description').value = m.description || '';
@@ -583,8 +574,8 @@ window.deleteMeal = function (id) {
     if (!isStaff()) return;
     const m = state.meals.find(x => x.id === id);
     showActionSheet(
-        m ? `„${m.name}" wirklich löschen?` : 'Speise löschen?',
-        'Löschen',
+        m ? t('confirmDeleteMeal', { name: m.name }) : t('confirmDeleteGeneric'),
+        t('delete'),
         async () => {
             if (!state.demoMode) await db.collection('meals').doc(id).delete();
             state.meals = state.meals.filter(m => m.id !== id);
@@ -622,6 +613,74 @@ document.getElementById('form-meal').addEventListener('submit', async (e) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+//  Speisen-API (TheMealDB) — Vorschläge laden
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Lädt Speise-Vorschläge von TheMealDB und fügt sie dem lokalen State hinzu.
+ * Kategorisiert automatisch basierend auf Zutaten (Fleisch/Fisch/Veggie/Vegan).
+ * @async
+ * @global
+ */
+window.loadMealsFromAPI = async function () {
+    if (!isStaff()) return;
+    const btn = document.getElementById('btn-load-api-meals');
+    if (btn) { btn.disabled = true; btn.textContent = '...'; }
+    try {
+        const letters = ['a','b','c','d','e','f','g','h','l','m','p','r','s','t'];
+        const letter = letters[Math.floor(Math.random() * letters.length)];
+        const resp = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?f=${letter}`);
+        const data = await resp.json();
+        if (!data.meals || !data.meals.length) {
+            if (btn) { btn.disabled = false; btn.textContent = t('apiNoResults') || 'Keine Ergebnisse'; }
+            return;
+        }
+        const meatKw = ['chicken','beef','pork','lamb','turkey','duck','bacon','ham','sausage','steak','meat','veal'];
+        const fishKw = ['fish','salmon','tuna','shrimp','prawn','cod','crab','lobster','anchov','sardine','squid','mussel','clam','oyster'];
+        const dairyKw = ['milk','cheese','cream','butter','yogurt','egg'];
+        let added = 0;
+        for (const meal of data.meals.slice(0, 8)) {
+            if (state.meals.some(m => m.name === meal.strMeal)) continue;
+            const ingrs = [];
+            for (let i = 1; i <= 20; i++) {
+                const ing = meal['strIngredient' + i];
+                if (ing && ing.trim()) ingrs.push(ing.trim().toLowerCase());
+            }
+            const ingrStr = ingrs.join(' ');
+            let category = 'vegan';
+            if (meatKw.some(k => ingrStr.includes(k))) category = 'fleisch';
+            else if (fishKw.some(k => ingrStr.includes(k))) category = 'fisch';
+            else if (dairyKw.some(k => ingrStr.includes(k))) category = 'vegetarisch';
+            const allergens = [];
+            if (ingrStr.includes('wheat') || ingrStr.includes('flour') || ingrStr.includes('bread') || ingrStr.includes('pasta') || ingrStr.includes('noodle')) allergens.push('gluten');
+            if (ingrStr.includes('egg')) allergens.push('eier');
+            if (fishKw.some(k => ingrStr.includes(k))) allergens.push('fisch');
+            if (ingrStr.includes('milk') || ingrStr.includes('cream') || ingrStr.includes('cheese') || ingrStr.includes('butter') || ingrStr.includes('yogurt')) allergens.push('milch');
+            if (ingrStr.includes('peanut')) allergens.push('erdnuesse');
+            if (ingrStr.includes('soy') || ingrStr.includes('soya')) allergens.push('soja');
+            if (ingrStr.includes('celery')) allergens.push('sellerie');
+            if (ingrStr.includes('mustard')) allergens.push('senf');
+            if (ingrStr.includes('sesame')) allergens.push('sesam');
+            const desc = meal.strInstructions ? meal.strInstructions.substring(0, 120) + '...' : '';
+            const newMeal = { id: state.demoMode ? 'api_' + Date.now() + '_' + added : null, name: meal.strMeal, category, description: desc, allergens };
+            if (!state.demoMode) {
+                const ref = await db.collection('meals').add({ name: newMeal.name, category, description: desc, allergens });
+                newMeal.id = ref.id;
+            } else {
+                newMeal.id = 'api_' + Date.now() + '_' + added;
+            }
+            state.meals.push(newMeal);
+            added++;
+        }
+        renderMealsList(); renderWeekPlan();
+    } catch (err) {
+        console.error('TheMealDB API:', err.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '\u{1F50D} ' + (t('apiLoadMeals') || 'Speisen laden'); }
+    }
+};
+
+// ═══════════════════════════════════════════════════════════════
 //  Kinder (Children) — CRUD
 // ═══════════════════════════════════════════════════════════════
 
@@ -631,18 +690,18 @@ document.getElementById('form-meal').addEventListener('submit', async (e) => {
  */
 function renderChildrenList() {
     const list = document.getElementById('children-list');
-    if (!state.children.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Noch keine Waggons angeh&auml;ngt!</p>'; return; }
+    if (!state.children.length) { list.innerHTML = `<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">${t('emptyChildren')}</p>`; return; }
     list.innerHTML = state.children.map(c => {
-        const aNames = c.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id);
+        const aNames = c.allergens.map(id => tAllergen(id));
         return `<div class="child-card">
             <div class="child-card-info">
                 <div class="child-name">${esc(c.firstname)} ${esc(c.lastname)}</div>
-                <div class="child-meta">${c.group ? esc(c.group) : ''}${c.notes ? ' · ' + esc(c.notes) : ''}</div>
+                <div class="child-meta">${c.group ? esc(c.group) : ''}${c.notes ? ' \u00b7 ' + esc(c.notes) : ''}</div>
                 <div class="child-allergies">${aNames.length ? aNames.map(n => `<span class="allergy-tag">${n}</span>`).join('') : ''}</div>
             </div>
             <div class="meal-card-actions">
-                <button class="btn-small btn-edit" onclick="editChild('${c.id}')">Bearb.</button>
-                <button class="btn-small btn-delete" onclick="deleteChild('${c.id}')">Entf.</button>
+                <button class="btn-small btn-edit" onclick="editChild('${c.id}')">${t('edit')}</button>
+                <button class="btn-small btn-delete" onclick="deleteChild('${c.id}')">${t('delete')}</button>
             </div>
         </div>`;
     }).join('');
@@ -652,7 +711,7 @@ function renderChildrenList() {
 document.getElementById('btn-add-child').addEventListener('click', () => {
     if (!isStaff()) return;
     state.editingChildId = null;
-    document.getElementById('modal-child-title').textContent = 'Kind hinzufügen';
+    document.getElementById('modal-child-title').textContent = t('newChild');
     document.getElementById('form-child').reset();
     renderAllergenCB('child-allergens');
     openModal('modal-child');
@@ -667,7 +726,7 @@ window.editChild = function (id) {
     if (!isStaff()) return;
     const c = state.children.find(x => x.id === id); if (!c) return;
     state.editingChildId = id;
-    document.getElementById('modal-child-title').textContent = 'Kind bearbeiten';
+    document.getElementById('modal-child-title').textContent = t('editChild');
     document.getElementById('child-firstname').value = c.firstname;
     document.getElementById('child-lastname').value = c.lastname;
     document.getElementById('child-group').value = c.group || '';
@@ -685,8 +744,8 @@ window.deleteChild = function (id) {
     if (!isStaff()) return;
     const c = state.children.find(x => x.id === id);
     showActionSheet(
-        c ? `${c.firstname} ${c.lastname} entfernen?` : 'Kind entfernen?',
-        'Entfernen',
+        c ? t('confirmRemoveChild', { name: c.firstname + ' ' + c.lastname }) : t('confirmRemoveChildGeneric'),
+        t('remove'),
         async () => {
             if (!state.demoMode) await db.collection('children').doc(id).delete();
             state.children = state.children.filter(c => c.id !== id);
@@ -738,21 +797,22 @@ function renderWeekPlan() {
     const staff = isStaff();
     renderParentBanner();
 
-    grid.innerHTML = DAYS.map((day, i) => {
+    grid.innerHTML = DAY_KEYS.map(i => {
+        const day = tDay(i);
         const ids = plan[i] || [];
         const dateStr = getDayDate(state.currentWeekOffset, i);
         const mealsHtml = ids.map(mid => {
             const m = state.meals.find(x => x.id === mid); if (!m) return '';
             return `<div class="day-meal">
                 <div class="meal-name">${esc(m.name)}</div>
-                <span class="category-badge cat-${m.category}">${CATEGORIES[m.category]}</span>
+                <span class="category-badge cat-${m.category}">${tCategory(m.category)}</span>
                 ${staff ? `<button class="btn-remove-meal" onclick="removeMealFromDay(${i},'${mid}')">&times;</button>` : ''}
                 ${getAllergyWarnings(m)}
             </div>`;
         }).join('');
         return `<div class="day-card">
             <div class="day-card-header">${day} <span class="day-date">${dateStr}</span></div>
-            <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">+ Proviant laden</button>` : ''}</div>
+            <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">${t('addMealToDay')}</button>` : ''}</div>
         </div>`;
     }).join('');
     renderStats(); if (staff) checkVariety();
@@ -768,7 +828,7 @@ function renderParentBanner() {
     const c = state.children.find(x => x.id === state.currentUser.childId);
     if (!c || !c.allergens.length) { b.classList.add('hidden'); return; }
     b.classList.remove('hidden');
-    b.innerHTML = `<strong>Allergien von ${esc(c.firstname)}:</strong> ${c.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ')}`;
+    b.innerHTML = `<strong>${t('allergyBannerPrefix', { name: esc(c.firstname) })}</strong> ${c.allergens.map(id => tAllergen(id)).join(', ')}`;
 }
 
 /**
@@ -786,13 +846,13 @@ function getAllergyWarnings(meal) {
         const c = state.children.find(x => x.id === state.currentUser.childId); if (!c) return '';
         const common = meal.allergens.filter(a => c.allergens.includes(a));
         if (!common.length) return '';
-        return `<div class="allergy-warning"><strong>Achtung!</strong> ${common.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ')}</div>`;
+        return `<div class="allergy-warning"><strong>${t('allergyWarning')}</strong> ${common.map(id => tAllergen(id)).join(', ')}</div>`;
     }
     if (!state.children.length) return '';
     const aff = [];
     for (const c of state.children) {
         const common = meal.allergens.filter(a => c.allergens.includes(a));
-        if (common.length) aff.push(`<strong>${esc(c.firstname)}</strong>: ${common.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ')}`);
+        if (common.length) aff.push(`<strong>${esc(c.firstname)}</strong>: ${common.map(id => tAllergen(id)).join(', ')}`);
     }
     return aff.length ? `<div class="allergy-warning">${aff.join(' · ')}</div>` : '';
 }
@@ -806,7 +866,7 @@ function renderStats() {
     const cats = { fleisch: 0, fisch: 0, vegetarisch: 0, vegan: 0 };
     for (let d = 0; d < 5; d++) for (const mid of (plan[d] || [])) { const m = state.meals.find(x => x.id === mid); if (m) cats[m.category]++; }
     document.getElementById('stats-bar').innerHTML =
-        Object.entries(cats).map(([k, v]) => `<div class="stat-card stat-${k}"><div class="stat-value" style="color:var(--cat-${k})">${v}</div><div class="stat-label">${CATEGORIES[k]}</div></div>`).join('');
+        Object.entries(cats).map(([k, v]) => `<div class="stat-card stat-${k}"><div class="stat-value" style="color:var(--cat-${k})">${v}</div><div class="stat-label">${tCategory(k)}</div></div>`).join('');
 }
 
 /**
@@ -820,11 +880,11 @@ function checkVariety() {
     for (let d = 0; d < 5; d++) for (const mid of (plan[d] || [])) { const m = state.meals.find(x => x.id === mid); if (m) { cats[m.category]++; total++; } }
     if (total < 3) { el.classList.add('hidden'); return; }
     const msgs = [];
-    if (cats.fleisch / total > 0.5) msgs.push('Zu viel Dampf im Kessel \u2013 weniger Fleisch!');
-    if (cats.fisch === 0 && total >= 4) msgs.push('Emma empfiehlt: Mind. 1x Fisch/Woche.');
-    if ((cats.vegetarisch + cats.vegan) / total < 0.3 && total >= 4) msgs.push('Mehr Gr\u00fcnes an Bord nehmen!');
-    if (msgs.length) { el.className = 'ios-banner alert alert-warning'; el.innerHTML = '<strong>Lokf\u00fchrer-Tipp:</strong> ' + msgs.join(' '); }
-    else if (total >= 5) { el.className = 'ios-banner alert alert-success'; el.textContent = 'Ausgezeichneter Fahrplan \u2013 volle Fahrt voraus!'; }
+    if (cats.fleisch / total > 0.5) msgs.push(t('varietyTooMuchMeat'));
+    if (cats.fisch === 0 && total >= 4) msgs.push(t('varietyNeedFish'));
+    if ((cats.vegetarisch + cats.vegan) / total < 0.3 && total >= 4) msgs.push(t('varietyMoreVeggie'));
+    if (msgs.length) { el.className = 'ios-banner alert alert-warning'; el.innerHTML = '<strong>' + t('varietyTipPrefix') + '</strong> ' + msgs.join(' '); }
+    else if (total >= 5) { el.className = 'ios-banner alert alert-success'; el.textContent = t('varietyGood'); }
     else el.classList.add('hidden');
 }
 
@@ -840,7 +900,7 @@ document.getElementById('next-week').addEventListener('click', () => { state.cur
  */
 window.pickMealForDay = function (i) {
     if (!isStaff()) return; state.pickingDay = i;
-    document.getElementById('modal-pick-title').textContent = `${DAYS[i]} \u2014 Proviant w\u00e4hlen`;
+    document.getElementById('modal-pick-title').textContent = t('pickMealDay', { day: tDay(i) });
     renderPickList('alle');
     document.querySelectorAll('.pick-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.pick-filter-btn[data-filter="alle"]').classList.add('active');
@@ -854,13 +914,13 @@ window.pickMealForDay = function (i) {
 function renderPickList(filter) {
     const list = document.getElementById('pick-meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
-    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Kein Proviant an Bord!</p>'; return; }
+    if (!items.length) { list.innerHTML = `<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">${t('emptyPickList')}</p>`; return; }
     list.innerHTML = items.map(m => {
-        const aNames = m.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ');
+        const aNames = m.allergens.map(id => tAllergen(id)).join(', ');
         return `<div class="meal-card" onclick="selectMealForDay('${m.id}')">
             <div class="meal-card-info">
-                <div class="meal-title">${esc(m.name)} <span class="category-badge cat-${m.category}">${CATEGORIES[m.category]}</span></div>
-                <div class="meal-meta">${aNames || 'Keine Allergene'}</div>
+                <div class="meal-title">${esc(m.name)} <span class="category-badge cat-${m.category}">${tCategory(m.category)}</span></div>
+                <div class="meal-meta">${aNames || t('noAllergens')}</div>
             </div>
         </div>`;
     }).join('');
@@ -915,16 +975,16 @@ window.removeMealFromDay = async function (di, mealId) {
  */
 function renderUsersList() {
     const list = document.getElementById('users-list'); if (!list) return;
-    if (!state.users.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Kein Stellwerker im Dienst</p>'; return; }
+    if (!state.users.length) { list.innerHTML = `<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">${t('emptyUsers')}</p>`; return; }
     list.innerHTML = state.users.map(u => {
         const childName = u.childId ? (() => { const c = state.children.find(x => x.id === u.childId); return c ? `${c.firstname} ${c.lastname}` : ''; })() : '';
         const isSelf = u.uid === state.currentUser?.uid;
         return `<div class="child-card">
             <div class="child-card-info">
-                <div class="child-name">${esc(u.name || u.email)} <span class="role-badge">${ROLE_LABELS[u.role] || u.role}</span></div>
-                <div class="child-meta">${esc(u.email)}${childName ? ' · ' + esc(childName) : ''}</div>
+                <div class="child-name">${esc(u.name || u.email)} <span class="role-badge">${tRole(u.role)}</span></div>
+                <div class="child-meta">${esc(u.email)}${childName ? ' \u00b7 ' + esc(childName) : ''}</div>
             </div>
-            ${!isSelf ? `<div class="meal-card-actions"><button class="btn-small btn-delete" onclick="deleteUser('${u.uid}')">Entf.</button></div>` : ''}
+            ${!isSelf ? `<div class="meal-card-actions"><button class="btn-small btn-delete" onclick="deleteUser('${u.uid}')">${t('delete')}</button></div>` : ''}
         </div>`;
     }).join('');
 }
@@ -935,7 +995,7 @@ document.getElementById('btn-add-user').addEventListener('click', () => {
     document.getElementById('user-form-error').classList.add('hidden');
     document.getElementById('user-child-assign').classList.add('hidden');
     const cs = document.getElementById('user-child-select');
-    cs.innerHTML = '<option value="">Kein Kind</option>' +
+    cs.innerHTML = `<option value="">${t('noChild')}</option>` +
         state.children.map(c => `<option value="${c.id}">${esc(c.firstname)} ${esc(c.lastname)}</option>`).join('');
     openModal('modal-user');
 });
@@ -969,8 +1029,7 @@ document.getElementById('form-user').addEventListener('submit', async (e) => {
         state.users.push({ uid, email, name, role, childId });
         closeModal('modal-user'); renderUsersList();
     } catch (err) {
-        const msgs = { 'auth/email-already-in-use': 'E-Mail bereits verwendet.', 'auth/weak-password': 'Passwort zu kurz.', 'auth/invalid-email': 'Ungültige E-Mail.' };
-        errEl.textContent = msgs[err.code] || err.message;
+        errEl.textContent = t(err.code) !== err.code ? t(err.code) : err.message;
         errEl.classList.remove('hidden');
     }
 });
@@ -982,7 +1041,7 @@ document.getElementById('form-user').addEventListener('submit', async (e) => {
  * @global
  */
 window.deleteUser = function (uid) {
-    showActionSheet('Benutzer wirklich entfernen?', 'Entfernen', async () => {
+    showActionSheet(t('confirmRemoveUser'), t('remove'), async () => {
         if (!state.demoMode) await db.collection('users').doc(uid).delete();
         state.users = state.users.filter(u => u.uid !== uid);
         renderUsersList();
@@ -1077,6 +1136,35 @@ document.querySelectorAll('.ios-theme-option').forEach(opt => {
  * @returns {string} HTML-sicherer String
  */
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ═══════════════════════════════════════════════════════════════
+//  Language Picker (rendered dynamically)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Rendert die Sprachauswahl im Theme/Settings-Sheet.
+ * Zeigt alle verfügbaren Sprachen als klickbare Buttons.
+ */
+function renderLangPicker() {
+    const el = document.getElementById('lang-picker');
+    if (!el) return;
+    el.innerHTML = Object.entries(LANGUAGES).map(([code, name]) =>
+        `<button class="ios-lang-btn${code === currentLang ? ' active' : ''}" data-lang="${code}">${name}</button>`
+    ).join('');
+    el.querySelectorAll('.ios-lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            setLanguage(btn.dataset.lang);
+            renderLangPicker();
+        });
+    });
+}
+
+// Render language picker when theme sheet opens (augment existing handler)
+const origThemeBtn = document.getElementById('btn-theme');
+origThemeBtn.addEventListener('click', () => { renderLangPicker(); });
+
+// Apply language to DOM on initial load
+applyLanguageToDOM();
 
 // ═══════════════════════════════════════════════════════════════
 //  Onboarding Overlay — V2.0 Lummerland

@@ -905,9 +905,51 @@ main {
 }
 
 /* ============================================================
+   LANGUAGE PICKER
+   ============================================================ */
+.ios-lang-picker {
+    display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 8px;
+}
+.ios-lang-btn {
+    padding: 8px 14px; border: 1.5px solid var(--ios-separator-opaque);
+    border-radius: 10px; background: var(--ios-bg-grouped);
+    font-size: 0.82rem; font-weight: 600; font-family: var(--font);
+    color: var(--ios-label); cursor: pointer; transition: all 0.15s;
+}
+.ios-lang-btn:active { opacity: 0.6; }
+.ios-lang-btn.active {
+    border-color: var(--lml-brass);
+    background: rgba(212,175,55,0.1);
+    color: var(--lml-ocean);
+}
+[data-theme="dark"] .ios-lang-btn { background: var(--ios-bg-elevated); }
+[data-theme="dark"] .ios-lang-btn.active {
+    border-color: var(--lml-brass);
+    background: rgba(230,201,92,0.12);
+    color: var(--lml-brass);
+}
+
+/* ============================================================
+   RTL SUPPORT
+   ============================================================ */
+[dir="rtl"] .ios-header-bar { flex-direction: row-reverse; }
+[dir="rtl"] .ios-header-left { flex-direction: row-reverse; }
+[dir="rtl"] .ios-header-right { flex-direction: row-reverse; }
+[dir="rtl"] .ios-form-row input,
+[dir="rtl"] .ios-form-row select,
+[dir="rtl"] .ios-form-row textarea { text-align: left; }
+[dir="rtl"] .ios-form-row label { text-align: right; }
+[dir="rtl"] .ios-sheet-cancel { text-align: right; }
+[dir="rtl"] .ios-sheet-done { text-align: left; }
+[dir="rtl"] .day-card { border-left: none; border-right: 4px solid var(--lml-brass); }
+[dir="rtl"] .meal-card { border-left: none; border-right: 3px solid var(--lml-brass); }
+[dir="rtl"] .btn-add-day-meal { text-align: right; padding-left: 0; padding-right: 12px; }
+[dir="rtl"] .ios-input-icon { margin-right: 0; margin-left: 10px; }
+
+/* ============================================================
    THEME PICKER
    ============================================================ */
-.ios-sheet-content.ios-sheet-compact { max-height: 50vh; }
+.ios-sheet-content.ios-sheet-compact { max-height: 65vh; }
 
 .ios-theme-picker { padding: 20px 16px 32px; }
 .ios-theme-options { display: flex; gap: 12px; justify-content: center; }
