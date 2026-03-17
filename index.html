@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260317c">
+    <link rel="stylesheet" href="style.css?v=20260317e">
 </head>
 <body>
     <!-- === LOGIN === -->
@@ -116,8 +116,11 @@
                     </button>
                 </div>
                 <div id="parent-allergy-banner" class="ios-banner ios-banner-warning hidden"></div>
+                <div id="dampf-counter" class="hidden"></div>
+                <div id="waggon-filter" class="hidden"></div>
                 <div id="stats-bar" class="ios-stats-row"></div>
                 <div id="variety-alert" class="ios-banner hidden"></div>
+                <div id="notbremse-alert" class="hidden"></div>
                 <div class="print-header"><h2 data-i18n="printTitle">KiTa Lummerland - Fahrplan der Woche</h2><p id="print-week-label"></p></div>
                 <div id="weekplan-grid" class="ios-day-grid"></div>
             </section>
@@ -138,7 +141,10 @@
                     <button class="ios-seg-btn" data-filter="vegan" data-i18n="catVegan">Vegan</button>
                 </div>
                 <div id="meals-list" class="ios-list-group"></div>
-                <div style="padding:12px 16px;">
+                <div style="padding:12px 16px; display:flex; flex-direction:column; gap:8px;">
+                    <button id="btn-load-kita-db" class="ios-btn-tinted btn-role-staff" onclick="loadKitaDB()" style="font-size:0.85rem;">
+                        &#x1F37D;&#xFE0F; <span data-i18n="kitaDbLoad">KiTa-Gerichte laden (50 Rezepte)</span>
+                    </button>
                     <button id="btn-load-api-meals" class="ios-btn-tinted btn-role-staff" onclick="loadMealsFromAPI()" style="font-size:0.85rem;">
                         &#x1F50D; <span data-i18n="apiLoadMeals">Speisen-Vorschl&auml;ge laden</span>
                     </button>
@@ -368,12 +374,25 @@
         </div>
     </div>
 
+    <!-- Die Wilde 13 — Error Page -->
+    <div id="wilde13-error-page" class="wilde13-page hidden">
+        <div class="wilde13-card">
+            <div class="wilde13-emoji">&#x1F3F4;&#x200D;&#x2620;&#xFE0F;</div>
+            <h2 data-i18n="wilde13Title">Die Wilde 13!</h2>
+            <p data-i18n="wilde13Text">Piraten haben die Verbindung gekapert! Etwas ist schiefgelaufen.</p>
+            <div id="wilde13-error-msg" class="wilde13-msg"></div>
+            <button class="wilde13-btn" onclick="zurueckZumLeuchtturm()">
+                <span>&#x1F3F0;</span> <span data-i18n="wilde13Recovery">Zur&uuml;ck zum Leuchtturm</span>
+            </button>
+        </div>
+    </div>
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js?v=20260317c"></script>
-    <script src="lang.js?v=20260317c"></script>
-    <script src="app.js?v=20260317c"></script>
+    <script src="firebase-config.js?v=20260317e"></script>
+    <script src="lang.js?v=20260317e"></script>
+    <script src="app.js?v=20260317e"></script>
 </body>
 </html>

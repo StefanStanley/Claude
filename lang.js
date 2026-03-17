@@ -210,6 +210,32 @@ de: {
     addUserTitle: 'Neuen Stellwerker anlegen',
     apiLoadMeals: 'Speisen-Vorschläge laden',
     apiNoResults: 'Keine Ergebnisse',
+
+    // Mandala-Security-System
+    lukasApproved: 'Lukas-geprüft',
+    frauMahlzahnWarning: 'Frau Mahlzahn warnt:',
+
+    // Emmas Dampf-Counter
+    dampfPortions: 'Portionen',
+    dampfVeggie: 'Veggie',
+    dampfAllergenAlerts: 'Allergen-Alarme',
+
+    // Notbremse
+    notbremseTitle: 'Notbremse — Stornieren',
+    signalRot: 'Signal steht auf Rot!',
+    signalRotMsg: 'Die Bestellfrist ist abgelaufen. Bitte kontaktieren Sie die Küche direkt.',
+
+    // Lukas-Modus / Waggon
+    waggonFilter: 'Waggons',
+
+    // Die Wilde 13
+    wilde13Title: 'Die Wilde 13!',
+    wilde13Text: 'Piraten haben die Verbindung gekapert! Etwas ist schiefgelaufen.',
+    wilde13Recovery: 'Zurück zum Leuchtturm',
+    wilde13UnknownError: 'Unbekannter Fehler',
+
+    // KiTa-Speisedatenbank
+    kitaDbLoad: 'KiTa-Gerichte laden (50 Rezepte)',
 },
 
 // ---------------------------------------------------------------
@@ -369,6 +395,30 @@ en: {
     addUserTitle: 'Create User',
     apiLoadMeals: 'Load meal suggestions',
     apiNoResults: 'No results',
+
+    // Mandala-Security-System
+    lukasApproved: 'Lukas-approved',
+    frauMahlzahnWarning: 'Frau Mahlzahn warns:',
+
+    // Emmas Dampf-Counter
+    dampfPortions: 'Portions',
+    dampfVeggie: 'Veggie',
+    dampfAllergenAlerts: 'Allergen alerts',
+
+    // Notbremse
+    notbremseTitle: 'Emergency brake — Cancel',
+    signalRot: 'Signal is red!',
+    signalRotMsg: 'The order deadline has passed. Please contact the kitchen directly.',
+
+    // Lukas-Modus / Waggon
+    waggonFilter: 'Wagons',
+
+    // Die Wilde 13
+    wilde13Title: 'The Wild 13!',
+    wilde13Text: 'Pirates have hijacked the connection! Something went wrong.',
+    wilde13Recovery: 'Back to the Lighthouse',
+    wilde13UnknownError: 'Unknown error',
+    kitaDbLoad: 'Load KiTa meals (50 recipes)',
 },
 
 // ---------------------------------------------------------------
@@ -528,6 +578,11 @@ tr: {
     addUserTitle: 'Kullanıcı Oluştur',
     apiLoadMeals: 'Yemek önerileri yükle',
     apiNoResults: 'Sonuç yok',
+    lukasApproved: 'Lukas onaylı', frauMahlzahnWarning: 'Frau Mahlzahn uyarıyor:',
+    dampfPortions: 'Porsiyon', dampfVeggie: 'Vejetaryen', dampfAllergenAlerts: 'Alerjen uyarıları',
+    notbremseTitle: 'Acil fren — İptal', signalRot: 'Sinyal kırmızı!', signalRotMsg: 'Sipariş süresi doldu.',
+    waggonFilter: 'Vagonlar',
+    wilde13Title: 'Vahşi 13!', wilde13Text: 'Korsanlar bağlantıyı ele geçirdi!', wilde13Recovery: 'Deniz Fenerine Dön', wilde13UnknownError: 'Bilinmeyen hata',
 },
 
 // ---------------------------------------------------------------
@@ -687,6 +742,11 @@ ru: {
     addUserTitle: 'Создать пользователя',
     apiLoadMeals: 'Загрузить предложения блюд',
     apiNoResults: 'Нет результатов',
+    lukasApproved: 'Одобрено Лукасом', frauMahlzahnWarning: 'Фрау Мальцан предупреждает:',
+    dampfPortions: 'Порции', dampfVeggie: 'Вегетарианские', dampfAllergenAlerts: 'Аллергены',
+    notbremseTitle: 'Стоп-кран — Отмена', signalRot: 'Сигнал красный!', signalRotMsg: 'Срок заказа истёк.',
+    waggonFilter: 'Вагоны',
+    wilde13Title: 'Дикая 13!', wilde13Text: 'Пираты перехватили связь!', wilde13Recovery: 'К маяку', wilde13UnknownError: 'Неизвестная ошибка',
 },
 
 // ---------------------------------------------------------------
@@ -846,6 +906,11 @@ ar: {
     addUserTitle: 'إنشاء مستخدم',
     apiLoadMeals: 'تحميل اقتراحات الوجبات',
     apiNoResults: 'لا توجد نتائج',
+    lukasApproved: 'معتمد من لوكاس', frauMahlzahnWarning: 'تحذير فراو مالزان:',
+    dampfPortions: 'حصص', dampfVeggie: 'نباتي', dampfAllergenAlerts: 'تنبيهات الحساسية',
+    notbremseTitle: 'فرامل طوارئ — إلغاء', signalRot: 'الإشارة حمراء!', signalRotMsg: 'انتهى الموعد النهائي للطلب.',
+    waggonFilter: 'عربات',
+    wilde13Title: 'الـ 13 المتوحشة!', wilde13Text: 'القراصنة اختطفوا الاتصال!', wilde13Recovery: 'العودة للمنارة', wilde13UnknownError: 'خطأ غير معروف',
 },
 
 // ---------------------------------------------------------------
@@ -1005,6 +1070,11 @@ zh: {
     addUserTitle: '创建用户',
     apiLoadMeals: '加载菜品建议',
     apiNoResults: '无结果',
+    lukasApproved: '卢卡斯认证', frauMahlzahnWarning: '马尔赞夫人警告：',
+    dampfPortions: '份量', dampfVeggie: '素食', dampfAllergenAlerts: '过敏警报',
+    notbremseTitle: '紧急刹车 — 取消', signalRot: '红灯！', signalRotMsg: '订餐截止时间已过。',
+    waggonFilter: '车厢',
+    wilde13Title: '狂野13！', wilde13Text: '海盗劫持了连接！', wilde13Recovery: '返回灯塔', wilde13UnknownError: '未知错误',
 },
 
 // ---------------------------------------------------------------
@@ -1164,6 +1234,11 @@ pl: {
     addUserTitle: 'Utwórz użytkownika',
     apiLoadMeals: 'Załaduj propozycje posiłków',
     apiNoResults: 'Brak wyników',
+    lukasApproved: 'Zatwierdzone przez Lukasa', frauMahlzahnWarning: 'Pani Mahlzahn ostrzega:',
+    dampfPortions: 'Porcje', dampfVeggie: 'Wege', dampfAllergenAlerts: 'Alerty alergenów',
+    notbremseTitle: 'Hamulec awaryjny — Anuluj', signalRot: 'Sygnał czerwony!', signalRotMsg: 'Termin zamówienia minął.',
+    waggonFilter: 'Wagony',
+    wilde13Title: 'Dzika 13!', wilde13Text: 'Piraci przechwycili połączenie!', wilde13Recovery: 'Powrót do latarni', wilde13UnknownError: 'Nieznany błąd',
 },
 
 // ---------------------------------------------------------------
@@ -1323,6 +1398,11 @@ uk: {
     addUserTitle: 'Створити користувача',
     apiLoadMeals: 'Завантажити пропозиції страв',
     apiNoResults: 'Немає результатів',
+    lukasApproved: 'Схвалено Лукасом', frauMahlzahnWarning: 'Фрау Мальцан попереджає:',
+    dampfPortions: 'Порції', dampfVeggie: 'Вегетаріанські', dampfAllergenAlerts: 'Алергени',
+    notbremseTitle: 'Стоп-кран — Скасувати', signalRot: 'Сигнал червоний!', signalRotMsg: 'Термін замовлення минув.',
+    waggonFilter: 'Вагони',
+    wilde13Title: 'Дика 13!', wilde13Text: 'Пірати перехопили з\'єднання!', wilde13Recovery: 'До маяка', wilde13UnknownError: 'Невідома помилка',
 },
 
 }; // end I18N

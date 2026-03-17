@@ -121,6 +121,10 @@ let state = {
     meals: [], children: [], weekPlans: {}, users: [],
     currentWeekOffset: 0, editingMealId: null, editingChildId: null, pickingDay: null,
     currentUser: null, demoMode: false,
+    /** @type {Object.<string, Object>} KiTa settings including cutoff times */
+    kitaSettings: { cutoffHour: 9, cutoffMinute: 0 },
+    /** @type {Object.<string, string>} Group → Waggon name mapping */
+    waggonMap: {},
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -230,35 +234,97 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  Demo Mode
+//  KiTa-Speisedatenbank (Deutsche Kindertagesstätten-Gerichte)
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Aktiviert den Demo-Modus mit vorbelegten Testdaten.
- * Kein Firebase-Zugriff nötig — alle Daten nur im lokalen State.
- * @listens click#btn-demo
+ * Umfangreiche Datenbank mit kindgerechten Gerichten für KiTas.
+ * Basierend auf DGE-Qualitätsstandards für die Verpflegung in Kitas.
+ * Alle Allergene nach EU-Verordnung 1169/2011 (14 Hauptallergene).
+ * @type {Meal[]}
  */
+const KITA_SPEISE_DB = [
+    // ── Fleischgerichte ──
+    { id: 'db01', name: 'Spaghetti Bolognese', category: 'fleisch', description: 'Klassiker mit Rindfleisch-Tomatensoße', allergens: ['gluten', 'sellerie'] },
+    { id: 'db02', name: 'Hähnchen-Nuggets mit Pommes', category: 'fleisch', description: 'Knusprig paniert mit Kartoffelecken', allergens: ['gluten', 'eier'] },
+    { id: 'db03', name: 'Gulasch mit Spätzle', category: 'fleisch', description: 'Rindergulasch mit schwäbischen Eierspätzle', allergens: ['gluten', 'eier', 'milch', 'sellerie'] },
+    { id: 'db04', name: 'Hühnerfrikassee mit Reis', category: 'fleisch', description: 'In heller Soße mit Erbsen und Möhren', allergens: ['milch', 'sellerie'] },
+    { id: 'db05', name: 'Königsberger Klopse', category: 'fleisch', description: 'In Kapernsoße mit Salzkartoffeln', allergens: ['gluten', 'eier', 'milch', 'senf'] },
+    { id: 'db06', name: 'Milchreis mit Zimt & Zucker', category: 'fleisch', description: 'Mit Apfelkompott (kein Fleisch, aber mit Milch)', allergens: ['milch'] },
+    { id: 'db07', name: 'Putenschnitzel mit Kartoffelpüree', category: 'fleisch', description: 'Zartes Putenfleisch mit cremigem Püree', allergens: ['gluten', 'eier', 'milch'] },
+    { id: 'db08', name: 'Rinderroulade mit Rotkohl', category: 'fleisch', description: 'Mit Klößen und Bratensauce', allergens: ['gluten', 'sellerie', 'senf', 'sulfite'] },
+    { id: 'db09', name: 'Hackbällchen in Tomatensoße', category: 'fleisch', description: 'Saftige Bällchen mit Nudeln', allergens: ['gluten', 'eier'] },
+    { id: 'db10', name: 'Geschnetzeltes Zürcher Art', category: 'fleisch', description: 'Schweinefilet in Rahmsoße mit Rösti', allergens: ['milch', 'gluten'] },
+    { id: 'db11', name: 'Hühnersuppe mit Nudeln', category: 'fleisch', description: 'Klare Brühe mit Gemüseeinlage', allergens: ['gluten', 'sellerie'] },
+    { id: 'db12', name: 'Cevapcici mit Djuvec-Reis', category: 'fleisch', description: 'Gegrillte Hackröllchen mit Paprikareis', allergens: ['gluten'] },
+    { id: 'db13', name: 'Wiener Würstchen mit Kartoffelsalat', category: 'fleisch', description: 'Klassisch mit Brühe-Dressing', allergens: ['senf', 'sellerie'] },
+    { id: 'db14', name: 'Chili con Carne', category: 'fleisch', description: 'Mild gewürzt mit Reis', allergens: ['sellerie'] },
+    { id: 'db15', name: 'Hähnchenbrust mit Buttergemüse', category: 'fleisch', description: 'Gedünstet mit Möhren und Kohlrabi', allergens: ['milch'] },
+
+    // ── Fischgerichte ──
+    { id: 'db16', name: 'Fischstäbchen mit Kartoffelpüree', category: 'fisch', description: 'Alaska-Seelachs in knuspriger Panade', allergens: ['fisch', 'gluten', 'milch'] },
+    { id: 'db17', name: 'Lachs mit Brokkoli und Reis', category: 'fisch', description: 'Gedämpfter Lachs mit Zitrone', allergens: ['fisch'] },
+    { id: 'db18', name: 'Seelachs in Senfsoße', category: 'fisch', description: 'Mit Petersilienkartoffeln', allergens: ['fisch', 'milch', 'senf'] },
+    { id: 'db19', name: 'Forelle Müllerin mit Mandeln', category: 'fisch', description: 'In Butter gebraten mit Salzkartoffeln', allergens: ['fisch', 'milch', 'schalenfruchte'] },
+    { id: 'db20', name: 'Fischfrikadellen mit Remoulade', category: 'fisch', description: 'Aus frischem Kabeljau mit Gurkensalat', allergens: ['fisch', 'gluten', 'eier', 'senf'] },
+    { id: 'db21', name: 'Pangasius mit Tomaten-Gemüse', category: 'fisch', description: 'Leicht in Olivenöl gegart', allergens: ['fisch'] },
+    { id: 'db22', name: 'Thunfisch-Nudel-Auflauf', category: 'fisch', description: 'Überbacken mit Käse', allergens: ['fisch', 'gluten', 'milch', 'eier'] },
+    { id: 'db23', name: 'Kabeljau mit Spinat und Kartoffeln', category: 'fisch', description: 'Gedünstet mit Rahmsoße', allergens: ['fisch', 'milch'] },
+
+    // ── Vegetarische Gerichte ──
+    { id: 'db24', name: 'Gemüse-Lasagne', category: 'vegetarisch', description: 'Mit Zucchini, Aubergine und Béchamel', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db25', name: 'Käsespätzle mit Röstzwiebeln', category: 'vegetarisch', description: 'Schwäbischer Klassiker', allergens: ['gluten', 'eier', 'milch'] },
+    { id: 'db26', name: 'Pfannkuchen mit Apfelmus', category: 'vegetarisch', description: 'Dünne Eierkuchen mit frischem Kompott', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db27', name: 'Kartoffelpuffer mit Quark', category: 'vegetarisch', description: 'Knusprig gebraten mit Kräuterquark', allergens: ['eier', 'milch'] },
+    { id: 'db28', name: 'Spinat-Ricotta-Tortellini', category: 'vegetarisch', description: 'In Tomaten-Sahne-Soße', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db29', name: 'Grießbrei mit Kirschkompott', category: 'vegetarisch', description: 'Cremig gerührt mit Vanille', allergens: ['gluten', 'milch'] },
+    { id: 'db30', name: 'Gemüse-Quiche', category: 'vegetarisch', description: 'Mit Brokkoli, Paprika und Gouda', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db31', name: 'Kartoffelgratin mit Salat', category: 'vegetarisch', description: 'Überbacken mit Emmentaler', allergens: ['milch'] },
+    { id: 'db32', name: 'Maultaschen in Gemüsebrühe', category: 'vegetarisch', description: 'Schwäbische Teigtaschen mit Spinatfüllung', allergens: ['gluten', 'eier', 'sellerie'] },
+    { id: 'db33', name: 'Kaiserschmarrn mit Zwetschgenröster', category: 'vegetarisch', description: 'Zerrissener Pfannkuchen mit Puderzucker', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db34', name: 'Blumenkohl-Käse-Auflauf', category: 'vegetarisch', description: 'Mit Vollkornnudeln', allergens: ['gluten', 'milch'] },
+    { id: 'db35', name: 'Eierpfannkuchen mit Gemüsefüllung', category: 'vegetarisch', description: 'Mit Champignons und Paprika', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db36', name: 'Tomatensuppe mit Grießklößchen', category: 'vegetarisch', description: 'Samtiger Klassiker', allergens: ['gluten', 'milch', 'eier', 'sellerie'] },
+    { id: 'db37', name: 'Flammkuchen mit Schmand', category: 'vegetarisch', description: 'Dünn und knusprig mit Lauch', allergens: ['gluten', 'milch'] },
+
+    // ── Vegane Gerichte ──
+    { id: 'db38', name: 'Reis mit Gemüsecurry', category: 'vegan', description: 'Thai-Curry mit Kokosmilch', allergens: [] },
+    { id: 'db39', name: 'Kartoffelsuppe', category: 'vegan', description: 'Sämige Suppe mit Möhren und Lauch', allergens: ['sellerie'] },
+    { id: 'db40', name: 'Nudeln mit Tomatensoße', category: 'vegan', description: 'Penne mit frischer Basilikum-Tomatensoße', allergens: ['gluten'] },
+    { id: 'db41', name: 'Linseneintopf', category: 'vegan', description: 'Rote Linsen mit Kartoffeln und Möhren', allergens: ['sellerie'] },
+    { id: 'db42', name: 'Gemüse-Couscous', category: 'vegan', description: 'Mit Kichererbsen und Minze', allergens: ['gluten'] },
+    { id: 'db43', name: 'Kürbissuppe mit Brötchen', category: 'vegan', description: 'Hokkaido-Kürbis mit Ingwer', allergens: ['gluten'] },
+    { id: 'db44', name: 'Bratkartoffeln mit Gurkensalat', category: 'vegan', description: 'Knusprig in Rapsöl', allergens: [] },
+    { id: 'db45', name: 'Gemüsepfanne mit Vollkornreis', category: 'vegan', description: 'Saisonales Marktgemüse', allergens: [] },
+    { id: 'db46', name: 'Spaghetti Aglio e Olio', category: 'vegan', description: 'Mit Knoblauch und Petersilie', allergens: ['gluten'] },
+    { id: 'db47', name: 'Kartoffel-Erbsen-Eintopf', category: 'vegan', description: 'Herzhaft mit frischer Minze', allergens: ['sellerie'] },
+    { id: 'db48', name: 'Ratatouille mit Ciabatta', category: 'vegan', description: 'Provenzalischer Gemüseeintopf', allergens: ['gluten'] },
+    { id: 'db49', name: 'Süßkartoffel-Pommes mit Ketchup', category: 'vegan', description: 'Im Ofen gebacken', allergens: [] },
+    { id: 'db50', name: 'Minestrone', category: 'vegan', description: 'Italienische Gemüsesuppe mit Nudeln', allergens: ['gluten', 'sellerie'] },
+];
 document.getElementById('btn-demo').addEventListener('click', () => {
     state.demoMode = true;
     state.currentUser = { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null };
-    state.meals = [
-        { id: 'd1', name: 'Spaghetti Bolognese', category: 'fleisch', description: '', allergens: ['gluten', 'milch'] },
-        { id: 'd2', name: 'Fischstäbchen mit Kartoffelpüree', category: 'fisch', description: '', allergens: ['fisch', 'gluten', 'milch'] },
-        { id: 'd3', name: 'Gemüse-Lasagne', category: 'vegetarisch', description: '', allergens: ['gluten', 'milch', 'eier'] },
-        { id: 'd4', name: 'Reis mit Gemüsecurry', category: 'vegan', description: '', allergens: [] },
-        { id: 'd5', name: 'Hähnchen-Nuggets mit Pommes', category: 'fleisch', description: '', allergens: ['gluten'] },
-        { id: 'd6', name: 'Lachs mit Brokkoli', category: 'fisch', description: '', allergens: ['fisch'] },
-        { id: 'd7', name: 'Kartoffelsuppe', category: 'vegan', description: '', allergens: ['sellerie'] },
-        { id: 'd8', name: 'Pfannkuchen mit Apfelmus', category: 'vegetarisch', description: '', allergens: ['gluten', 'milch', 'eier'] },
-    ];
+    // Lade alle 50 Gerichte aus der KiTa-Speisedatenbank
+    state.meals = KITA_SPEISE_DB.map(m => ({ ...m }));
     state.children = [
         { id: 'c1', firstname: 'Jim', lastname: 'Knopf', group: 'Lummerland', notes: '', allergens: [] },
         { id: 'c2', firstname: 'Lukas', lastname: 'Lokomotivführer', group: 'Lummerland', notes: '', allergens: ['milch'] },
         { id: 'c3', firstname: 'Li', lastname: 'Si', group: 'Mandala', notes: 'kein Schweinefleisch', allergens: ['erdnuesse', 'soja'] },
         { id: 'c4', firstname: 'Prinzessin', lastname: 'Li Si', group: 'Mandala', notes: '', allergens: [] },
+        { id: 'c5', firstname: 'Nepomuk', lastname: 'Halbdrache', group: 'Lummerland', notes: '', allergens: ['gluten'] },
+        { id: 'c6', firstname: 'Ping', lastname: 'Pong', group: 'Mandala', notes: 'Vegetarier', allergens: ['fisch'] },
+        { id: 'c7', firstname: 'Herr', lastname: 'Tur Tur', group: 'Scheinriesen', notes: '', allergens: ['milch', 'eier'] },
+        { id: 'c8', firstname: 'Emma', lastname: 'Lokomotive', group: 'Scheinriesen', notes: '', allergens: [] },
     ];
     const wk = getWeekKey(0);
-    state.weekPlans[wk] = { 0: ['d1'], 1: ['d6'], 2: ['d3', 'd4'], 3: ['d5'], 4: ['d8', 'd7'] };
+    state.weekPlans[wk] = {
+        0: ['db01', 'db38'],  // Mo: Spaghetti Bolognese + Reis mit Gemüsecurry
+        1: ['db17', 'db40'],  // Di: Lachs mit Brokkoli + Nudeln mit Tomatensoße
+        2: ['db24', 'db42'],  // Mi: Gemüse-Lasagne + Gemüse-Couscous
+        3: ['db04', 'db49'],  // Do: Hühnerfrikassee + Süßkartoffel-Pommes
+        4: ['db26', 'db39'],  // Fr: Pfannkuchen mit Apfelmus + Kartoffelsuppe
+    };
     state.users = [
         { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null },
         { uid: 'demo2', email: 'kueche@lummerland.de', name: 'Frau Waas', role: 'kueche', childId: null },
@@ -334,6 +400,21 @@ async function loadAllData() {
     if (isAdmin()) {
         const uSnap = await db.collection('users').get();
         state.users = uSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    }
+    // Auto-Import: Wenn Firestore leer ist, KiTa-Datenbank automatisch laden
+    if (state.meals.length === 0 && isStaff()) {
+        console.log('[KiTa-DB] Keine Gerichte gefunden — lade 50 Gerichte aus der KiTa-Datenbank...');
+        for (const dbMeal of KITA_SPEISE_DB) {
+            const data = { name: dbMeal.name, category: dbMeal.category, description: dbMeal.description, allergens: dbMeal.allergens };
+            try {
+                const ref = await db.collection('meals').add(data);
+                state.meals.push({ id: ref.id, ...data });
+            } catch (err) {
+                console.error('[KiTa-DB] Import-Fehler:', err.message);
+                break;
+            }
+        }
+        console.log(`[KiTa-DB] ${state.meals.length} Gerichte importiert.`);
     }
 }
 
@@ -680,6 +761,37 @@ window.loadMealsFromAPI = async function () {
     }
 };
 
+/**
+ * Lädt deutsche KiTa-Gerichte aus der eingebauten Datenbank.
+ * Fügt nur Gerichte hinzu, die noch nicht vorhanden sind.
+ * @async
+ * @global
+ */
+window.loadKitaDB = async function () {
+    if (!isStaff()) return;
+    const btn = document.getElementById('btn-load-kita-db');
+    if (btn) { btn.disabled = true; btn.textContent = '...'; }
+    let added = 0;
+    try {
+        for (const dbMeal of KITA_SPEISE_DB) {
+            if (state.meals.some(m => m.name === dbMeal.name)) continue;
+            const data = { name: dbMeal.name, category: dbMeal.category, description: dbMeal.description, allergens: dbMeal.allergens };
+            if (state.demoMode) {
+                state.meals.push({ id: 'kitadb_' + Date.now() + '_' + added, ...data });
+            } else {
+                const ref = await db.collection('meals').add(data);
+                state.meals.push({ id: ref.id, ...data });
+            }
+            added++;
+        }
+        renderMealsList(); renderWeekPlan();
+    } catch (err) {
+        handleWilde13Error(err);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🍽️ ' + (t('kitaDbLoad') || 'KiTa-Gerichte laden') + (added ? ` (+${added})` : ''); }
+    }
+};
+
 // ═══════════════════════════════════════════════════════════════
 //  Kinder (Children) — CRUD
 // ═══════════════════════════════════════════════════════════════
@@ -780,6 +892,381 @@ document.getElementById('form-child').addEventListener('submit', async (e) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+//  Mandala-Security-System (Allergie-Logik)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Prüft ob eine Speise für ein Kind sicher ist (Mandala-Check).
+ * Vergleicht child.allergens mit meal.allergens.
+ * @param {Child} child
+ * @param {Meal} meal
+ * @returns {{ isLukasApproved: boolean, conflicts: string[], childName: string }}
+ */
+function checkMandala(child, meal) {
+    if (!child || !meal) return { isLukasApproved: true, conflicts: [], childName: '' };
+    const conflicts = (meal.allergens || []).filter(a => (child.allergens || []).includes(a));
+    return {
+        isLukasApproved: conflicts.length === 0,
+        conflicts: conflicts,
+        childName: child.firstname || '',
+    };
+}
+
+/**
+ * Prüft alle Kinder gegen eine Speise und gibt den Mandala-Status zurück.
+ * @param {Meal} meal
+ * @returns {{ allSafe: boolean, alerts: Array<{child: Child, conflicts: string[]}> }}
+ */
+function checkMandalaAll(meal) {
+    const alerts = [];
+    for (const child of state.children) {
+        const result = checkMandala(child, meal);
+        if (!result.isLukasApproved) {
+            alerts.push({ child, conflicts: result.conflicts });
+        }
+    }
+    return { allSafe: alerts.length === 0, alerts };
+}
+
+/**
+ * Erzeugt erweiterte Allergie-Warnungen mit Frau-Mahlzahn-Warnung und Lukas-Badge.
+ * @param {Meal} meal
+ * @returns {string} HTML
+ */
+function getMandalaWarnings(meal) {
+    if (!meal.allergens || !meal.allergens.length) {
+        return `<div class="lukas-approved-badge"><span class="lukas-badge-icon">&#x2714;</span> <span data-i18n="lukasApproved">${t('lukasApproved')}</span></div>`;
+    }
+    if (state.currentUser?.role === 'eltern') {
+        if (!state.currentUser.childId) return '';
+        const c = state.children.find(x => x.id === state.currentUser.childId);
+        if (!c) return '';
+        const result = checkMandala(c, meal);
+        if (result.isLukasApproved) {
+            return `<div class="lukas-approved-badge"><span class="lukas-badge-icon">&#x2714;</span> ${t('lukasApproved')}</div>`;
+        }
+        return `<div class="frau-mahlzahn-warning"><span class="mahlzahn-icon">&#x1F6A8;</span> <strong>${t('frauMahlzahnWarning')}</strong> ${result.conflicts.map(id => tAllergen(id)).join(', ')}</div>`;
+    }
+    // Staff view: check all children
+    const check = checkMandalaAll(meal);
+    if (check.allSafe) {
+        return `<div class="lukas-approved-badge"><span class="lukas-badge-icon">&#x2714;</span> ${t('lukasApproved')}</div>`;
+    }
+    const alertHtml = check.alerts.map(a =>
+        `<strong>${esc(a.child.firstname)}</strong>: ${a.conflicts.map(id => tAllergen(id)).join(', ')}`
+    ).join(' &middot; ');
+    return `<div class="frau-mahlzahn-warning"><span class="mahlzahn-icon">&#x1F6A8;</span> <strong>${t('frauMahlzahnWarning')}</strong> ${alertHtml}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Emmas Dampf-Counter (Portionen-Analytik)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Berechnet Portionsstatistiken für einen Tag.
+ * @param {number} weekOffset
+ * @param {number} [dayIndex] - Optional: nur für einen Tag. Ohne = ganze Woche.
+ * @returns {{ totalPortions: number, veggieCount: number, allergenAlerts: number }}
+ */
+function getDampfCounter(weekOffset, dayIndex) {
+    const plan = getWeekPlan(weekOffset);
+    let totalPortions = 0, veggieCount = 0, allergenAlerts = 0;
+    const days = dayIndex !== undefined ? [dayIndex] : [0, 1, 2, 3, 4];
+
+    for (const d of days) {
+        const ids = plan[d] || [];
+        for (const mid of ids) {
+            const m = state.meals.find(x => x.id === mid);
+            if (!m) continue;
+            // Each meal slot = portions for all active children
+            totalPortions += state.children.length;
+            if (m.category === 'vegetarisch' || m.category === 'vegan') {
+                veggieCount += state.children.length;
+            }
+            // Count allergen alerts
+            const check = checkMandalaAll(m);
+            allergenAlerts += check.alerts.length;
+        }
+    }
+    return { totalPortions, veggieCount, allergenAlerts };
+}
+
+/**
+ * Rendert den Dampf-Counter als kompakte Statistik-Leiste.
+ */
+function renderDampfCounter() {
+    const el = document.getElementById('dampf-counter');
+    if (!el) return;
+    if (!isStaff()) { el.classList.add('hidden'); return; }
+
+    const counter = getDampfCounter(state.currentWeekOffset);
+    el.classList.remove('hidden');
+    el.innerHTML = `
+        <div class="dampf-counter-row">
+            <div class="dampf-stat">
+                <span class="dampf-stat-icon">&#x1F682;</span>
+                <span class="dampf-stat-value">${counter.totalPortions}</span>
+                <span class="dampf-stat-label">${t('dampfPortions')}</span>
+            </div>
+            <div class="dampf-stat dampf-stat-veggie">
+                <span class="dampf-stat-icon">&#x1F331;</span>
+                <span class="dampf-stat-value">${counter.veggieCount}</span>
+                <span class="dampf-stat-label">${t('dampfVeggie')}</span>
+            </div>
+            <div class="dampf-stat ${counter.allergenAlerts > 0 ? 'dampf-stat-alert' : 'dampf-stat-safe'}">
+                <span class="dampf-stat-icon">${counter.allergenAlerts > 0 ? '&#x1F6A8;' : '&#x2705;'}</span>
+                <span class="dampf-stat-value">${counter.allergenAlerts}</span>
+                <span class="dampf-stat-label">${t('dampfAllergenAlerts')}</span>
+            </div>
+        </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Notbremse (Schnell-Stornierung mit Deadline-Check)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Prüft ob die Bestellfrist für einen bestimmten Tag abgelaufen ist.
+ * @param {number} dayIndex - 0=Mo, 4=Fr
+ * @param {number} [weekOffset] - default: state.currentWeekOffset
+ * @returns {boolean} true wenn Frist abgelaufen
+ */
+function isDeadlinePassed(dayIndex, weekOffset) {
+    const off = weekOffset !== undefined ? weekOffset : state.currentWeekOffset;
+    const monday = getMonday(off);
+    const targetDate = new Date(monday);
+    targetDate.setDate(targetDate.getDate() + dayIndex);
+    targetDate.setHours(state.kitaSettings.cutoffHour, state.kitaSettings.cutoffMinute, 0, 0);
+    return new Date() > targetDate;
+}
+
+/**
+ * Notbremse: 1-Click Stornierung einer Speise von einem Tag.
+ * Prüft Deadline, zeigt "Signal steht auf Rot" wenn zu spät.
+ * @param {number} dayIndex
+ * @param {string} mealId
+ * @global
+ */
+window.notbremse = async function(dayIndex, mealId) {
+    if (!isStaff()) return;
+
+    if (isDeadlinePassed(dayIndex)) {
+        // Signal steht auf Rot - zu spät zum Stornieren
+        const el = document.getElementById('notbremse-alert');
+        if (el) {
+            el.classList.remove('hidden');
+            el.innerHTML = `<div class="notbremse-rot">
+                <span class="notbremse-signal">&#x1F6D1;</span>
+                <strong>${t('signalRot')}</strong> ${t('signalRotMsg')}
+            </div>`;
+            setTimeout(() => el.classList.add('hidden'), 4000);
+        }
+        return;
+    }
+
+    // Optimistic UI: sofort entfernen
+    const k = getWeekKey(state.currentWeekOffset);
+    const plan = getWeekPlan(state.currentWeekOffset);
+    if (plan[dayIndex]) {
+        const idx = plan[dayIndex].indexOf(mealId);
+        if (idx !== -1) plan[dayIndex].splice(idx, 1);
+    }
+    renderWeekPlan();
+
+    // Persistieren
+    if (!state.demoMode) {
+        try {
+            await db.collection('weekPlans').doc(k).set(plan);
+        } catch (err) {
+            // Rollback on error
+            plan[dayIndex] = plan[dayIndex] || [];
+            plan[dayIndex].push(mealId);
+            renderWeekPlan();
+            handleWilde13Error(err);
+        }
+    }
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  Lukas-Modus (Gruppen-/Waggon-Verwaltung + Drag & Drop)
+// ═══════════════════════════════════════════════════════════════
+
+/** Currently dragged meal info */
+let dragData = null;
+
+/**
+ * Startet einen Drag-Vorgang für eine Speise im Wochenplan.
+ * @param {DragEvent} e
+ * @param {number} fromDay - Quell-Tagesindex
+ * @param {string} mealId - Meal-ID
+ */
+window.onDragStartMeal = function(e, fromDay, mealId) {
+    dragData = { fromDay, mealId };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ fromDay, mealId }));
+    e.target.closest('.day-meal')?.classList.add('dragging');
+};
+
+/**
+ * Erlaubt Drop auf einem Tag-Container.
+ * @param {DragEvent} e
+ */
+window.onDragOverDay = function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('day-card-dragover');
+};
+
+/**
+ * Entfernt Drag-Over-Styling.
+ * @param {DragEvent} e
+ */
+window.onDragLeaveDay = function(e) {
+    e.currentTarget.classList.remove('day-card-dragover');
+};
+
+/**
+ * Verschiebt eine Speise per Drag & Drop zwischen Tagen.
+ * @param {DragEvent} e
+ * @param {number} toDay - Ziel-Tagesindex
+ */
+window.onDropDay = async function(e, toDay) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('day-card-dragover');
+    if (!dragData || !isStaff()) return;
+
+    const { fromDay, mealId } = dragData;
+    if (fromDay === toDay) { dragData = null; return; }
+
+    const k = getWeekKey(state.currentWeekOffset);
+    const plan = getWeekPlan(state.currentWeekOffset);
+
+    // Remove from source
+    if (plan[fromDay]) {
+        const idx = plan[fromDay].indexOf(mealId);
+        if (idx !== -1) plan[fromDay].splice(idx, 1);
+    }
+    // Add to target
+    if (!plan[toDay]) plan[toDay] = [];
+    plan[toDay].push(mealId);
+
+    dragData = null;
+    renderWeekPlan();
+
+    if (!state.demoMode) {
+        try {
+            await db.collection('weekPlans').doc(k).set(plan);
+        } catch (err) {
+            handleWilde13Error(err);
+        }
+    }
+};
+
+/**
+ * Gibt die Waggon-Gruppen zurück (einzigartige Gruppen aller Kinder).
+ * @returns {string[]}
+ */
+function getWaggonGroups() {
+    const groups = new Set();
+    for (const c of state.children) {
+        if (c.group) groups.add(c.group);
+    }
+    return [...groups].sort();
+}
+
+/**
+ * Rendert den Gruppen-Filter im Wochenplan.
+ */
+function renderWaggonFilter() {
+    const el = document.getElementById('waggon-filter');
+    if (!el || !isStaff()) { if (el) el.classList.add('hidden'); return; }
+
+    const groups = getWaggonGroups();
+    if (!groups.length) { el.classList.add('hidden'); return; }
+
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="waggon-filter-row">
+        <span class="waggon-filter-label">&#x1F683; ${t('waggonFilter')}:</span>
+        ${groups.map(g => `<button class="waggon-filter-btn" data-group="${esc(g)}">${esc(g)}</button>`).join('')}
+        <button class="waggon-filter-btn waggon-filter-all active">${t('catAll')}</button>
+    </div>`;
+
+    el.querySelectorAll('.waggon-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            el.querySelectorAll('.waggon-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state._activeWaggonFilter = btn.dataset.group || null;
+            renderWeekPlan();
+        });
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Die Wilde 13 (Robustes Error Handling)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Globaler Error-Handler. Fängt unbehandelte Fehler ab.
+ * Zeigt die "Wilde 13" Fehlerseite.
+ * @param {Error|string} error
+ */
+function handleWilde13Error(error) {
+    const msg = error?.message || error?.toString() || t('wilde13UnknownError');
+    console.error('[Wilde 13]', msg);
+    showWilde13Page(msg);
+}
+
+/**
+ * Zeigt die Wilde-13-Fehlerseite.
+ * @param {string} message
+ */
+function showWilde13Page(message) {
+    const el = document.getElementById('wilde13-error-page');
+    if (!el) return;
+    const msgEl = document.getElementById('wilde13-error-msg');
+    if (msgEl) msgEl.textContent = message;
+    el.classList.remove('hidden');
+}
+
+/**
+ * "Zurück zum Leuchtturm" — Recovery-Funktion.
+ * Setzt Cache/State zurück und leitet zum Dashboard.
+ * @global
+ */
+window.zurueckZumLeuchtturm = function() {
+    const el = document.getElementById('wilde13-error-page');
+    if (el) el.classList.add('hidden');
+
+    // Reset to safe state
+    state.editingMealId = null;
+    state.editingChildId = null;
+    state.pickingDay = null;
+
+    // Close all modals
+    document.querySelectorAll('.ios-sheet, .ios-action-sheet').forEach(s => s.classList.add('hidden'));
+    document.body.style.overflow = '';
+
+    // Navigate to Fahrplan
+    document.querySelectorAll('.ios-tab').forEach(b => b.classList.remove('active'));
+    document.querySelector('.ios-tab[data-view="wochenplan"]')?.classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-wochenplan')?.classList.add('active');
+
+    // Re-render
+    try { renderAll(); } catch (e) { console.error('Recovery render failed:', e); }
+};
+
+/** Global error handlers */
+window.addEventListener('error', (e) => {
+    if (e.message?.includes('Script error')) return;
+    handleWilde13Error(e.error || e.message);
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+    handleWilde13Error(e.reason);
+});
+
+// ═══════════════════════════════════════════════════════════════
 //  Wochenplan (Weekly Meal Plan)
 // ═══════════════════════════════════════════════════════════════
 
@@ -801,21 +1288,26 @@ function renderWeekPlan() {
         const day = tDay(i);
         const ids = plan[i] || [];
         const dateStr = getDayDate(state.currentWeekOffset, i);
+        const deadlinePassed = isDeadlinePassed(i);
         const mealsHtml = ids.map(mid => {
             const m = state.meals.find(x => x.id === mid); if (!m) return '';
-            return `<div class="day-meal">
+            const dragAttr = staff ? `draggable="true" ondragstart="onDragStartMeal(event,${i},'${mid}')"` : '';
+            return `<div class="day-meal" ${dragAttr}>
                 <div class="meal-name">${esc(m.name)}</div>
                 <span class="category-badge cat-${m.category}">${tCategory(m.category)}</span>
+                ${staff ? `<button class="btn-notbremse" onclick="notbremse(${i},'${mid}')" title="${t('notbremseTitle')}">&#x1F6D1;</button>` : ''}
                 ${staff ? `<button class="btn-remove-meal" onclick="removeMealFromDay(${i},'${mid}')">&times;</button>` : ''}
-                ${getAllergyWarnings(m)}
+                ${getMandalaWarnings(m)}
             </div>`;
         }).join('');
-        return `<div class="day-card">
-            <div class="day-card-header">${day} <span class="day-date">${dateStr}</span></div>
+        const dropAttrs = staff ? `ondragover="onDragOverDay(event)" ondragleave="onDragLeaveDay(event)" ondrop="onDropDay(event,${i})"` : '';
+        return `<div class="day-card ${deadlinePassed ? 'day-card-locked' : ''}" ${dropAttrs}>
+            <div class="day-card-header">${day} <span class="day-date">${dateStr}</span>${deadlinePassed ? ' <span class="deadline-badge">&#x1F512;</span>' : ''}</div>
             <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">${t('addMealToDay')}</button>` : ''}</div>
         </div>`;
     }).join('');
-    renderStats(); if (staff) checkVariety();
+    renderStats(); renderDampfCounter(); renderWaggonFilter();
+    if (staff) checkVariety();
 }
 
 /**
