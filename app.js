@@ -628,5 +628,62 @@ window.deleteUser = function (uid) {
     });
 };
 
+// ===================== THEME (Light / Dark / System) =====================
+function getThemePref() { return localStorage.getItem('kita-theme') || 'system'; }
+
+function applyTheme(pref) {
+    const html = document.documentElement;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    let effective;
+    if (pref === 'system') {
+        effective = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else {
+        effective = pref;
+    }
+    html.setAttribute('data-theme', effective);
+    if (meta) meta.content = effective === 'dark' ? '#000000' : '#F2F2F7';
+    updateThemeIcon(effective);
+}
+
+function updateThemeIcon(effective) {
+    const btn = document.getElementById('btn-theme');
+    if (!btn) return;
+    if (effective === 'dark') {
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    } else {
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    }
+}
+
+function updateThemePicker(pref) {
+    document.querySelectorAll('.ios-theme-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.theme === pref);
+    });
+}
+
+// Init theme on load
+applyTheme(getThemePref());
+
+// Listen for system preference changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (getThemePref() === 'system') applyTheme('system');
+});
+
+// Open theme picker
+document.getElementById('btn-theme').addEventListener('click', () => {
+    updateThemePicker(getThemePref());
+    openModal('modal-theme');
+});
+
+// Theme option clicks
+document.querySelectorAll('.ios-theme-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+        const pref = opt.dataset.theme;
+        localStorage.setItem('kita-theme', pref);
+        applyTheme(pref);
+        updateThemePicker(pref);
+    });
+});
+
 // ===================== UTILITIES =====================
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
