@@ -522,7 +522,7 @@ function renderMealsList(filter = 'alle') {
     const list = document.getElementById('meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
     const staff = isStaff();
-    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Keine Speisen vorhanden</p>'; return; }
+    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Gleis leer &ndash; Emma wartet auf Kohle!</p>'; return; }
     list.innerHTML = items.map(m => {
         const aNames = m.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ');
         return `<div class="meal-card">
@@ -631,7 +631,7 @@ document.getElementById('form-meal').addEventListener('submit', async (e) => {
  */
 function renderChildrenList() {
     const list = document.getElementById('children-list');
-    if (!state.children.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Noch keine Kinder</p>'; return; }
+    if (!state.children.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Noch keine Waggons angeh&auml;ngt!</p>'; return; }
     list.innerHTML = state.children.map(c => {
         const aNames = c.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id);
         return `<div class="child-card">
@@ -752,7 +752,7 @@ function renderWeekPlan() {
         }).join('');
         return `<div class="day-card">
             <div class="day-card-header">${day} <span class="day-date">${dateStr}</span></div>
-            <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">+ Speise hinzufügen</button>` : ''}</div>
+            <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">+ Proviant laden</button>` : ''}</div>
         </div>`;
     }).join('');
     renderStats(); if (staff) checkVariety();
@@ -820,11 +820,11 @@ function checkVariety() {
     for (let d = 0; d < 5; d++) for (const mid of (plan[d] || [])) { const m = state.meals.find(x => x.id === mid); if (m) { cats[m.category]++; total++; } }
     if (total < 3) { el.classList.add('hidden'); return; }
     const msgs = [];
-    if (cats.fleisch / total > 0.5) msgs.push('Zu viele Fleischgerichte.');
-    if (cats.fisch === 0 && total >= 4) msgs.push('Mind. 1x Fisch/Woche empfohlen.');
-    if ((cats.vegetarisch + cats.vegan) / total < 0.3 && total >= 4) msgs.push('Mehr vegetarisch/vegan empfohlen.');
-    if (msgs.length) { el.className = 'ios-banner alert alert-warning'; el.innerHTML = '<strong>Tipp:</strong> ' + msgs.join(' '); }
-    else if (total >= 5) { el.className = 'ios-banner alert alert-success'; el.textContent = 'Gute Abwechslung!'; }
+    if (cats.fleisch / total > 0.5) msgs.push('Zu viel Dampf im Kessel \u2013 weniger Fleisch!');
+    if (cats.fisch === 0 && total >= 4) msgs.push('Emma empfiehlt: Mind. 1x Fisch/Woche.');
+    if ((cats.vegetarisch + cats.vegan) / total < 0.3 && total >= 4) msgs.push('Mehr Gr\u00fcnes an Bord nehmen!');
+    if (msgs.length) { el.className = 'ios-banner alert alert-warning'; el.innerHTML = '<strong>Lokf\u00fchrer-Tipp:</strong> ' + msgs.join(' '); }
+    else if (total >= 5) { el.className = 'ios-banner alert alert-success'; el.textContent = 'Ausgezeichneter Fahrplan \u2013 volle Fahrt voraus!'; }
     else el.classList.add('hidden');
 }
 
@@ -840,7 +840,7 @@ document.getElementById('next-week').addEventListener('click', () => { state.cur
  */
 window.pickMealForDay = function (i) {
     if (!isStaff()) return; state.pickingDay = i;
-    document.getElementById('modal-pick-title').textContent = `${DAYS[i]} — Speise wählen`;
+    document.getElementById('modal-pick-title').textContent = `${DAYS[i]} \u2014 Proviant w\u00e4hlen`;
     renderPickList('alle');
     document.querySelectorAll('.pick-filter-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.pick-filter-btn[data-filter="alle"]').classList.add('active');
@@ -854,7 +854,7 @@ window.pickMealForDay = function (i) {
 function renderPickList(filter) {
     const list = document.getElementById('pick-meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
-    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Keine Speisen</p>'; return; }
+    if (!items.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Kein Proviant an Bord!</p>'; return; }
     list.innerHTML = items.map(m => {
         const aNames = m.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ');
         return `<div class="meal-card" onclick="selectMealForDay('${m.id}')">
@@ -915,7 +915,7 @@ window.removeMealFromDay = async function (di, mealId) {
  */
 function renderUsersList() {
     const list = document.getElementById('users-list'); if (!list) return;
-    if (!state.users.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Keine Benutzer</p>'; return; }
+    if (!state.users.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Kein Stellwerker im Dienst</p>'; return; }
     list.innerHTML = state.users.map(u => {
         const childName = u.childId ? (() => { const c = state.children.find(x => x.id === u.childId); return c ? `${c.firstname} ${c.lastname}` : ''; })() : '';
         const isSelf = u.uid === state.currentUser?.uid;
@@ -1014,7 +1014,7 @@ function applyTheme(pref) {
         effective = pref;
     }
     html.setAttribute('data-theme', effective);
-    if (meta) meta.content = effective === 'dark' ? '#000000' : '#F2F2F7';
+    if (meta) meta.content = effective === 'dark' ? '#0d1820' : '#1a3a5f';
     updateThemeIcon(effective);
 }
 
@@ -1077,3 +1077,23 @@ document.querySelectorAll('.ios-theme-option').forEach(opt => {
  * @returns {string} HTML-sicherer String
  */
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ═══════════════════════════════════════════════════════════════
+//  Onboarding Overlay — V2.0 Lummerland
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Zeigt das Onboarding-Overlay einmalig beim ersten Besuch nach dem V2.0-Update.
+ * Nutzt localStorage um den Status zu speichern.
+ */
+(function initOnboarding() {
+    const KEY = 'kita-lml-v2-onboarded';
+    if (localStorage.getItem(KEY)) return;
+    const overlay = document.getElementById('lml-onboarding');
+    if (!overlay) return;
+    overlay.classList.remove('hidden');
+    document.getElementById('lml-onboarding-close').addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        localStorage.setItem(KEY, '1');
+    });
+})();

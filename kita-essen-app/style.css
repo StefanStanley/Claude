@@ -1,47 +1,64 @@
 /* ============================================================
-   KiTa Lummerland — iOS Native UX
-   Inspired by iOS 17 Human Interface Guidelines
+   KiTa Lummerland — V2.0 "Lummerland" Design System
+   Inspired by Jim Knopf & Lukas der Lokomotivführer
    ============================================================ */
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    /* iOS System Colors */
-    --ios-blue: #007AFF;
+    /* Lummerland Primary Palette */
+    --lml-ocean: #1a3a5f;
+    --lml-ocean-light: #2a5a8f;
+    --lml-brass: #d4af37;
+    --lml-brass-light: #e6c95c;
+    --lml-brass-dark: #b8941e;
+    --lml-steam: #f5f5f0;
+    --lml-dragon-red: #b22222;
+    --lml-dragon-red-light: #d43d3d;
+
+    /* Mapped System Colors */
+    --ios-blue: var(--lml-ocean);
     --ios-green: #34C759;
-    --ios-red: #FF3B30;
-    --ios-orange: #FF9500;
-    --ios-yellow: #FFCC00;
-    --ios-teal: #5AC8FA;
-    --ios-indigo: #5856D6;
+    --ios-red: var(--lml-dragon-red);
+    --ios-orange: var(--lml-brass);
+    --ios-yellow: var(--lml-brass-light);
+    --ios-teal: #4a90b8;
+    --ios-indigo: #3a4a7f;
 
     /* Surfaces */
-    --ios-bg: #F2F2F7;
+    --ios-bg: var(--lml-steam);
     --ios-bg-grouped: #FFFFFF;
     --ios-bg-elevated: #FFFFFF;
-    --ios-separator: rgba(60,60,67,0.12);
-    --ios-separator-opaque: #C6C6C8;
+    --ios-separator: rgba(26,58,95,0.1);
+    --ios-separator-opaque: #d0cfc8;
 
     /* Text */
-    --ios-label: #000000;
-    --ios-label-secondary: #3C3C43;
-    --ios-label-tertiary: #8E8E93;
-    --ios-label-quaternary: #C7C7CC;
+    --ios-label: #1a2a3a;
+    --ios-label-secondary: #3a4a5a;
+    --ios-label-tertiary: #7a8a9a;
+    --ios-label-quaternary: #b0b8c0;
 
     /* Category */
-    --cat-fleisch: #FF3B30;
-    --cat-fisch: #007AFF;
+    --cat-fleisch: var(--lml-dragon-red);
+    --cat-fisch: var(--lml-ocean);
     --cat-vegetarisch: #34C759;
-    --cat-vegan: #00C7BE;
+    --cat-vegan: #2a9d8f;
 
     /* Layout */
-    --ios-radius: 12px;
-    --ios-radius-lg: 16px;
+    --ios-radius: 14px;
+    --ios-radius-lg: 18px;
     --tab-height: 83px;
-    --header-height: 52px;
+    --header-height: 56px;
 
     /* Font */
     --font: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+
+    /* Lummerland Specials */
+    --lml-gradient: linear-gradient(135deg, var(--lml-ocean) 0%, var(--lml-ocean-light) 100%);
+    --lml-shadow: 0 4px 16px rgba(26,58,95,0.15);
+    --lml-shadow-sm: 0 2px 8px rgba(26,58,95,0.1);
+    --knopf-shadow: 0 3px 0 var(--lml-brass-dark), 0 5px 12px rgba(26,58,95,0.2);
+    --knopf-shadow-active: 0 1px 0 var(--lml-brass-dark), 0 2px 6px rgba(26,58,95,0.15);
 }
 
 body {
@@ -71,7 +88,7 @@ body {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
     padding: 1rem;
-    background: linear-gradient(180deg, #87CEEB 0%, #B0E0FF 35%, #E8F4FD 50%, #A8D5A2 50%, #7CB342 55%, #558B2F 60%, #33691E 65%, #1565C0 66%, #0D47A1 100%);
+    background: linear-gradient(180deg, #6dafd4 0%, #8dc7e8 35%, #c8e2f0 50%, #A8D5A2 50%, #7CB342 55%, #558B2F 60%, #33691E 65%, var(--lml-ocean) 66%, #0d2744 100%);
 }
 
 /* Clouds */
@@ -110,21 +127,22 @@ body {
 
 /* Login Card */
 .login-card {
-    background: rgba(255,255,255,0.92);
+    background: rgba(255,255,255,0.94);
     backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
     border-radius: 20px;
     padding: 2rem 1.5rem 1.5rem;
     width: 100%; max-width: 380px;
     position: relative; z-index: 10;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 40px rgba(26,58,95,0.18);
+    border: 1px solid rgba(212,175,55,0.2);
 }
 
 .login-logo { text-align: center; margin-bottom: 1.5rem; }
 .logo-island {
     width: 72px; height: 72px; margin: 0 auto 0.75rem;
-    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+    background: var(--lml-gradient);
     border-radius: 18px; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 16px rgba(26,58,95,0.2);
 }
 .login-card h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
 .login-tagline { color: var(--ios-label-tertiary); font-size: 0.85rem; font-weight: 500; margin-top: 0.15rem; }
@@ -154,25 +172,27 @@ body {
     font-size: 0.82rem; font-weight: 600; margin-bottom: 0.5rem;
 }
 
-/* iOS Buttons */
+/* Lummerland "Knopf" Buttons */
 .ios-btn-primary {
-    width: 100%; padding: 14px; background: var(--ios-blue); color: white;
+    width: 100%; padding: 14px; background: var(--lml-gradient); color: white;
     border: none; border-radius: var(--ios-radius); font-size: 16px; font-weight: 700;
-    font-family: var(--font); cursor: pointer; transition: opacity 0.15s;
+    font-family: var(--font); cursor: pointer;
+    transition: all 0.15s; box-shadow: var(--lml-shadow-sm);
 }
-.ios-btn-primary:active { opacity: 0.7; }
+.ios-btn-primary:active { opacity: 0.85; transform: translateY(1px); box-shadow: none; }
 
-.btn-login { background: #D32F2F; }
+.btn-login { background: var(--lml-dragon-red); box-shadow: 0 3px 0 #8b1a1a, 0 5px 12px rgba(178,34,34,0.3); }
+.btn-login:active { box-shadow: 0 1px 0 #8b1a1a; transform: translateY(2px); }
 
 .ios-btn-secondary {
-    width: 100%; padding: 14px; background: none; color: var(--ios-blue);
+    width: 100%; padding: 14px; background: none; color: var(--lml-ocean);
     border: none; border-radius: var(--ios-radius); font-size: 15px; font-weight: 600;
     font-family: var(--font); cursor: pointer; transition: opacity 0.15s; margin-top: 4px;
 }
 .ios-btn-secondary:active { opacity: 0.5; }
 
 .ios-btn-tinted {
-    width: 100%; padding: 12px; background: rgba(255,149,0,0.12); color: #E67E00;
+    width: 100%; padding: 12px; background: rgba(212,175,55,0.12); color: var(--lml-brass-dark);
     border: none; border-radius: var(--ios-radius); font-size: 15px; font-weight: 700;
     font-family: var(--font); cursor: pointer; transition: all 0.15s;
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -194,9 +214,9 @@ body {
    ============================================================ */
 .ios-header {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(242,242,247,0.85);
+    background: rgba(26,58,95,0.92);
     backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 0.5px solid var(--ios-separator);
+    border-bottom: 1px solid rgba(212,175,55,0.3);
 }
 
 .ios-header-bar {
@@ -206,26 +226,32 @@ body {
 
 .ios-header-left { display: flex; align-items: center; gap: 8px; }
 .ios-header-logo { display: flex; align-items: center; }
-.ios-header-title { font-size: 0.9rem; font-weight: 700; color: var(--ios-label-secondary); }
+.ios-header-title { font-size: 0.9rem; font-weight: 700; color: var(--lml-brass); }
 
 .ios-header-right { display: flex; align-items: center; gap: 10px; }
-.ios-user-info { font-size: 0.8rem; font-weight: 600; color: var(--ios-label-secondary); }
+.ios-user-info { font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.85); }
 .role-badge {
-    background: var(--ios-orange); color: white; padding: 2px 7px; border-radius: 6px;
+    background: var(--lml-brass); color: var(--lml-ocean); padding: 2px 7px; border-radius: 6px;
     font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 4px;
 }
 
 .ios-btn-icon {
-    width: 34px; height: 34px; border: none; background: rgba(0,0,0,0.04);
+    width: 34px; height: 34px; border: none; background: rgba(255,255,255,0.1);
     border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    color: var(--ios-blue); transition: all 0.15s;
+    color: var(--lml-brass); transition: all 0.15s;
 }
-.ios-btn-icon:active { background: rgba(0,0,0,0.1); transform: scale(0.92); }
+.ios-btn-icon:active { background: rgba(255,255,255,0.2); transform: scale(0.92); }
+
+/* In-content icon buttons (not in header) */
+main .ios-btn-icon {
+    background: rgba(26,58,95,0.06); color: var(--lml-ocean);
+}
+main .ios-btn-icon:active { background: rgba(26,58,95,0.12); }
 
 .ios-btn-circle {
-    width: 34px; height: 34px; border: none; background: var(--ios-blue);
+    width: 34px; height: 34px; border: none; background: var(--lml-brass);
     border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    color: white; transition: all 0.15s; box-shadow: 0 2px 8px rgba(0,122,255,0.3);
+    color: var(--lml-ocean); transition: all 0.15s; box-shadow: 0 2px 8px rgba(212,175,55,0.4);
 }
 .ios-btn-circle:active { transform: scale(0.9); opacity: 0.8; }
 
@@ -235,9 +261,9 @@ body {
 .ios-tab-bar {
     position: fixed; bottom: 0; left: 0; right: 0;
     height: var(--tab-height); z-index: 100;
-    background: rgba(249,249,249,0.88);
+    background: rgba(26,58,95,0.94);
     backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-top: 0.5px solid var(--ios-separator);
+    border-top: 1px solid rgba(212,175,55,0.3);
     display: flex; justify-content: space-around; align-items: flex-start;
     padding: 6px 0 0;
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -246,13 +272,13 @@ body {
 .ios-tab {
     flex: 1; border: none; background: none; cursor: pointer;
     display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 4px 0; color: var(--ios-label-tertiary); font-size: 0.62rem;
+    padding: 4px 0; color: rgba(255,255,255,0.45); font-size: 0.62rem;
     font-weight: 600; font-family: var(--font); transition: color 0.15s;
     -webkit-tap-highlight-color: transparent;
 }
-.ios-tab svg { stroke: var(--ios-label-tertiary); transition: stroke 0.15s; }
-.ios-tab.active { color: var(--ios-blue); }
-.ios-tab.active svg { stroke: var(--ios-blue); }
+.ios-tab svg { stroke: rgba(255,255,255,0.45); transition: stroke 0.15s; }
+.ios-tab.active { color: var(--lml-brass); }
+.ios-tab.active svg { stroke: var(--lml-brass); }
 .ios-tab:active { opacity: 0.5; }
 
 /* ============================================================
@@ -274,7 +300,7 @@ main {
 }
 .ios-large-title h1 {
     font-size: 2rem; font-weight: 800; letter-spacing: -0.8px;
-    color: var(--ios-label);
+    color: var(--lml-ocean);
 }
 
 /* ============================================================
@@ -296,7 +322,8 @@ main {
 .stat-card {
     flex: 1; background: var(--ios-bg-grouped); border-radius: var(--ios-radius);
     padding: 10px 8px; text-align: center;
-    box-shadow: 0 0.5px 0 var(--ios-separator);
+    box-shadow: var(--lml-shadow-sm);
+    border: 1px solid var(--ios-separator);
 }
 .stat-card.stat-fleisch .stat-value { color: var(--cat-fleisch); }
 .stat-card.stat-fisch .stat-value { color: var(--cat-fisch); }
@@ -309,18 +336,19 @@ main {
    iOS SEGMENTED CONTROL
    ============================================================ */
 .ios-segmented {
-    display: flex; background: rgba(118,118,128,0.12); border-radius: 9px;
+    display: flex; background: rgba(26,58,95,0.08); border-radius: 10px;
     padding: 2px; margin: 0 16px 12px; position: relative;
 }
 .ios-seg-btn {
     flex: 1; padding: 7px 4px; border: none; background: none;
-    border-radius: 7px; font-size: 0.75rem; font-weight: 600; font-family: var(--font);
+    border-radius: 8px; font-size: 0.75rem; font-weight: 600; font-family: var(--font);
     color: var(--ios-label); cursor: pointer; transition: all 0.2s; position: relative; z-index: 1;
     -webkit-tap-highlight-color: transparent;
 }
 .ios-seg-btn.active {
     background: var(--ios-bg-grouped);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 6px rgba(26,58,95,0.12);
+    color: var(--lml-ocean);
 }
 
 /* ============================================================
@@ -335,13 +363,16 @@ main {
     background: var(--ios-bg-grouped);
     border-radius: var(--ios-radius);
     overflow: hidden;
-    box-shadow: 0 0.5px 0 var(--ios-separator);
+    box-shadow: var(--lml-shadow-sm);
+    border: 1px solid var(--ios-separator);
+    border-left: 4px solid var(--lml-brass);
 }
 
 .day-card-header {
     padding: 10px 16px 6px;
-    font-weight: 700; font-size: 0.82rem; color: var(--ios-label);
+    font-weight: 700; font-size: 0.82rem; color: var(--lml-ocean);
     display: flex; align-items: baseline; gap: 6px;
+    background: rgba(26,58,95,0.03);
 }
 .day-date { font-size: 0.75rem; font-weight: 500; color: var(--ios-label-tertiary); }
 
@@ -364,7 +395,7 @@ main {
 .day-meal .btn-remove-meal:active { opacity: 1; }
 
 .btn-add-day-meal {
-    padding: 10px; border: none; background: none; color: var(--ios-blue);
+    padding: 10px; border: none; background: none; color: var(--lml-ocean);
     font-size: 0.82rem; font-weight: 600; font-family: var(--font);
     cursor: pointer; text-align: left; padding-left: 12px;
     transition: opacity 0.15s; -webkit-tap-highlight-color: transparent;
@@ -388,11 +419,13 @@ main {
     border-bottom: 0.5px solid var(--ios-separator);
     transition: background 0.15s;
     position: relative; overflow: hidden;
+    border-left: 3px solid transparent;
 }
 .meal-card:first-child, .child-card:first-child { border-radius: var(--ios-radius) var(--ios-radius) 0 0; }
 .meal-card:last-child, .child-card:last-child { border-radius: 0 0 var(--ios-radius) var(--ios-radius); border-bottom: none; }
 .meal-card:only-child, .child-card:only-child { border-radius: var(--ios-radius); }
-.meal-card:active, .child-card:active { background: rgba(0,0,0,0.04); }
+.meal-card:active, .child-card:active { background: rgba(26,58,95,0.04); }
+.meal-card { border-left-color: var(--lml-brass); }
 
 .meal-card-info, .child-card-info { flex: 1; min-width: 0; }
 .meal-title { font-weight: 600; font-size: 0.92rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -402,7 +435,7 @@ main {
 
 .child-allergies { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .allergy-tag {
-    background: rgba(255,149,0,0.12); color: #C67600;
+    background: rgba(212,175,55,0.15); color: var(--lml-brass-dark);
     padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
 }
 
@@ -413,12 +446,12 @@ main {
     -webkit-tap-highlight-color: transparent;
 }
 .btn-small:active { opacity: 0.6; }
-.btn-edit { background: rgba(0,122,255,0.1); color: var(--ios-blue); }
-.btn-delete { background: rgba(255,59,48,0.1); color: var(--ios-red); }
+.btn-edit { background: rgba(26,58,95,0.08); color: var(--lml-ocean); }
+.btn-delete { background: rgba(178,34,34,0.08); color: var(--lml-dragon-red); }
 
 /* Pick list */
 .pick-list .meal-card { cursor: pointer; }
-.pick-list .meal-card:active { background: rgba(0,122,255,0.06); }
+.pick-list .meal-card:active { background: rgba(26,58,95,0.06); }
 
 /* ============================================================
    iOS BANNERS
@@ -427,16 +460,16 @@ main {
     margin: 0 16px 12px; padding: 12px 16px; border-radius: var(--ios-radius);
     font-size: 0.85rem; font-weight: 600; line-height: 1.5;
 }
-.ios-banner-warning, .alert-warning { background: rgba(255,149,0,0.1); color: #996300; }
+.ios-banner-warning, .alert-warning { background: rgba(212,175,55,0.1); color: var(--lml-brass-dark); }
 .alert-success { background: rgba(52,199,89,0.1); color: #248A3D; }
 .alert { margin: 0 16px 12px; padding: 12px 16px; border-radius: var(--ios-radius); font-size: 0.85rem; font-weight: 600; }
 
 /* Allergy warning in day meals */
 .allergy-warning {
-    background: rgba(255,149,0,0.08); border-radius: 8px; padding: 6px 8px;
-    font-size: 0.72rem; color: #996300; margin-top: 4px; font-weight: 600; line-height: 1.4;
+    background: rgba(178,34,34,0.06); border-radius: 8px; padding: 6px 8px;
+    font-size: 0.72rem; color: var(--lml-dragon-red); margin-top: 4px; font-weight: 600; line-height: 1.4;
 }
-.allergy-warning strong { color: var(--ios-red); }
+.allergy-warning strong { color: var(--lml-dragon-red); }
 
 /* ============================================================
    iOS SHEET MODAL
@@ -473,13 +506,13 @@ main {
 }
 .ios-sheet-header h3 { font-size: 0.95rem; font-weight: 700; flex: 1; text-align: center; }
 .ios-sheet-cancel {
-    background: none; border: none; color: var(--ios-blue); font-size: 0.9rem;
+    background: none; border: none; color: var(--lml-ocean); font-size: 0.9rem;
     font-weight: 500; font-family: var(--font); cursor: pointer; padding: 4px 0;
     min-width: 80px; text-align: left;
 }
 .ios-sheet-cancel:active { opacity: 0.5; }
 .ios-sheet-done {
-    background: none; border: none; color: var(--ios-blue); font-size: 0.9rem;
+    background: none; border: none; color: var(--lml-ocean); font-size: 0.9rem;
     font-weight: 700; font-family: var(--font); cursor: pointer; padding: 4px 0;
     min-width: 80px; text-align: right;
 }
@@ -573,10 +606,10 @@ main {
     transition: background 0.1s; -webkit-tap-highlight-color: transparent;
 }
 .ios-action-btn:active { background: rgba(0,0,0,0.06); }
-.ios-action-destructive { background: rgba(255,255,255,0.92); backdrop-filter: blur(40px); color: var(--ios-red); font-weight: 600; }
+.ios-action-destructive { background: rgba(255,255,255,0.92); backdrop-filter: blur(40px); color: var(--lml-dragon-red); font-weight: 600; }
 .ios-action-cancel {
     background: rgba(255,255,255,0.95); backdrop-filter: blur(40px);
-    border-radius: 14px; color: var(--ios-blue); font-weight: 700; margin-bottom: 8px;
+    border-radius: 14px; color: var(--lml-ocean); font-weight: 700; margin-bottom: 8px;
 }
 
 /* ============================================================
@@ -636,108 +669,132 @@ main {
    DARK MODE
    ============================================================ */
 
-/* Dark theme variables */
+/* Dark theme variables — Lummerland Night */
 [data-theme="dark"] {
-    --ios-bg: #000000;
-    --ios-bg-grouped: #1C1C1E;
-    --ios-bg-elevated: #2C2C2E;
-    --ios-separator: rgba(84,84,88,0.65);
-    --ios-separator-opaque: #38383A;
+    --ios-bg: #0d1820;
+    --ios-bg-grouped: #162030;
+    --ios-bg-elevated: #1e2a3a;
+    --ios-separator: rgba(212,175,55,0.15);
+    --ios-separator-opaque: #2a3a4a;
 
-    --ios-label: #FFFFFF;
-    --ios-label-secondary: #EBEBF5;
-    --ios-label-tertiary: #8E8E93;
-    --ios-label-quaternary: #636366;
+    --ios-label: #e8e4dc;
+    --ios-label-secondary: #c0bdb5;
+    --ios-label-tertiary: #7a8a9a;
+    --ios-label-quaternary: #4a5a6a;
 
-    /* iOS dark mode system colors (slightly brighter) */
-    --ios-blue: #0A84FF;
+    /* Lummerland dark accent colors */
+    --lml-ocean: #4a90c4;
+    --lml-ocean-light: #5aa0d4;
+    --lml-brass: #e6c95c;
+    --lml-brass-light: #f0d878;
+    --lml-brass-dark: #c4a832;
+    --lml-dragon-red: #e04040;
+    --lml-dragon-red-light: #f05050;
+    --ios-blue: var(--lml-ocean);
     --ios-green: #30D158;
-    --ios-red: #FF453A;
-    --ios-orange: #FF9F0A;
-    --ios-yellow: #FFD60A;
+    --ios-red: var(--lml-dragon-red);
+    --ios-orange: var(--lml-brass);
+    --ios-yellow: var(--lml-brass-light);
     --ios-teal: #64D2FF;
-    --ios-indigo: #5E5CE6;
+    --ios-indigo: #7a7ae6;
 
-    --cat-fleisch: #FF453A;
-    --cat-fisch: #0A84FF;
+    --cat-fleisch: var(--lml-dragon-red);
+    --cat-fisch: var(--lml-ocean);
     --cat-vegetarisch: #30D158;
     --cat-vegan: #66D4CF;
+
+    --lml-gradient: linear-gradient(135deg, #2a5a8f 0%, #4a80b8 100%);
+    --lml-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    --lml-shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    --knopf-shadow: 0 3px 0 var(--lml-brass-dark), 0 5px 12px rgba(0,0,0,0.4);
 
     color-scheme: dark;
 }
 
 /* Header dark */
 [data-theme="dark"] .ios-header {
-    background: rgba(0,0,0,0.85);
+    background: rgba(13,24,32,0.94);
+    border-bottom-color: rgba(212,175,55,0.2);
 }
 
 /* Tab bar dark */
 [data-theme="dark"] .ios-tab-bar {
-    background: rgba(30,30,30,0.88);
+    background: rgba(13,24,32,0.94);
+    border-top-color: rgba(212,175,55,0.2);
 }
+[data-theme="dark"] .ios-tab { color: rgba(232,228,220,0.4); }
+[data-theme="dark"] .ios-tab svg { stroke: rgba(232,228,220,0.4); }
+[data-theme="dark"] .ios-tab.active { color: var(--lml-brass); }
+[data-theme="dark"] .ios-tab.active svg { stroke: var(--lml-brass); }
 
 /* Login card dark */
 [data-theme="dark"] .login-card {
-    background: rgba(28,28,30,0.92);
+    background: rgba(22,32,48,0.94);
+    border-color: rgba(212,175,55,0.15);
 }
-[data-theme="dark"] .login-card h1 { color: #FFFFFF; }
+[data-theme="dark"] .login-card h1 { color: var(--lml-brass); }
 [data-theme="dark"] .login-scene {
-    background: linear-gradient(180deg, #1a3a5c 0%, #0d2744 35%, #0a1e38 50%, #1a3a1e 50%, #264d1c 55%, #1a3518 60%, #0e2410 65%, #0a2040 66%, #061530 100%);
+    background: linear-gradient(180deg, #0d2744 0%, #091c38 35%, #061530 50%, #0a1e0e 50%, #0e2810 55%, #0a1e0c 60%, #061508 65%, #0a1830 66%, #040e20 100%);
 }
-[data-theme="dark"] .cloud { opacity: 0.15; }
+[data-theme="dark"] .cloud { opacity: 0.08; }
 
 /* iOS input dark */
 [data-theme="dark"] .ios-input-group { background: var(--ios-bg-elevated); }
-[data-theme="dark"] .ios-input-row input { color: #FFFFFF; }
+[data-theme="dark"] .ios-input-row input { color: var(--ios-label); }
 
-/* Buttons */
-[data-theme="dark"] .btn-login { background: #C62828; }
-[data-theme="dark"] .ios-btn-tinted { background: rgba(255,159,10,0.18); color: #FF9F0A; }
-[data-theme="dark"] .ios-btn-secondary { color: var(--ios-blue); }
-[data-theme="dark"] .ios-btn-icon { background: rgba(255,255,255,0.06); }
-[data-theme="dark"] .ios-btn-icon:active { background: rgba(255,255,255,0.12); }
+/* Buttons dark */
+[data-theme="dark"] .btn-login { background: var(--lml-dragon-red); box-shadow: 0 3px 0 #8b1a1a, 0 5px 12px rgba(0,0,0,0.4); }
+[data-theme="dark"] .ios-btn-tinted { background: rgba(230,201,92,0.15); color: var(--lml-brass); }
+[data-theme="dark"] .ios-btn-secondary { color: var(--lml-ocean); }
+[data-theme="dark"] .ios-btn-icon { background: rgba(230,201,92,0.1); color: var(--lml-brass); }
+[data-theme="dark"] .ios-btn-icon:active { background: rgba(230,201,92,0.2); }
+[data-theme="dark"] main .ios-btn-icon { background: rgba(74,144,196,0.1); color: var(--lml-ocean); }
+[data-theme="dark"] main .ios-btn-icon:active { background: rgba(74,144,196,0.2); }
 
 /* Segmented control dark */
-[data-theme="dark"] .ios-segmented { background: rgba(118,118,128,0.24); }
+[data-theme="dark"] .ios-segmented { background: rgba(42,58,74,0.5); }
 [data-theme="dark"] .ios-seg-btn.active {
-    background: #636366;
+    background: var(--ios-bg-elevated);
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    color: var(--lml-brass);
 }
 
-/* Day meals dark */
+/* Day cards dark */
+[data-theme="dark"] .day-card { border-color: var(--ios-separator); border-left-color: var(--lml-brass); }
+[data-theme="dark"] .day-card-header { background: rgba(212,175,55,0.04); color: var(--lml-brass); }
 [data-theme="dark"] .day-meal { background: var(--ios-bg-elevated); }
 
 /* Card hover/active dark */
 [data-theme="dark"] .meal-card:active,
-[data-theme="dark"] .child-card:active { background: rgba(255,255,255,0.04); }
-[data-theme="dark"] .pick-list .meal-card:active { background: rgba(10,132,255,0.08); }
+[data-theme="dark"] .child-card:active { background: rgba(212,175,55,0.04); }
+[data-theme="dark"] .pick-list .meal-card:active { background: rgba(74,144,196,0.08); }
 
 /* Edit/Delete buttons dark */
-[data-theme="dark"] .btn-edit { background: rgba(10,132,255,0.15); color: var(--ios-blue); }
-[data-theme="dark"] .btn-delete { background: rgba(255,69,58,0.15); color: var(--ios-red); }
+[data-theme="dark"] .btn-edit { background: rgba(74,144,196,0.15); color: var(--lml-ocean); }
+[data-theme="dark"] .btn-delete { background: rgba(224,64,64,0.15); color: var(--lml-dragon-red); }
 
 /* Allergy tag dark */
-[data-theme="dark"] .allergy-tag { background: rgba(255,159,10,0.18); color: #FF9F0A; }
+[data-theme="dark"] .allergy-tag { background: rgba(230,201,92,0.15); color: var(--lml-brass); }
 
 /* Banners dark */
 [data-theme="dark"] .ios-banner-warning,
-[data-theme="dark"] .alert-warning { background: rgba(255,159,10,0.12); color: #FF9F0A; }
+[data-theme="dark"] .alert-warning { background: rgba(230,201,92,0.1); color: var(--lml-brass); }
 [data-theme="dark"] .alert-success { background: rgba(48,209,88,0.12); color: #30D158; }
-[data-theme="dark"] .allergy-warning { background: rgba(255,159,10,0.1); color: #FF9F0A; }
+[data-theme="dark"] .allergy-warning { background: rgba(224,64,64,0.1); color: var(--lml-dragon-red); }
 
 /* Sheet modal dark */
-[data-theme="dark"] .ios-sheet-content { background: #1C1C1E; }
-[data-theme="dark"] .ios-sheet-header { background: #1C1C1E; }
-[data-theme="dark"] .ios-sheet-handle { background: rgba(235,235,245,0.3); }
-[data-theme="dark"] .ios-sheet-backdrop { background: rgba(0,0,0,0.55); }
+[data-theme="dark"] .ios-sheet-content { background: var(--ios-bg-grouped); }
+[data-theme="dark"] .ios-sheet-header { background: var(--ios-bg-grouped); }
+[data-theme="dark"] .ios-sheet-handle { background: rgba(212,175,55,0.3); }
+[data-theme="dark"] .ios-sheet-backdrop { background: rgba(0,0,0,0.6); }
 [data-theme="dark"] .ios-sheet-cancel,
-[data-theme="dark"] .ios-sheet-done { color: var(--ios-blue); }
+[data-theme="dark"] .ios-sheet-done { color: var(--lml-ocean); }
 
 /* Form dark */
 [data-theme="dark"] .ios-form-group { background: var(--ios-bg-elevated); }
 [data-theme="dark"] .ios-form-row input,
 [data-theme="dark"] .ios-form-row select,
-[data-theme="dark"] .ios-form-row textarea { color: #FFFFFF; }
+[data-theme="dark"] .ios-form-row textarea { color: var(--ios-label); }
 
 /* Toggle dark */
 [data-theme="dark"] .ios-toggle-track { background: rgba(120,120,128,0.32); }
@@ -745,29 +802,107 @@ main {
 [data-theme="dark"] .ios-toggle input:checked + .ios-toggle-track { background: var(--ios-green); }
 
 /* Action sheet dark */
-[data-theme="dark"] .ios-action-group { background: rgba(44,44,46,0.92); }
-[data-theme="dark"] .ios-action-destructive { background: rgba(44,44,46,0.92); color: var(--ios-red); }
-[data-theme="dark"] .ios-action-cancel { background: rgba(44,44,46,0.95); color: var(--ios-blue); }
-[data-theme="dark"] .ios-action-sheet .ios-sheet-backdrop { background: rgba(0,0,0,0.6); }
+[data-theme="dark"] .ios-action-group { background: rgba(30,42,58,0.94); }
+[data-theme="dark"] .ios-action-destructive { background: rgba(30,42,58,0.94); color: var(--lml-dragon-red); }
+[data-theme="dark"] .ios-action-cancel { background: rgba(30,42,58,0.96); color: var(--lml-ocean); }
+[data-theme="dark"] .ios-action-sheet .ios-sheet-backdrop { background: rgba(0,0,0,0.65); }
 
 /* Error dark */
-[data-theme="dark"] .ios-error { background: rgba(255,69,58,0.15); color: var(--ios-red); }
+[data-theme="dark"] .ios-error { background: rgba(224,64,64,0.15); color: var(--lml-dragon-red); }
 
 /* Demo divider dark */
 [data-theme="dark"] .demo-divider::before,
 [data-theme="dark"] .demo-divider::after { background: var(--ios-separator-opaque); }
 
-/* Role badge */
-[data-theme="dark"] .role-badge { background: var(--ios-orange); }
+/* Role badge dark */
+[data-theme="dark"] .role-badge { background: var(--lml-brass); color: #0d1820; }
 
 /* Logo island dark */
-[data-theme="dark"] .logo-island { background: linear-gradient(135deg, #1a2a3a 0%, #0d1f33 100%); }
+[data-theme="dark"] .logo-island { background: linear-gradient(135deg, #162030 0%, #0d1820 100%); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
 
 /* Stat card dark */
-[data-theme="dark"] .stat-card { background: var(--ios-bg-grouped); }
+[data-theme="dark"] .stat-card { background: var(--ios-bg-grouped); border-color: var(--ios-separator); }
+
+/* Btn circle dark */
+[data-theme="dark"] .ios-btn-circle { background: var(--lml-brass); color: #0d1820; box-shadow: 0 2px 8px rgba(230,201,92,0.3); }
+
+/* Large title dark */
+[data-theme="dark"] .ios-large-title h1 { color: var(--lml-brass); }
+
+/* User info dark */
+[data-theme="dark"] .ios-user-info { color: rgba(232,228,220,0.8); }
+[data-theme="dark"] .ios-header-title { color: var(--lml-brass); }
 
 /* Print: always light */
 @media print { [data-theme="dark"] { --ios-bg: #fff; --ios-bg-grouped: #fff; --ios-label: #000; } }
+
+/* ============================================================
+   ONBOARDING OVERLAY — "Neuer Anstrich, gleicher Kurs"
+   ============================================================ */
+.lml-onboarding {
+    position: fixed; inset: 0; z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(13,24,32,0.85);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    animation: lmlOnboardIn 0.4s ease;
+    padding: 1rem;
+}
+@keyframes lmlOnboardIn { from { opacity: 0; } to { opacity: 1; } }
+
+.lml-onboarding-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    max-width: 380px; width: 100%;
+    text-align: center;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.3);
+    border: 2px solid rgba(212,175,55,0.3);
+    animation: lmlCardIn 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes lmlCardIn { from { transform: scale(0.9) translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+[data-theme="dark"] .lml-onboarding-card {
+    background: #162030;
+    border-color: rgba(212,175,55,0.2);
+}
+
+.lml-onboarding-emoji { font-size: 3rem; margin-bottom: 0.75rem; }
+.lml-onboarding-card h2 {
+    font-size: 1.4rem; font-weight: 800; color: var(--lml-ocean);
+    margin-bottom: 0.5rem; letter-spacing: -0.5px;
+}
+[data-theme="dark"] .lml-onboarding-card h2 { color: var(--lml-brass); }
+
+.lml-onboarding-card p {
+    font-size: 0.9rem; color: var(--ios-label-secondary);
+    line-height: 1.6; margin-bottom: 1.25rem;
+}
+
+.lml-onboarding-features {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+.lml-feature-tag {
+    background: rgba(26,58,95,0.06); color: var(--lml-ocean);
+    padding: 4px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+}
+[data-theme="dark"] .lml-feature-tag {
+    background: rgba(212,175,55,0.1); color: var(--lml-brass);
+}
+
+.lml-onboarding-btn {
+    width: 100%; padding: 14px;
+    background: var(--lml-brass); color: var(--lml-ocean);
+    border: none; border-radius: var(--ios-radius);
+    font-size: 16px; font-weight: 700; font-family: var(--font);
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--lml-brass-dark), 0 5px 12px rgba(212,175,55,0.3);
+    transition: all 0.15s;
+}
+.lml-onboarding-btn:active {
+    box-shadow: 0 1px 0 var(--lml-brass-dark);
+    transform: translateY(2px);
+}
 
 /* ============================================================
    THEME PICKER
@@ -784,11 +919,11 @@ main {
     color: var(--ios-label); transition: all 0.2s; -webkit-tap-highlight-color: transparent;
 }
 .ios-theme-option:active { opacity: 0.7; }
-.ios-theme-option.active { border-color: var(--ios-blue); }
+.ios-theme-option.active { border-color: var(--lml-brass); }
 
 .ios-theme-check {
     width: 22px; height: 22px; border-radius: 50%;
-    background: var(--ios-blue); color: white;
+    background: var(--lml-brass); color: var(--lml-ocean);
     display: none; align-items: center; justify-content: center;
 }
 .ios-theme-option.active .ios-theme-check { display: flex; }
@@ -804,19 +939,19 @@ main {
 .ios-theme-preview .tp-short { width: 50%; }
 
 .ios-theme-preview-light {
-    background: #F2F2F7; border-color: #D1D1D6;
+    background: var(--lml-steam); border-color: #d0cfc8;
 }
-.ios-theme-preview-light .tp-bar { background: #007AFF; }
-.ios-theme-preview-light .tp-line { background: #C7C7CC; }
+.ios-theme-preview-light .tp-bar { background: var(--lml-ocean); }
+.ios-theme-preview-light .tp-line { background: #d0cfc8; }
 
 .ios-theme-preview-dark {
-    background: #1C1C1E; border-color: #38383A;
+    background: #1a2030; border-color: #2a3a4a;
 }
-.ios-theme-preview-dark .tp-bar { background: #0A84FF; }
-.ios-theme-preview-dark .tp-line { background: #48484A; }
+.ios-theme-preview-dark .tp-bar { background: var(--lml-brass); }
+.ios-theme-preview-dark .tp-line { background: #2a3a4a; }
 
 .ios-theme-preview-system {
-    background: linear-gradient(135deg, #F2F2F7 50%, #1C1C1E 50%); border-color: #8E8E93;
+    background: linear-gradient(135deg, var(--lml-steam) 50%, #1a2030 50%); border-color: #8E8E93;
 }
-.ios-theme-preview-system .tp-bar { background: linear-gradient(135deg, #007AFF 50%, #0A84FF 50%); }
-.ios-theme-preview-system .tp-line { background: linear-gradient(135deg, #C7C7CC 50%, #48484A 50%); }
+.ios-theme-preview-system .tp-bar { background: linear-gradient(135deg, var(--lml-ocean) 50%, var(--lml-brass) 50%); }
+.ios-theme-preview-system .tp-line { background: linear-gradient(135deg, #d0cfc8 50%, #2a3a4a 50%); }
