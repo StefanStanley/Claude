@@ -121,6 +121,10 @@ let state = {
     meals: [], children: [], weekPlans: {}, users: [],
     currentWeekOffset: 0, editingMealId: null, editingChildId: null, pickingDay: null,
     currentUser: null, demoMode: false,
+    /** @type {Object.<string, Object>} KiTa settings including cutoff times */
+    kitaSettings: { cutoffHour: 9, cutoffMinute: 0 },
+    /** @type {Object.<string, string>} Group → Waggon name mapping */
+    waggonMap: {},
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -780,6 +784,381 @@ document.getElementById('form-child').addEventListener('submit', async (e) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+//  Mandala-Security-System (Allergie-Logik)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Prüft ob eine Speise für ein Kind sicher ist (Mandala-Check).
+ * Vergleicht child.allergens mit meal.allergens.
+ * @param {Child} child
+ * @param {Meal} meal
+ * @returns {{ isLukasApproved: boolean, conflicts: string[], childName: string }}
+ */
+function checkMandala(child, meal) {
+    if (!child || !meal) return { isLukasApproved: true, conflicts: [], childName: '' };
+    const conflicts = (meal.allergens || []).filter(a => (child.allergens || []).includes(a));
+    return {
+        isLukasApproved: conflicts.length === 0,
+        conflicts: conflicts,
+        childName: child.firstname || '',
+    };
+}
+
+/**
+ * Prüft alle Kinder gegen eine Speise und gibt den Mandala-Status zurück.
+ * @param {Meal} meal
+ * @returns {{ allSafe: boolean, alerts: Array<{child: Child, conflicts: string[]}> }}
+ */
+function checkMandalaAll(meal) {
+    const alerts = [];
+    for (const child of state.children) {
+        const result = checkMandala(child, meal);
+        if (!result.isLukasApproved) {
+            alerts.push({ child, conflicts: result.conflicts });
+        }
+    }
+    return { allSafe: alerts.length === 0, alerts };
+}
+
+/**
+ * Erzeugt erweiterte Allergie-Warnungen mit Frau-Mahlzahn-Warnung und Lukas-Badge.
+ * @param {Meal} meal
+ * @returns {string} HTML
+ */
+function getMandalaWarnings(meal) {
+    if (!meal.allergens || !meal.allergens.length) {
+        return `<div class="lukas-approved-badge"><span class="lukas-badge-icon">&#x2714;</span> <span data-i18n="lukasApproved">${t('lukasApproved')}</span></div>`;
+    }
+    if (state.currentUser?.role === 'eltern') {
+        if (!state.currentUser.childId) return '';
+        const c = state.children.find(x => x.id === state.currentUser.childId);
+        if (!c) return '';
+        const result = checkMandala(c, meal);
+        if (result.isLukasApproved) {
+            return `<div class="lukas-approved-badge"><span class="lukas-badge-icon">&#x2714;</span> ${t('lukasApproved')}</div>`;
+        }
+        return `<div class="frau-mahlzahn-warning"><span class="mahlzahn-icon">&#x1F6A8;</span> <strong>${t('frauMahlzahnWarning')}</strong> ${result.conflicts.map(id => tAllergen(id)).join(', ')}</div>`;
+    }
+    // Staff view: check all children
+    const check = checkMandalaAll(meal);
+    if (check.allSafe) {
+        return `<div class="lukas-approved-badge"><span class="lukas-badge-icon">&#x2714;</span> ${t('lukasApproved')}</div>`;
+    }
+    const alertHtml = check.alerts.map(a =>
+        `<strong>${esc(a.child.firstname)}</strong>: ${a.conflicts.map(id => tAllergen(id)).join(', ')}`
+    ).join(' &middot; ');
+    return `<div class="frau-mahlzahn-warning"><span class="mahlzahn-icon">&#x1F6A8;</span> <strong>${t('frauMahlzahnWarning')}</strong> ${alertHtml}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Emmas Dampf-Counter (Portionen-Analytik)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Berechnet Portionsstatistiken für einen Tag.
+ * @param {number} weekOffset
+ * @param {number} [dayIndex] - Optional: nur für einen Tag. Ohne = ganze Woche.
+ * @returns {{ totalPortions: number, veggieCount: number, allergenAlerts: number }}
+ */
+function getDampfCounter(weekOffset, dayIndex) {
+    const plan = getWeekPlan(weekOffset);
+    let totalPortions = 0, veggieCount = 0, allergenAlerts = 0;
+    const days = dayIndex !== undefined ? [dayIndex] : [0, 1, 2, 3, 4];
+
+    for (const d of days) {
+        const ids = plan[d] || [];
+        for (const mid of ids) {
+            const m = state.meals.find(x => x.id === mid);
+            if (!m) continue;
+            // Each meal slot = portions for all active children
+            totalPortions += state.children.length;
+            if (m.category === 'vegetarisch' || m.category === 'vegan') {
+                veggieCount += state.children.length;
+            }
+            // Count allergen alerts
+            const check = checkMandalaAll(m);
+            allergenAlerts += check.alerts.length;
+        }
+    }
+    return { totalPortions, veggieCount, allergenAlerts };
+}
+
+/**
+ * Rendert den Dampf-Counter als kompakte Statistik-Leiste.
+ */
+function renderDampfCounter() {
+    const el = document.getElementById('dampf-counter');
+    if (!el) return;
+    if (!isStaff()) { el.classList.add('hidden'); return; }
+
+    const counter = getDampfCounter(state.currentWeekOffset);
+    el.classList.remove('hidden');
+    el.innerHTML = `
+        <div class="dampf-counter-row">
+            <div class="dampf-stat">
+                <span class="dampf-stat-icon">&#x1F682;</span>
+                <span class="dampf-stat-value">${counter.totalPortions}</span>
+                <span class="dampf-stat-label">${t('dampfPortions')}</span>
+            </div>
+            <div class="dampf-stat dampf-stat-veggie">
+                <span class="dampf-stat-icon">&#x1F331;</span>
+                <span class="dampf-stat-value">${counter.veggieCount}</span>
+                <span class="dampf-stat-label">${t('dampfVeggie')}</span>
+            </div>
+            <div class="dampf-stat ${counter.allergenAlerts > 0 ? 'dampf-stat-alert' : 'dampf-stat-safe'}">
+                <span class="dampf-stat-icon">${counter.allergenAlerts > 0 ? '&#x1F6A8;' : '&#x2705;'}</span>
+                <span class="dampf-stat-value">${counter.allergenAlerts}</span>
+                <span class="dampf-stat-label">${t('dampfAllergenAlerts')}</span>
+            </div>
+        </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Notbremse (Schnell-Stornierung mit Deadline-Check)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Prüft ob die Bestellfrist für einen bestimmten Tag abgelaufen ist.
+ * @param {number} dayIndex - 0=Mo, 4=Fr
+ * @param {number} [weekOffset] - default: state.currentWeekOffset
+ * @returns {boolean} true wenn Frist abgelaufen
+ */
+function isDeadlinePassed(dayIndex, weekOffset) {
+    const off = weekOffset !== undefined ? weekOffset : state.currentWeekOffset;
+    const monday = getMonday(off);
+    const targetDate = new Date(monday);
+    targetDate.setDate(targetDate.getDate() + dayIndex);
+    targetDate.setHours(state.kitaSettings.cutoffHour, state.kitaSettings.cutoffMinute, 0, 0);
+    return new Date() > targetDate;
+}
+
+/**
+ * Notbremse: 1-Click Stornierung einer Speise von einem Tag.
+ * Prüft Deadline, zeigt "Signal steht auf Rot" wenn zu spät.
+ * @param {number} dayIndex
+ * @param {string} mealId
+ * @global
+ */
+window.notbremse = async function(dayIndex, mealId) {
+    if (!isStaff()) return;
+
+    if (isDeadlinePassed(dayIndex)) {
+        // Signal steht auf Rot - zu spät zum Stornieren
+        const el = document.getElementById('notbremse-alert');
+        if (el) {
+            el.classList.remove('hidden');
+            el.innerHTML = `<div class="notbremse-rot">
+                <span class="notbremse-signal">&#x1F6D1;</span>
+                <strong>${t('signalRot')}</strong> ${t('signalRotMsg')}
+            </div>`;
+            setTimeout(() => el.classList.add('hidden'), 4000);
+        }
+        return;
+    }
+
+    // Optimistic UI: sofort entfernen
+    const k = getWeekKey(state.currentWeekOffset);
+    const plan = getWeekPlan(state.currentWeekOffset);
+    if (plan[dayIndex]) {
+        const idx = plan[dayIndex].indexOf(mealId);
+        if (idx !== -1) plan[dayIndex].splice(idx, 1);
+    }
+    renderWeekPlan();
+
+    // Persistieren
+    if (!state.demoMode) {
+        try {
+            await db.collection('weekPlans').doc(k).set(plan);
+        } catch (err) {
+            // Rollback on error
+            plan[dayIndex] = plan[dayIndex] || [];
+            plan[dayIndex].push(mealId);
+            renderWeekPlan();
+            handleWilde13Error(err);
+        }
+    }
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  Lukas-Modus (Gruppen-/Waggon-Verwaltung + Drag & Drop)
+// ═══════════════════════════════════════════════════════════════
+
+/** Currently dragged meal info */
+let dragData = null;
+
+/**
+ * Startet einen Drag-Vorgang für eine Speise im Wochenplan.
+ * @param {DragEvent} e
+ * @param {number} fromDay - Quell-Tagesindex
+ * @param {string} mealId - Meal-ID
+ */
+window.onDragStartMeal = function(e, fromDay, mealId) {
+    dragData = { fromDay, mealId };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ fromDay, mealId }));
+    e.target.closest('.day-meal')?.classList.add('dragging');
+};
+
+/**
+ * Erlaubt Drop auf einem Tag-Container.
+ * @param {DragEvent} e
+ */
+window.onDragOverDay = function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('day-card-dragover');
+};
+
+/**
+ * Entfernt Drag-Over-Styling.
+ * @param {DragEvent} e
+ */
+window.onDragLeaveDay = function(e) {
+    e.currentTarget.classList.remove('day-card-dragover');
+};
+
+/**
+ * Verschiebt eine Speise per Drag & Drop zwischen Tagen.
+ * @param {DragEvent} e
+ * @param {number} toDay - Ziel-Tagesindex
+ */
+window.onDropDay = async function(e, toDay) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('day-card-dragover');
+    if (!dragData || !isStaff()) return;
+
+    const { fromDay, mealId } = dragData;
+    if (fromDay === toDay) { dragData = null; return; }
+
+    const k = getWeekKey(state.currentWeekOffset);
+    const plan = getWeekPlan(state.currentWeekOffset);
+
+    // Remove from source
+    if (plan[fromDay]) {
+        const idx = plan[fromDay].indexOf(mealId);
+        if (idx !== -1) plan[fromDay].splice(idx, 1);
+    }
+    // Add to target
+    if (!plan[toDay]) plan[toDay] = [];
+    plan[toDay].push(mealId);
+
+    dragData = null;
+    renderWeekPlan();
+
+    if (!state.demoMode) {
+        try {
+            await db.collection('weekPlans').doc(k).set(plan);
+        } catch (err) {
+            handleWilde13Error(err);
+        }
+    }
+};
+
+/**
+ * Gibt die Waggon-Gruppen zurück (einzigartige Gruppen aller Kinder).
+ * @returns {string[]}
+ */
+function getWaggonGroups() {
+    const groups = new Set();
+    for (const c of state.children) {
+        if (c.group) groups.add(c.group);
+    }
+    return [...groups].sort();
+}
+
+/**
+ * Rendert den Gruppen-Filter im Wochenplan.
+ */
+function renderWaggonFilter() {
+    const el = document.getElementById('waggon-filter');
+    if (!el || !isStaff()) { if (el) el.classList.add('hidden'); return; }
+
+    const groups = getWaggonGroups();
+    if (!groups.length) { el.classList.add('hidden'); return; }
+
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="waggon-filter-row">
+        <span class="waggon-filter-label">&#x1F683; ${t('waggonFilter')}:</span>
+        ${groups.map(g => `<button class="waggon-filter-btn" data-group="${esc(g)}">${esc(g)}</button>`).join('')}
+        <button class="waggon-filter-btn waggon-filter-all active">${t('catAll')}</button>
+    </div>`;
+
+    el.querySelectorAll('.waggon-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            el.querySelectorAll('.waggon-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state._activeWaggonFilter = btn.dataset.group || null;
+            renderWeekPlan();
+        });
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Die Wilde 13 (Robustes Error Handling)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Globaler Error-Handler. Fängt unbehandelte Fehler ab.
+ * Zeigt die "Wilde 13" Fehlerseite.
+ * @param {Error|string} error
+ */
+function handleWilde13Error(error) {
+    const msg = error?.message || error?.toString() || t('wilde13UnknownError');
+    console.error('[Wilde 13]', msg);
+    showWilde13Page(msg);
+}
+
+/**
+ * Zeigt die Wilde-13-Fehlerseite.
+ * @param {string} message
+ */
+function showWilde13Page(message) {
+    const el = document.getElementById('wilde13-error-page');
+    if (!el) return;
+    const msgEl = document.getElementById('wilde13-error-msg');
+    if (msgEl) msgEl.textContent = message;
+    el.classList.remove('hidden');
+}
+
+/**
+ * "Zurück zum Leuchtturm" — Recovery-Funktion.
+ * Setzt Cache/State zurück und leitet zum Dashboard.
+ * @global
+ */
+window.zurueckZumLeuchtturm = function() {
+    const el = document.getElementById('wilde13-error-page');
+    if (el) el.classList.add('hidden');
+
+    // Reset to safe state
+    state.editingMealId = null;
+    state.editingChildId = null;
+    state.pickingDay = null;
+
+    // Close all modals
+    document.querySelectorAll('.ios-sheet, .ios-action-sheet').forEach(s => s.classList.add('hidden'));
+    document.body.style.overflow = '';
+
+    // Navigate to Fahrplan
+    document.querySelectorAll('.ios-tab').forEach(b => b.classList.remove('active'));
+    document.querySelector('.ios-tab[data-view="wochenplan"]')?.classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-wochenplan')?.classList.add('active');
+
+    // Re-render
+    try { renderAll(); } catch (e) { console.error('Recovery render failed:', e); }
+};
+
+/** Global error handlers */
+window.addEventListener('error', (e) => {
+    if (e.message?.includes('Script error')) return;
+    handleWilde13Error(e.error || e.message);
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+    handleWilde13Error(e.reason);
+});
+
+// ═══════════════════════════════════════════════════════════════
 //  Wochenplan (Weekly Meal Plan)
 // ═══════════════════════════════════════════════════════════════
 
@@ -801,21 +1180,26 @@ function renderWeekPlan() {
         const day = tDay(i);
         const ids = plan[i] || [];
         const dateStr = getDayDate(state.currentWeekOffset, i);
+        const deadlinePassed = isDeadlinePassed(i);
         const mealsHtml = ids.map(mid => {
             const m = state.meals.find(x => x.id === mid); if (!m) return '';
-            return `<div class="day-meal">
+            const dragAttr = staff ? `draggable="true" ondragstart="onDragStartMeal(event,${i},'${mid}')"` : '';
+            return `<div class="day-meal" ${dragAttr}>
                 <div class="meal-name">${esc(m.name)}</div>
                 <span class="category-badge cat-${m.category}">${tCategory(m.category)}</span>
+                ${staff ? `<button class="btn-notbremse" onclick="notbremse(${i},'${mid}')" title="${t('notbremseTitle')}">&#x1F6D1;</button>` : ''}
                 ${staff ? `<button class="btn-remove-meal" onclick="removeMealFromDay(${i},'${mid}')">&times;</button>` : ''}
-                ${getAllergyWarnings(m)}
+                ${getMandalaWarnings(m)}
             </div>`;
         }).join('');
-        return `<div class="day-card">
-            <div class="day-card-header">${day} <span class="day-date">${dateStr}</span></div>
+        const dropAttrs = staff ? `ondragover="onDragOverDay(event)" ondragleave="onDragLeaveDay(event)" ondrop="onDropDay(event,${i})"` : '';
+        return `<div class="day-card ${deadlinePassed ? 'day-card-locked' : ''}" ${dropAttrs}>
+            <div class="day-card-header">${day} <span class="day-date">${dateStr}</span>${deadlinePassed ? ' <span class="deadline-badge">&#x1F512;</span>' : ''}</div>
             <div class="day-card-body">${mealsHtml}${staff ? `<button class="btn-add-day-meal" onclick="pickMealForDay(${i})">${t('addMealToDay')}</button>` : ''}</div>
         </div>`;
     }).join('');
-    renderStats(); if (staff) checkVariety();
+    renderStats(); renderDampfCounter(); renderWaggonFilter();
+    if (staff) checkVariety();
 }
 
 /**
