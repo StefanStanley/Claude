@@ -401,6 +401,21 @@ async function loadAllData() {
         const uSnap = await db.collection('users').get();
         state.users = uSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
     }
+    // Auto-Import: Wenn Firestore leer ist, KiTa-Datenbank automatisch laden
+    if (state.meals.length === 0 && isStaff()) {
+        console.log('[KiTa-DB] Keine Gerichte gefunden — lade 50 Gerichte aus der KiTa-Datenbank...');
+        for (const dbMeal of KITA_SPEISE_DB) {
+            const data = { name: dbMeal.name, category: dbMeal.category, description: dbMeal.description, allergens: dbMeal.allergens };
+            try {
+                const ref = await db.collection('meals').add(data);
+                state.meals.push({ id: ref.id, ...data });
+            } catch (err) {
+                console.error('[KiTa-DB] Import-Fehler:', err.message);
+                break;
+            }
+        }
+        console.log(`[KiTa-DB] ${state.meals.length} Gerichte importiert.`);
+    }
 }
 
 /** Rendert alle Views neu (Wochenplan, Speisen, Kinder, ggf. Benutzer). */
