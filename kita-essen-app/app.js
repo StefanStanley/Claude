@@ -1,6 +1,83 @@
-// === KiTa Lummerland Essensplanung App (Firebase) ===
+/**
+ * @file KiTa Lummerland — Essensplanung App
+ * @description Single-Page-Application zur Verwaltung von Wochenspeiseplänen,
+ *   Speisen, Kindern und Benutzern in einer KiTa. Unterstützt Firebase Auth
+ *   und Firestore als Backend sowie einen Offline-Demo-Modus.
+ * @version 2.0.0
+ * @license MIT
+ *
+ * @requires firebase-app-compat.js
+ * @requires firebase-auth-compat.js
+ * @requires firebase-firestore-compat.js
+ * @requires firebase-config.js — exportiert globale `firebaseConfig`
+ */
 
-let auth, db;
+// ═══════════════════════════════════════════════════════════════
+//  Type Definitions
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * @typedef {Object} Allergen
+ * @property {string} id    — Eindeutiger Bezeichner (z.B. 'gluten')
+ * @property {string} name  — Anzeigename (z.B. 'Gluten')
+ */
+
+/**
+ * @typedef {Object} Meal
+ * @property {string}   id          — Firestore-Dokument-ID oder Demo-ID
+ * @property {string}   name        — Name der Speise
+ * @property {'fleisch'|'fisch'|'vegetarisch'|'vegan'} category
+ * @property {string}   description — Optionale Beschreibung
+ * @property {string[]} allergens   — Array von Allergen-IDs
+ */
+
+/**
+ * @typedef {Object} Child
+ * @property {string}   id        — Firestore-Dokument-ID oder Demo-ID
+ * @property {string}   firstname — Vorname
+ * @property {string}   lastname  — Nachname
+ * @property {string}   group     — KiTa-Gruppe (z.B. 'Lummerland')
+ * @property {string}   notes     — Freitext-Hinweise
+ * @property {string[]} allergens — Array von Allergen-IDs
+ */
+
+/**
+ * @typedef {Object} AppUser
+ * @property {string}      uid     — Firebase Auth UID
+ * @property {string}      email
+ * @property {string}      name    — Anzeigename
+ * @property {'admin'|'kueche'|'eltern'} role
+ * @property {string|null} childId — Zugeordnetes Kind (nur bei Rolle 'eltern')
+ */
+
+/**
+ * @typedef {Object.<number, string[]>} WeekPlanData
+ * Mapping von Wochentag-Index (0=Mo … 4=Fr) auf Array von Meal-IDs.
+ */
+
+/**
+ * @typedef {Object} AppState
+ * @property {Meal[]}   meals
+ * @property {Child[]}  children
+ * @property {Object.<string, WeekPlanData>} weekPlans — Key: 'YYYY-WW'
+ * @property {AppUser[]} users
+ * @property {number}    currentWeekOffset — 0 = aktuelle Woche
+ * @property {string|null} editingMealId
+ * @property {string|null} editingChildId
+ * @property {number|null} pickingDay — Wochentag-Index für Speiseauswahl
+ * @property {AppUser|null} currentUser
+ * @property {boolean}  demoMode
+ */
+
+// ═══════════════════════════════════════════════════════════════
+//  Firebase Initialisation
+// ═══════════════════════════════════════════════════════════════
+
+/** @type {firebase.auth.Auth|undefined} */
+let auth;
+/** @type {firebase.firestore.Firestore|undefined} */
+let db;
+
 try {
     if (typeof firebase !== 'undefined') {
         firebase.initializeApp(firebaseConfig);
@@ -11,6 +88,11 @@ try {
     console.error('Firebase init:', err.message);
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  Constants
+// ═══════════════════════════════════════════════════════════════
+
+/** @type {Allergen[]} Die 14 EU-Hauptallergene */
 const ALLERGENS = [
     { id: 'gluten', name: 'Gluten' }, { id: 'krebstiere', name: 'Krebstiere' },
     { id: 'eier', name: 'Eier' }, { id: 'fisch', name: 'Fisch' },
@@ -20,17 +102,37 @@ const ALLERGENS = [
     { id: 'sesam', name: 'Sesam' }, { id: 'sulfite', name: 'Sulfite' },
     { id: 'lupinen', name: 'Lupinen' }, { id: 'weichtiere', name: 'Weichtiere' },
 ];
+
+/** @type {string[]} Wochentage (Mo-Fr) */
 const DAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+
+/** @type {Object.<string, string>} Kategorie-ID → Anzeigename */
 const CATEGORIES = { fleisch: 'Fleisch', fisch: 'Fisch', vegetarisch: 'Vegetarisch', vegan: 'Vegan' };
+
+/** @type {Object.<string, string>} Rollen-ID → Anzeigename */
 const ROLE_LABELS = { admin: 'Admin', kueche: 'Küche', eltern: 'Eltern' };
 
+// ═══════════════════════════════════════════════════════════════
+//  Application State
+// ═══════════════════════════════════════════════════════════════
+
+/** @type {AppState} Globaler, reaktiver App-Zustand */
 let state = {
     meals: [], children: [], weekPlans: {}, users: [],
     currentWeekOffset: 0, editingMealId: null, editingChildId: null, pickingDay: null,
     currentUser: null, demoMode: false,
 };
 
-// ===================== AUTH =====================
+// ═══════════════════════════════════════════════════════════════
+//  Authentication
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Firebase Auth State Observer.
+ * Wird bei jedem Login/Logout automatisch aufgerufen.
+ * Erstellt bei erstmaligem Login automatisch ein User-Dokument in Firestore.
+ * Der erste registrierte Benutzer erhält die Rolle 'admin'.
+ */
 if (auth) {
     auth.onAuthStateChanged(async (user) => {
         const errEl = document.getElementById('login-error');
@@ -63,6 +165,12 @@ if (auth) {
     });
 }
 
+/**
+ * Login-Formular Submit-Handler.
+ * Authentifiziert den Benutzer mit E-Mail und Passwort.
+ * Zeigt lokalisierte Fehlermeldungen bei Firebase Auth Errors.
+ * @listens submit#form-login
+ */
 document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value.trim();
@@ -90,6 +198,11 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     }
 });
 
+/**
+ * Registrierungs-Button Handler.
+ * Erstellt ein neues Firebase Auth Konto. Mindestens 6 Zeichen Passwort erforderlich.
+ * @listens click#btn-register
+ */
 document.getElementById('btn-register').addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
     const pw = document.getElementById('login-password').value;
@@ -111,6 +224,11 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     }
 });
 
+/**
+ * Logout-Handler. Setzt im Demo-Modus den State zurück,
+ * ansonsten wird Firebase Auth signOut aufgerufen.
+ * @listens click#btn-logout
+ */
 document.getElementById('btn-logout').addEventListener('click', () => {
     if (state.demoMode) {
         state.demoMode = false; state.currentUser = null;
@@ -120,7 +238,15 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     auth.signOut();
 });
 
-// ===================== DEMO MODE =====================
+// ═══════════════════════════════════════════════════════════════
+//  Demo Mode
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Aktiviert den Demo-Modus mit vorbelegten Testdaten.
+ * Kein Firebase-Zugriff nötig — alle Daten nur im lokalen State.
+ * @listens click#btn-demo
+ */
 document.getElementById('btn-demo').addEventListener('click', () => {
     state.demoMode = true;
     state.currentUser = { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null };
@@ -149,11 +275,20 @@ document.getElementById('btn-demo').addEventListener('click', () => {
     showApp(); renderAll();
 });
 
+// ═══════════════════════════════════════════════════════════════
+//  View Switching
+// ═══════════════════════════════════════════════════════════════
+
+/** Zeigt die Login-Seite und versteckt die App */
 function showLogin() {
     document.getElementById('login-page').classList.remove('hidden');
     document.getElementById('app-container').classList.add('hidden');
 }
 
+/**
+ * Zeigt die App-Oberfläche und aktualisiert Header-Informationen.
+ * Setzt Benutzername, Rollen-Badge und passt Navigations-Sichtbarkeit an.
+ */
 function showApp() {
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('app-container').classList.remove('hidden');
@@ -163,6 +298,10 @@ function showApp() {
     applyRole();
 }
 
+/**
+ * Passt die UI-Sichtbarkeit basierend auf der Benutzerrolle an.
+ * Staff (admin/kueche) sieht Bearbeitungsoptionen, Admin sieht Benutzerverwaltung.
+ */
 function applyRole() {
     const r = state.currentUser?.role;
     const staff = r === 'admin' || r === 'kueche';
@@ -171,10 +310,28 @@ function applyRole() {
     document.querySelectorAll('.btn-role-staff').forEach(el => el.style.display = staff ? '' : 'none');
 }
 
+/**
+ * Prüft ob der aktuelle Benutzer Staff-Rechte hat (Admin oder Küche).
+ * @returns {boolean}
+ */
 function isStaff() { return ['admin', 'kueche'].includes(state.currentUser?.role); }
+
+/**
+ * Prüft ob der aktuelle Benutzer Admin ist.
+ * @returns {boolean}
+ */
 function isAdmin() { return state.currentUser?.role === 'admin'; }
 
-// ===================== FIRESTORE =====================
+// ═══════════════════════════════════════════════════════════════
+//  Firestore Data Layer
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Lädt alle Daten parallel aus Firestore in den lokalen State.
+ * Lädt Speisen, Kinder und Wochenpläne. Admins erhalten zusätzlich die Benutzerliste.
+ * @async
+ * @throws {Error} Bei Firestore-Netzwerkfehlern
+ */
 async function loadAllData() {
     const [mSnap, cSnap, wSnap] = await Promise.all([
         db.collection('meals').get(), db.collection('children').get(), db.collection('weekPlans').get(),
@@ -189,27 +346,68 @@ async function loadAllData() {
     }
 }
 
+/** Rendert alle Views neu (Wochenplan, Speisen, Kinder, ggf. Benutzer). */
 function renderAll() { renderWeekPlan(); renderMealsList(); renderChildrenList(); if (isAdmin()) renderUsersList(); }
 
-// ===================== WEEK HELPERS =====================
+// ═══════════════════════════════════════════════════════════════
+//  Calendar / Week Helpers
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Berechnet das Datum des Montags einer Woche relativ zur aktuellen.
+ * @param {number} off — Wochen-Offset (0 = aktuelle Woche, -1 = letzte, +1 = nächste)
+ * @returns {Date} Montag 00:00:00 der Zielwoche
+ */
 function getMonday(off) {
     const n = new Date(); const d = n.getDay();
     const diff = n.getDate() - d + (d === 0 ? -6 : 1);
     const m = new Date(n.setDate(diff)); m.setDate(m.getDate() + off * 7); m.setHours(0, 0, 0, 0); return m;
 }
+
+/**
+ * Erzeugt den Firestore-Dokumentschlüssel für eine Woche.
+ * @param {number} off — Wochen-Offset
+ * @returns {string} Format: 'YYYY-WW' (z.B. '2026-12')
+ */
 function getWeekKey(off) {
     const m = getMonday(off), y = m.getFullYear(), j = new Date(y, 0, 1);
     return `${y}-${String(Math.ceil((Math.floor((m - j) / 864e5) + j.getDay() + 1) / 7)).padStart(2, '0')}`;
 }
+
+/**
+ * Erzeugt ein lesbares Wochenlabel.
+ * @param {number} off — Wochen-Offset
+ * @returns {string} z.B. 'KW 12  ·  16.3. – 20.3.2026'
+ */
 function getWeekLabel(off) {
     const m = getMonday(off), f = new Date(m); f.setDate(f.getDate() + 4);
     const fmt = d => `${d.getDate()}.${d.getMonth() + 1}.`;
     return `KW ${getWeekKey(off).split('-')[1]}  ·  ${fmt(m)} – ${fmt(f)}${m.getFullYear()}`;
 }
+
+/**
+ * Gibt das formatierte Datum eines Wochentags zurück.
+ * @param {number} off — Wochen-Offset
+ * @param {number} i   — Tagesindex (0=Mo … 4=Fr)
+ * @returns {string} z.B. '16.3.'
+ */
 function getDayDate(off, i) { const m = getMonday(off), d = new Date(m); d.setDate(d.getDate() + i); return `${d.getDate()}.${d.getMonth() + 1}.`; }
+
+/**
+ * Gibt den Wochenplan für eine Woche zurück (erstellt ihn ggf. leer).
+ * @param {number} off — Wochen-Offset
+ * @returns {WeekPlanData}
+ */
 function getWeekPlan(off) { const k = getWeekKey(off); if (!state.weekPlans[k]) state.weekPlans[k] = { 0: [], 1: [], 2: [], 3: [], 4: [] }; return state.weekPlans[k]; }
 
-// ===================== iOS TAB BAR NAVIGATION =====================
+// ═══════════════════════════════════════════════════════════════
+//  iOS Tab Bar Navigation
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Tab-Bar Click-Handler. Wechselt zwischen den Haupt-Views.
+ * @listens click.ios-tab
+ */
 document.querySelectorAll('.ios-tab').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.ios-tab').forEach(b => b.classList.remove('active'));
@@ -219,17 +417,29 @@ document.querySelectorAll('.ios-tab').forEach(btn => {
     });
 });
 
-// ===================== MODALS (iOS Sheet) =====================
+// ═══════════════════════════════════════════════════════════════
+//  Modal / Sheet Management
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Öffnet ein iOS-Sheet-Modal und blockiert Hintergrund-Scroll.
+ * @param {string} id — DOM-ID des Sheet-Elements
+ */
 function openModal(id) {
     document.getElementById(id).classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
+
+/**
+ * Schließt ein iOS-Sheet-Modal und gibt Scroll wieder frei.
+ * @param {string} id — DOM-ID des Sheet-Elements
+ */
 function closeModal(id) {
     document.getElementById(id).classList.add('hidden');
     document.body.style.overflow = '';
 }
 
-// Close on backdrop tap
+/** Backdrop-Tap schließt das übergeordnete Sheet */
 document.querySelectorAll('.ios-sheet-backdrop').forEach(bd => {
     bd.addEventListener('click', () => {
         bd.closest('.ios-sheet, .ios-action-sheet').classList.add('hidden');
@@ -237,7 +447,7 @@ document.querySelectorAll('.ios-sheet-backdrop').forEach(bd => {
     });
 });
 
-// Close on cancel
+/** Cancel-Buttons schließen ihr Sheet */
 document.querySelectorAll('.ios-sheet-cancel, .modal-cancel').forEach(b => {
     b.addEventListener('click', () => {
         const sheet = b.closest('.ios-sheet, .ios-action-sheet');
@@ -245,7 +455,21 @@ document.querySelectorAll('.ios-sheet-cancel, .modal-cancel').forEach(b => {
     });
 });
 
-// ===================== iOS ACTION SHEET (replaces confirm) =====================
+// ═══════════════════════════════════════════════════════════════
+//  iOS Action Sheet (ersetzt native confirm())
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Zeigt ein iOS-style Action Sheet mit destruktiver Aktion.
+ * Ersetzt den nativen Browser-confirm()-Dialog.
+ *
+ * @param {string}   title        — Beschreibung der Aktion
+ * @param {string}   confirmLabel — Text des roten Bestätigungs-Buttons
+ * @param {Function} onConfirm    — Callback bei Bestätigung
+ *
+ * @example
+ * showActionSheet('Speise löschen?', 'Löschen', async () => { ... });
+ */
 function showActionSheet(title, confirmLabel, onConfirm) {
     const sheet = document.getElementById('ios-action-sheet');
     document.getElementById('action-sheet-title').textContent = title;
@@ -257,7 +481,15 @@ function showActionSheet(title, confirmLabel, onConfirm) {
     document.body.style.overflow = 'hidden';
 }
 
-// ===================== ALLERGEN HELPERS (iOS Toggle Switches) =====================
+// ═══════════════════════════════════════════════════════════════
+//  Allergen UI Helpers
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Rendert iOS-Toggle-Switches für alle 14 Allergene in einen Container.
+ * @param {string}   id  — DOM-ID des Zielcontainers
+ * @param {string[]} sel — Bereits ausgewählte Allergen-IDs
+ */
 function renderAllergenCB(id, sel = []) {
     document.getElementById(id).innerHTML = ALLERGENS.map(a =>
         `<div class="ios-allergen-row">
@@ -269,9 +501,23 @@ function renderAllergenCB(id, sel = []) {
         </div>`
     ).join('');
 }
+
+/**
+ * Liest alle aktivierten Allergen-Toggles aus einem Container.
+ * @param {string} id — DOM-ID des Containers
+ * @returns {string[]} Aktivierte Allergen-IDs
+ */
 function getCheckedAllergens(id) { return [...document.querySelectorAll(`#${id} input:checked`)].map(c => c.value); }
 
-// ===================== SPEISEN =====================
+// ═══════════════════════════════════════════════════════════════
+//  Speisen (Meals) — CRUD
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Rendert die Speisen-Liste als iOS Grouped Inset List.
+ * Filtert optional nach Kategorie. Staff-User sehen Bearbeiten/Löschen-Buttons.
+ * @param {'alle'|'fleisch'|'fisch'|'vegetarisch'|'vegan'} [filter='alle']
+ */
 function renderMealsList(filter = 'alle') {
     const list = document.getElementById('meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
@@ -292,7 +538,7 @@ function renderMealsList(filter = 'alle') {
     }).join('');
 }
 
-// Segmented control for meals filter
+/** Segmented Control Filter für Speisen-Kategorien */
 document.querySelectorAll('#meals-filter .ios-seg-btn').forEach(b => {
     b.addEventListener('click', () => {
         document.querySelectorAll('#meals-filter .ios-seg-btn').forEach(x => x.classList.remove('active'));
@@ -300,6 +546,7 @@ document.querySelectorAll('#meals-filter .ios-seg-btn').forEach(b => {
     });
 });
 
+/** Öffnet das Speise-Modal im Erstellungsmodus. Nur für Staff. */
 document.getElementById('btn-add-meal').addEventListener('click', () => {
     if (!isStaff()) return;
     state.editingMealId = null;
@@ -309,6 +556,11 @@ document.getElementById('btn-add-meal').addEventListener('click', () => {
     openModal('modal-meal');
 });
 
+/**
+ * Öffnet das Speise-Modal im Bearbeitungsmodus.
+ * @param {string} id — Meal-ID
+ * @global
+ */
 window.editMeal = function (id) {
     if (!isStaff()) return;
     const m = state.meals.find(x => x.id === id); if (!m) return;
@@ -321,6 +573,12 @@ window.editMeal = function (id) {
     openModal('modal-meal');
 };
 
+/**
+ * Löscht eine Speise nach Bestätigung via Action Sheet.
+ * Entfernt die Speise auch aus allen Wochenplänen.
+ * @param {string} id — Meal-ID
+ * @global
+ */
 window.deleteMeal = function (id) {
     if (!isStaff()) return;
     const m = state.meals.find(x => x.id === id);
@@ -340,6 +598,11 @@ window.deleteMeal = function (id) {
     );
 };
 
+/**
+ * Speise-Formular Submit. Erstellt oder aktualisiert eine Speise.
+ * Im Demo-Modus werden IDs mit Timestamp generiert.
+ * @listens submit#form-meal
+ */
 document.getElementById('form-meal').addEventListener('submit', async (e) => {
     e.preventDefault(); if (!isStaff()) return;
     const name = document.getElementById('meal-name').value.trim();
@@ -358,7 +621,14 @@ document.getElementById('form-meal').addEventListener('submit', async (e) => {
     closeModal('modal-meal'); renderMealsList(); renderWeekPlan();
 });
 
-// ===================== KINDER =====================
+// ═══════════════════════════════════════════════════════════════
+//  Kinder (Children) — CRUD
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Rendert die Kinderliste als iOS Grouped Inset List.
+ * Zeigt Allergie-Tags und Gruppen-Zuordnung.
+ */
 function renderChildrenList() {
     const list = document.getElementById('children-list');
     if (!state.children.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Noch keine Kinder</p>'; return; }
@@ -378,6 +648,7 @@ function renderChildrenList() {
     }).join('');
 }
 
+/** Öffnet das Kind-Modal im Erstellungsmodus */
 document.getElementById('btn-add-child').addEventListener('click', () => {
     if (!isStaff()) return;
     state.editingChildId = null;
@@ -387,6 +658,11 @@ document.getElementById('btn-add-child').addEventListener('click', () => {
     openModal('modal-child');
 });
 
+/**
+ * Öffnet das Kind-Modal im Bearbeitungsmodus.
+ * @param {string} id — Child-ID
+ * @global
+ */
 window.editChild = function (id) {
     if (!isStaff()) return;
     const c = state.children.find(x => x.id === id); if (!c) return;
@@ -400,6 +676,11 @@ window.editChild = function (id) {
     openModal('modal-child');
 };
 
+/**
+ * Löscht ein Kind nach Bestätigung via Action Sheet.
+ * @param {string} id — Child-ID
+ * @global
+ */
 window.deleteChild = function (id) {
     if (!isStaff()) return;
     const c = state.children.find(x => x.id === id);
@@ -414,6 +695,10 @@ window.deleteChild = function (id) {
     );
 };
 
+/**
+ * Kind-Formular Submit. Erstellt oder aktualisiert ein Kind.
+ * @listens submit#form-child
+ */
 document.getElementById('form-child').addEventListener('submit', async (e) => {
     e.preventDefault(); if (!isStaff()) return;
     const data = {
@@ -435,7 +720,15 @@ document.getElementById('form-child').addEventListener('submit', async (e) => {
     closeModal('modal-child'); renderChildrenList();
 });
 
-// ===================== WOCHENPLAN =====================
+// ═══════════════════════════════════════════════════════════════
+//  Wochenplan (Weekly Meal Plan)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Rendert den kompletten Wochenplan als 5-Tage-Grid.
+ * Zeigt pro Tag die zugewiesenen Speisen, Kategorie-Badges, Allergie-Warnungen
+ * und (für Staff) Buttons zum Hinzufügen/Entfernen.
+ */
 function renderWeekPlan() {
     const grid = document.getElementById('weekplan-grid');
     const plan = getWeekPlan(state.currentWeekOffset);
@@ -465,6 +758,10 @@ function renderWeekPlan() {
     renderStats(); if (staff) checkVariety();
 }
 
+/**
+ * Zeigt ein Allergie-Banner für Eltern mit zugeordnetem Kind.
+ * Nur sichtbar wenn die Rolle 'eltern' ist und ein Kind zugeordnet ist.
+ */
 function renderParentBanner() {
     const b = document.getElementById('parent-allergy-banner'); if (!b) return;
     if (state.currentUser?.role !== 'eltern' || !state.currentUser?.childId) { b.classList.add('hidden'); return; }
@@ -474,6 +771,14 @@ function renderParentBanner() {
     b.innerHTML = `<strong>Allergien von ${esc(c.firstname)}:</strong> ${c.allergens.map(id => ALLERGENS.find(a => a.id === id)?.name || id).join(', ')}`;
 }
 
+/**
+ * Erzeugt HTML für Allergie-Warnungen bei einer Speise.
+ * - Eltern: Warnt nur bei Übereinstimmung mit dem eigenen Kind
+ * - Staff: Warnt bei allen betroffenen Kindern der KiTa
+ *
+ * @param {Meal} meal — Die zu prüfende Speise
+ * @returns {string} HTML-String (leer wenn keine Warnung)
+ */
 function getAllergyWarnings(meal) {
     if (!meal.allergens.length) return '';
     if (state.currentUser?.role === 'eltern') {
@@ -492,6 +797,10 @@ function getAllergyWarnings(meal) {
     return aff.length ? `<div class="allergy-warning">${aff.join(' · ')}</div>` : '';
 }
 
+/**
+ * Rendert die Kategorie-Statistik-Karten für den aktuellen Wochenplan.
+ * Zeigt Anzahl Fleisch/Fisch/Veggie/Vegan als Zahlen-Badges.
+ */
 function renderStats() {
     const plan = getWeekPlan(state.currentWeekOffset);
     const cats = { fleisch: 0, fisch: 0, vegetarisch: 0, vegan: 0 };
@@ -500,6 +809,11 @@ function renderStats() {
         Object.entries(cats).map(([k, v]) => `<div class="stat-card stat-${k}"><div class="stat-value" style="color:var(--cat-${k})">${v}</div><div class="stat-label">${CATEGORIES[k]}</div></div>`).join('');
 }
 
+/**
+ * Prüft die Abwechslung im Wochenplan und zeigt Empfehlungen.
+ * Regeln: Max. 50% Fleisch, mind. 1x Fisch, mind. 30% veggie/vegan.
+ * Nur ab 3+ geplanten Speisen aktiv.
+ */
 function checkVariety() {
     const plan = getWeekPlan(state.currentWeekOffset), el = document.getElementById('variety-alert');
     const cats = { fleisch: 0, fisch: 0, vegetarisch: 0, vegan: 0 }; let total = 0;
@@ -514,9 +828,16 @@ function checkVariety() {
     else el.classList.add('hidden');
 }
 
+/** Wochen-Navigation: vorherige Woche */
 document.getElementById('prev-week').addEventListener('click', () => { state.currentWeekOffset--; renderWeekPlan(); });
+/** Wochen-Navigation: nächste Woche */
 document.getElementById('next-week').addEventListener('click', () => { state.currentWeekOffset++; renderWeekPlan(); });
 
+/**
+ * Öffnet das Speise-Auswahl-Sheet für einen bestimmten Wochentag.
+ * @param {number} i — Tagesindex (0=Mo … 4=Fr)
+ * @global
+ */
 window.pickMealForDay = function (i) {
     if (!isStaff()) return; state.pickingDay = i;
     document.getElementById('modal-pick-title').textContent = `${DAYS[i]} — Speise wählen`;
@@ -526,6 +847,10 @@ window.pickMealForDay = function (i) {
     openModal('modal-pick-meal');
 };
 
+/**
+ * Rendert die Speisen-Auswahlliste im Pick-Modal.
+ * @param {'alle'|'fleisch'|'fisch'|'vegetarisch'|'vegan'} filter
+ */
 function renderPickList(filter) {
     const list = document.getElementById('pick-meals-list');
     const items = filter === 'alle' ? state.meals : state.meals.filter(m => m.category === filter);
@@ -541,6 +866,7 @@ function renderPickList(filter) {
     }).join('');
 }
 
+/** Filter-Buttons im Speise-Auswahl-Sheet */
 document.querySelectorAll('.pick-filter-btn').forEach(b => {
     b.addEventListener('click', () => {
         document.querySelectorAll('.pick-filter-btn').forEach(x => x.classList.remove('active'));
@@ -548,6 +874,12 @@ document.querySelectorAll('.pick-filter-btn').forEach(b => {
     });
 });
 
+/**
+ * Fügt eine Speise einem Wochentag hinzu und persistiert in Firestore.
+ * @param {string} mealId — Meal-ID
+ * @global
+ * @async
+ */
 window.selectMealForDay = async function (mealId) {
     if (!isStaff()) return;
     const k = getWeekKey(state.currentWeekOffset), plan = getWeekPlan(state.currentWeekOffset);
@@ -557,6 +889,13 @@ window.selectMealForDay = async function (mealId) {
     closeModal('modal-pick-meal'); renderWeekPlan();
 };
 
+/**
+ * Entfernt eine Speise von einem Wochentag und persistiert in Firestore.
+ * @param {number} di     — Tagesindex (0=Mo … 4=Fr)
+ * @param {string} mealId — Meal-ID
+ * @global
+ * @async
+ */
 window.removeMealFromDay = async function (di, mealId) {
     if (!isStaff()) return;
     const k = getWeekKey(state.currentWeekOffset), plan = getWeekPlan(state.currentWeekOffset);
@@ -565,7 +904,15 @@ window.removeMealFromDay = async function (di, mealId) {
     renderWeekPlan();
 };
 
-// ===================== BENUTZERVERWALTUNG =====================
+// ═══════════════════════════════════════════════════════════════
+//  Benutzerverwaltung (Admin only)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Rendert die Benutzerliste als iOS Grouped Inset List.
+ * Zeigt Rollen-Badge und ggf. zugeordnetes Kind.
+ * Der eigene Account kann nicht gelöscht werden.
+ */
 function renderUsersList() {
     const list = document.getElementById('users-list'); if (!list) return;
     if (!state.users.length) { list.innerHTML = '<p style="text-align:center;color:var(--ios-label-tertiary);padding:2rem;font-size:0.88rem;">Keine Benutzer</p>'; return; }
@@ -582,6 +929,7 @@ function renderUsersList() {
     }).join('');
 }
 
+/** Öffnet das Benutzer-Erstellungs-Modal und füllt die Kind-Auswahl */
 document.getElementById('btn-add-user').addEventListener('click', () => {
     document.getElementById('form-user').reset();
     document.getElementById('user-form-error').classList.add('hidden');
@@ -592,10 +940,17 @@ document.getElementById('btn-add-user').addEventListener('click', () => {
     openModal('modal-user');
 });
 
+/** Zeigt/versteckt die Kind-Zuweisung basierend auf der gewählten Rolle */
 document.getElementById('user-role').addEventListener('change', e => {
     document.getElementById('user-child-assign').classList.toggle('hidden', e.target.value !== 'eltern');
 });
 
+/**
+ * Benutzer-Formular Submit. Erstellt einen neuen Firebase Auth Account
+ * über eine sekundäre App-Instanz (um den aktuellen Admin nicht auszuloggen)
+ * und legt ein User-Dokument in Firestore an.
+ * @listens submit#form-user
+ */
 document.getElementById('form-user').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errEl = document.getElementById('user-form-error');
@@ -620,6 +975,12 @@ document.getElementById('form-user').addEventListener('submit', async (e) => {
     }
 });
 
+/**
+ * Löscht einen Benutzer nach Bestätigung via Action Sheet.
+ * Entfernt nur das Firestore-Dokument (Firebase Auth Account bleibt bestehen).
+ * @param {string} uid — Firebase Auth UID
+ * @global
+ */
 window.deleteUser = function (uid) {
     showActionSheet('Benutzer wirklich entfernen?', 'Entfernen', async () => {
         if (!state.demoMode) await db.collection('users').doc(uid).delete();
@@ -628,9 +989,21 @@ window.deleteUser = function (uid) {
     });
 };
 
-// ===================== THEME (Light / Dark / System) =====================
+// ═══════════════════════════════════════════════════════════════
+//  Theme (Light / Dark / System)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Liest die gespeicherte Theme-Präferenz aus localStorage.
+ * @returns {'light'|'dark'|'system'} Standard: 'system'
+ */
 function getThemePref() { return localStorage.getItem('kita-theme') || 'system'; }
 
+/**
+ * Wendet das Theme auf das Dokument an.
+ * Setzt data-theme Attribut, aktualisiert meta theme-color und Header-Icon.
+ * @param {'light'|'dark'|'system'} pref — Gewählte Präferenz
+ */
 function applyTheme(pref) {
     const html = document.documentElement;
     const meta = document.querySelector('meta[name="theme-color"]');
@@ -645,6 +1018,10 @@ function applyTheme(pref) {
     updateThemeIcon(effective);
 }
 
+/**
+ * Aktualisiert das Theme-Toggle-Icon im Header (Sonne/Mond).
+ * @param {'light'|'dark'} effective — Aktuell angewendetes Theme
+ */
 function updateThemeIcon(effective) {
     const btn = document.getElementById('btn-theme');
     if (!btn) return;
@@ -655,27 +1032,31 @@ function updateThemeIcon(effective) {
     }
 }
 
+/**
+ * Aktualisiert die aktive Auswahl im Theme-Picker-Sheet.
+ * @param {'light'|'dark'|'system'} pref
+ */
 function updateThemePicker(pref) {
     document.querySelectorAll('.ios-theme-option').forEach(opt => {
         opt.classList.toggle('active', opt.dataset.theme === pref);
     });
 }
 
-// Init theme on load
+// Theme beim Laden anwenden
 applyTheme(getThemePref());
 
-// Listen for system preference changes
+/** Reagiert auf System-Theme-Änderungen (z.B. OS Darkmode wechselt) */
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getThemePref() === 'system') applyTheme('system');
 });
 
-// Open theme picker
+/** Öffnet den Theme-Picker */
 document.getElementById('btn-theme').addEventListener('click', () => {
     updateThemePicker(getThemePref());
     openModal('modal-theme');
 });
 
-// Theme option clicks
+/** Theme-Auswahl im Picker — speichert sofort in localStorage */
 document.querySelectorAll('.ios-theme-option').forEach(opt => {
     opt.addEventListener('click', () => {
         const pref = opt.dataset.theme;
@@ -685,5 +1066,14 @@ document.querySelectorAll('.ios-theme-option').forEach(opt => {
     });
 });
 
-// ===================== UTILITIES =====================
+// ═══════════════════════════════════════════════════════════════
+//  Utility Functions
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Escaped einen String für sichere HTML-Ausgabe (XSS-Schutz).
+ * Nutzt die native DOM-API statt Regex für zuverlässiges Escaping.
+ * @param {string} s — Unescapeter String
+ * @returns {string} HTML-sicherer String
+ */
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

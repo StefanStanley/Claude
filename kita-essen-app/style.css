@@ -772,7 +772,7 @@ main {
 /* ============================================================
    THEME PICKER
    ============================================================ */
-.ios-sheet-compact .ios-sheet-content { max-height: 50vh; }
+.ios-sheet-content.ios-sheet-compact { max-height: 50vh; }
 
 .ios-theme-picker { padding: 20px 16px 32px; }
 .ios-theme-options { display: flex; gap: 12px; justify-content: center; }
