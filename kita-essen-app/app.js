@@ -234,35 +234,97 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  Demo Mode
+//  KiTa-Speisedatenbank (Deutsche Kindertagesstätten-Gerichte)
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Aktiviert den Demo-Modus mit vorbelegten Testdaten.
- * Kein Firebase-Zugriff nötig — alle Daten nur im lokalen State.
- * @listens click#btn-demo
+ * Umfangreiche Datenbank mit kindgerechten Gerichten für KiTas.
+ * Basierend auf DGE-Qualitätsstandards für die Verpflegung in Kitas.
+ * Alle Allergene nach EU-Verordnung 1169/2011 (14 Hauptallergene).
+ * @type {Meal[]}
  */
+const KITA_SPEISE_DB = [
+    // ── Fleischgerichte ──
+    { id: 'db01', name: 'Spaghetti Bolognese', category: 'fleisch', description: 'Klassiker mit Rindfleisch-Tomatensoße', allergens: ['gluten', 'sellerie'] },
+    { id: 'db02', name: 'Hähnchen-Nuggets mit Pommes', category: 'fleisch', description: 'Knusprig paniert mit Kartoffelecken', allergens: ['gluten', 'eier'] },
+    { id: 'db03', name: 'Gulasch mit Spätzle', category: 'fleisch', description: 'Rindergulasch mit schwäbischen Eierspätzle', allergens: ['gluten', 'eier', 'milch', 'sellerie'] },
+    { id: 'db04', name: 'Hühnerfrikassee mit Reis', category: 'fleisch', description: 'In heller Soße mit Erbsen und Möhren', allergens: ['milch', 'sellerie'] },
+    { id: 'db05', name: 'Königsberger Klopse', category: 'fleisch', description: 'In Kapernsoße mit Salzkartoffeln', allergens: ['gluten', 'eier', 'milch', 'senf'] },
+    { id: 'db06', name: 'Milchreis mit Zimt & Zucker', category: 'fleisch', description: 'Mit Apfelkompott (kein Fleisch, aber mit Milch)', allergens: ['milch'] },
+    { id: 'db07', name: 'Putenschnitzel mit Kartoffelpüree', category: 'fleisch', description: 'Zartes Putenfleisch mit cremigem Püree', allergens: ['gluten', 'eier', 'milch'] },
+    { id: 'db08', name: 'Rinderroulade mit Rotkohl', category: 'fleisch', description: 'Mit Klößen und Bratensauce', allergens: ['gluten', 'sellerie', 'senf', 'sulfite'] },
+    { id: 'db09', name: 'Hackbällchen in Tomatensoße', category: 'fleisch', description: 'Saftige Bällchen mit Nudeln', allergens: ['gluten', 'eier'] },
+    { id: 'db10', name: 'Geschnetzeltes Zürcher Art', category: 'fleisch', description: 'Schweinefilet in Rahmsoße mit Rösti', allergens: ['milch', 'gluten'] },
+    { id: 'db11', name: 'Hühnersuppe mit Nudeln', category: 'fleisch', description: 'Klare Brühe mit Gemüseeinlage', allergens: ['gluten', 'sellerie'] },
+    { id: 'db12', name: 'Cevapcici mit Djuvec-Reis', category: 'fleisch', description: 'Gegrillte Hackröllchen mit Paprikareis', allergens: ['gluten'] },
+    { id: 'db13', name: 'Wiener Würstchen mit Kartoffelsalat', category: 'fleisch', description: 'Klassisch mit Brühe-Dressing', allergens: ['senf', 'sellerie'] },
+    { id: 'db14', name: 'Chili con Carne', category: 'fleisch', description: 'Mild gewürzt mit Reis', allergens: ['sellerie'] },
+    { id: 'db15', name: 'Hähnchenbrust mit Buttergemüse', category: 'fleisch', description: 'Gedünstet mit Möhren und Kohlrabi', allergens: ['milch'] },
+
+    // ── Fischgerichte ──
+    { id: 'db16', name: 'Fischstäbchen mit Kartoffelpüree', category: 'fisch', description: 'Alaska-Seelachs in knuspriger Panade', allergens: ['fisch', 'gluten', 'milch'] },
+    { id: 'db17', name: 'Lachs mit Brokkoli und Reis', category: 'fisch', description: 'Gedämpfter Lachs mit Zitrone', allergens: ['fisch'] },
+    { id: 'db18', name: 'Seelachs in Senfsoße', category: 'fisch', description: 'Mit Petersilienkartoffeln', allergens: ['fisch', 'milch', 'senf'] },
+    { id: 'db19', name: 'Forelle Müllerin mit Mandeln', category: 'fisch', description: 'In Butter gebraten mit Salzkartoffeln', allergens: ['fisch', 'milch', 'schalenfruchte'] },
+    { id: 'db20', name: 'Fischfrikadellen mit Remoulade', category: 'fisch', description: 'Aus frischem Kabeljau mit Gurkensalat', allergens: ['fisch', 'gluten', 'eier', 'senf'] },
+    { id: 'db21', name: 'Pangasius mit Tomaten-Gemüse', category: 'fisch', description: 'Leicht in Olivenöl gegart', allergens: ['fisch'] },
+    { id: 'db22', name: 'Thunfisch-Nudel-Auflauf', category: 'fisch', description: 'Überbacken mit Käse', allergens: ['fisch', 'gluten', 'milch', 'eier'] },
+    { id: 'db23', name: 'Kabeljau mit Spinat und Kartoffeln', category: 'fisch', description: 'Gedünstet mit Rahmsoße', allergens: ['fisch', 'milch'] },
+
+    // ── Vegetarische Gerichte ──
+    { id: 'db24', name: 'Gemüse-Lasagne', category: 'vegetarisch', description: 'Mit Zucchini, Aubergine und Béchamel', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db25', name: 'Käsespätzle mit Röstzwiebeln', category: 'vegetarisch', description: 'Schwäbischer Klassiker', allergens: ['gluten', 'eier', 'milch'] },
+    { id: 'db26', name: 'Pfannkuchen mit Apfelmus', category: 'vegetarisch', description: 'Dünne Eierkuchen mit frischem Kompott', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db27', name: 'Kartoffelpuffer mit Quark', category: 'vegetarisch', description: 'Knusprig gebraten mit Kräuterquark', allergens: ['eier', 'milch'] },
+    { id: 'db28', name: 'Spinat-Ricotta-Tortellini', category: 'vegetarisch', description: 'In Tomaten-Sahne-Soße', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db29', name: 'Grießbrei mit Kirschkompott', category: 'vegetarisch', description: 'Cremig gerührt mit Vanille', allergens: ['gluten', 'milch'] },
+    { id: 'db30', name: 'Gemüse-Quiche', category: 'vegetarisch', description: 'Mit Brokkoli, Paprika und Gouda', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db31', name: 'Kartoffelgratin mit Salat', category: 'vegetarisch', description: 'Überbacken mit Emmentaler', allergens: ['milch'] },
+    { id: 'db32', name: 'Maultaschen in Gemüsebrühe', category: 'vegetarisch', description: 'Schwäbische Teigtaschen mit Spinatfüllung', allergens: ['gluten', 'eier', 'sellerie'] },
+    { id: 'db33', name: 'Kaiserschmarrn mit Zwetschgenröster', category: 'vegetarisch', description: 'Zerrissener Pfannkuchen mit Puderzucker', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db34', name: 'Blumenkohl-Käse-Auflauf', category: 'vegetarisch', description: 'Mit Vollkornnudeln', allergens: ['gluten', 'milch'] },
+    { id: 'db35', name: 'Eierpfannkuchen mit Gemüsefüllung', category: 'vegetarisch', description: 'Mit Champignons und Paprika', allergens: ['gluten', 'milch', 'eier'] },
+    { id: 'db36', name: 'Tomatensuppe mit Grießklößchen', category: 'vegetarisch', description: 'Samtiger Klassiker', allergens: ['gluten', 'milch', 'eier', 'sellerie'] },
+    { id: 'db37', name: 'Flammkuchen mit Schmand', category: 'vegetarisch', description: 'Dünn und knusprig mit Lauch', allergens: ['gluten', 'milch'] },
+
+    // ── Vegane Gerichte ──
+    { id: 'db38', name: 'Reis mit Gemüsecurry', category: 'vegan', description: 'Thai-Curry mit Kokosmilch', allergens: [] },
+    { id: 'db39', name: 'Kartoffelsuppe', category: 'vegan', description: 'Sämige Suppe mit Möhren und Lauch', allergens: ['sellerie'] },
+    { id: 'db40', name: 'Nudeln mit Tomatensoße', category: 'vegan', description: 'Penne mit frischer Basilikum-Tomatensoße', allergens: ['gluten'] },
+    { id: 'db41', name: 'Linseneintopf', category: 'vegan', description: 'Rote Linsen mit Kartoffeln und Möhren', allergens: ['sellerie'] },
+    { id: 'db42', name: 'Gemüse-Couscous', category: 'vegan', description: 'Mit Kichererbsen und Minze', allergens: ['gluten'] },
+    { id: 'db43', name: 'Kürbissuppe mit Brötchen', category: 'vegan', description: 'Hokkaido-Kürbis mit Ingwer', allergens: ['gluten'] },
+    { id: 'db44', name: 'Bratkartoffeln mit Gurkensalat', category: 'vegan', description: 'Knusprig in Rapsöl', allergens: [] },
+    { id: 'db45', name: 'Gemüsepfanne mit Vollkornreis', category: 'vegan', description: 'Saisonales Marktgemüse', allergens: [] },
+    { id: 'db46', name: 'Spaghetti Aglio e Olio', category: 'vegan', description: 'Mit Knoblauch und Petersilie', allergens: ['gluten'] },
+    { id: 'db47', name: 'Kartoffel-Erbsen-Eintopf', category: 'vegan', description: 'Herzhaft mit frischer Minze', allergens: ['sellerie'] },
+    { id: 'db48', name: 'Ratatouille mit Ciabatta', category: 'vegan', description: 'Provenzalischer Gemüseeintopf', allergens: ['gluten'] },
+    { id: 'db49', name: 'Süßkartoffel-Pommes mit Ketchup', category: 'vegan', description: 'Im Ofen gebacken', allergens: [] },
+    { id: 'db50', name: 'Minestrone', category: 'vegan', description: 'Italienische Gemüsesuppe mit Nudeln', allergens: ['gluten', 'sellerie'] },
+];
 document.getElementById('btn-demo').addEventListener('click', () => {
     state.demoMode = true;
     state.currentUser = { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null };
-    state.meals = [
-        { id: 'd1', name: 'Spaghetti Bolognese', category: 'fleisch', description: '', allergens: ['gluten', 'milch'] },
-        { id: 'd2', name: 'Fischstäbchen mit Kartoffelpüree', category: 'fisch', description: '', allergens: ['fisch', 'gluten', 'milch'] },
-        { id: 'd3', name: 'Gemüse-Lasagne', category: 'vegetarisch', description: '', allergens: ['gluten', 'milch', 'eier'] },
-        { id: 'd4', name: 'Reis mit Gemüsecurry', category: 'vegan', description: '', allergens: [] },
-        { id: 'd5', name: 'Hähnchen-Nuggets mit Pommes', category: 'fleisch', description: '', allergens: ['gluten'] },
-        { id: 'd6', name: 'Lachs mit Brokkoli', category: 'fisch', description: '', allergens: ['fisch'] },
-        { id: 'd7', name: 'Kartoffelsuppe', category: 'vegan', description: '', allergens: ['sellerie'] },
-        { id: 'd8', name: 'Pfannkuchen mit Apfelmus', category: 'vegetarisch', description: '', allergens: ['gluten', 'milch', 'eier'] },
-    ];
+    // Lade alle 50 Gerichte aus der KiTa-Speisedatenbank
+    state.meals = KITA_SPEISE_DB.map(m => ({ ...m }));
     state.children = [
         { id: 'c1', firstname: 'Jim', lastname: 'Knopf', group: 'Lummerland', notes: '', allergens: [] },
         { id: 'c2', firstname: 'Lukas', lastname: 'Lokomotivführer', group: 'Lummerland', notes: '', allergens: ['milch'] },
         { id: 'c3', firstname: 'Li', lastname: 'Si', group: 'Mandala', notes: 'kein Schweinefleisch', allergens: ['erdnuesse', 'soja'] },
         { id: 'c4', firstname: 'Prinzessin', lastname: 'Li Si', group: 'Mandala', notes: '', allergens: [] },
+        { id: 'c5', firstname: 'Nepomuk', lastname: 'Halbdrache', group: 'Lummerland', notes: '', allergens: ['gluten'] },
+        { id: 'c6', firstname: 'Ping', lastname: 'Pong', group: 'Mandala', notes: 'Vegetarier', allergens: ['fisch'] },
+        { id: 'c7', firstname: 'Herr', lastname: 'Tur Tur', group: 'Scheinriesen', notes: '', allergens: ['milch', 'eier'] },
+        { id: 'c8', firstname: 'Emma', lastname: 'Lokomotive', group: 'Scheinriesen', notes: '', allergens: [] },
     ];
     const wk = getWeekKey(0);
-    state.weekPlans[wk] = { 0: ['d1'], 1: ['d6'], 2: ['d3', 'd4'], 3: ['d5'], 4: ['d8', 'd7'] };
+    state.weekPlans[wk] = {
+        0: ['db01', 'db38'],  // Mo: Spaghetti Bolognese + Reis mit Gemüsecurry
+        1: ['db17', 'db40'],  // Di: Lachs mit Brokkoli + Nudeln mit Tomatensoße
+        2: ['db24', 'db42'],  // Mi: Gemüse-Lasagne + Gemüse-Couscous
+        3: ['db04', 'db49'],  // Do: Hühnerfrikassee + Süßkartoffel-Pommes
+        4: ['db26', 'db39'],  // Fr: Pfannkuchen mit Apfelmus + Kartoffelsuppe
+    };
     state.users = [
         { uid: 'demo', email: 'demo@lummerland.de', name: 'Jim Knopf', role: 'admin', childId: null },
         { uid: 'demo2', email: 'kueche@lummerland.de', name: 'Frau Waas', role: 'kueche', childId: null },
@@ -681,6 +743,37 @@ window.loadMealsFromAPI = async function () {
         console.error('TheMealDB API:', err.message);
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = '\u{1F50D} ' + (t('apiLoadMeals') || 'Speisen laden'); }
+    }
+};
+
+/**
+ * Lädt deutsche KiTa-Gerichte aus der eingebauten Datenbank.
+ * Fügt nur Gerichte hinzu, die noch nicht vorhanden sind.
+ * @async
+ * @global
+ */
+window.loadKitaDB = async function () {
+    if (!isStaff()) return;
+    const btn = document.getElementById('btn-load-kita-db');
+    if (btn) { btn.disabled = true; btn.textContent = '...'; }
+    let added = 0;
+    try {
+        for (const dbMeal of KITA_SPEISE_DB) {
+            if (state.meals.some(m => m.name === dbMeal.name)) continue;
+            const data = { name: dbMeal.name, category: dbMeal.category, description: dbMeal.description, allergens: dbMeal.allergens };
+            if (state.demoMode) {
+                state.meals.push({ id: 'kitadb_' + Date.now() + '_' + added, ...data });
+            } else {
+                const ref = await db.collection('meals').add(data);
+                state.meals.push({ id: ref.id, ...data });
+            }
+            added++;
+        }
+        renderMealsList(); renderWeekPlan();
+    } catch (err) {
+        handleWilde13Error(err);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🍽️ ' + (t('kitaDbLoad') || 'KiTa-Gerichte laden') + (added ? ` (+${added})` : ''); }
     }
 };
 

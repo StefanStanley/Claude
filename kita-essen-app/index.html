@@ -141,7 +141,10 @@
                     <button class="ios-seg-btn" data-filter="vegan" data-i18n="catVegan">Vegan</button>
                 </div>
                 <div id="meals-list" class="ios-list-group"></div>
-                <div style="padding:12px 16px;">
+                <div style="padding:12px 16px; display:flex; flex-direction:column; gap:8px;">
+                    <button id="btn-load-kita-db" class="ios-btn-tinted btn-role-staff" onclick="loadKitaDB()" style="font-size:0.85rem;">
+                        &#x1F37D;&#xFE0F; <span data-i18n="kitaDbLoad">KiTa-Gerichte laden (50 Rezepte)</span>
+                    </button>
                     <button id="btn-load-api-meals" class="ios-btn-tinted btn-role-staff" onclick="loadMealsFromAPI()" style="font-size:0.85rem;">
                         &#x1F50D; <span data-i18n="apiLoadMeals">Speisen-Vorschl&auml;ge laden</span>
                     </button>

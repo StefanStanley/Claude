@@ -233,6 +233,9 @@ de: {
     wilde13Text: 'Piraten haben die Verbindung gekapert! Etwas ist schiefgelaufen.',
     wilde13Recovery: 'Zurück zum Leuchtturm',
     wilde13UnknownError: 'Unbekannter Fehler',
+
+    // KiTa-Speisedatenbank
+    kitaDbLoad: 'KiTa-Gerichte laden (50 Rezepte)',
 },
 
 // ---------------------------------------------------------------
@@ -415,6 +418,7 @@ en: {
     wilde13Text: 'Pirates have hijacked the connection! Something went wrong.',
     wilde13Recovery: 'Back to the Lighthouse',
     wilde13UnknownError: 'Unknown error',
+    kitaDbLoad: 'Load KiTa meals (50 recipes)',
 },
 
 // ---------------------------------------------------------------
