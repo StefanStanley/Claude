@@ -236,6 +236,8 @@ de: {
 
     // KiTa-Speisedatenbank
     kitaDbLoad: 'KiTa-Gerichte laden (50 Rezepte)',
+    kitaDbAdded: 'Gerichte hinzugefügt',
+    kitaDbAllLoaded: 'Alle Gerichte bereits geladen',
 },
 
 // ---------------------------------------------------------------
@@ -419,6 +421,8 @@ en: {
     wilde13Recovery: 'Back to the Lighthouse',
     wilde13UnknownError: 'Unknown error',
     kitaDbLoad: 'Load KiTa meals (50 recipes)',
+    kitaDbAdded: 'meals added',
+    kitaDbAllLoaded: 'All meals already loaded',
 },
 
 // ---------------------------------------------------------------

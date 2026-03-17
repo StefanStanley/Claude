@@ -710,7 +710,7 @@ window.loadMealsFromAPI = async function () {
     try {
         const letters = ['a','b','c','d','e','f','g','h','l','m','p','r','s','t'];
         const letter = letters[Math.floor(Math.random() * letters.length)];
-        const resp = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?f=${letter}`);
+        const resp = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?f=${letter}`, { signal: AbortSignal.timeout(8000) });
         const data = await resp.json();
         if (!data.meals || !data.meals.length) {
             if (btn) { btn.disabled = false; btn.textContent = t('apiNoResults') || 'Keine Ergebnisse'; }
@@ -744,7 +744,7 @@ window.loadMealsFromAPI = async function () {
             if (ingrStr.includes('sesame')) allergens.push('sesam');
             const desc = meal.strInstructions ? meal.strInstructions.substring(0, 120) + '...' : '';
             const newMeal = { id: state.demoMode ? 'api_' + Date.now() + '_' + added : null, name: meal.strMeal, category, description: desc, allergens };
-            if (!state.demoMode) {
+            if (!state.demoMode && db) {
                 const ref = await db.collection('meals').add({ name: newMeal.name, category, description: desc, allergens });
                 newMeal.id = ref.id;
             } else {
@@ -776,7 +776,7 @@ window.loadKitaDB = async function () {
         for (const dbMeal of KITA_SPEISE_DB) {
             if (state.meals.some(m => m.name === dbMeal.name)) continue;
             const data = { name: dbMeal.name, category: dbMeal.category, description: dbMeal.description, allergens: dbMeal.allergens };
-            if (state.demoMode) {
+            if (state.demoMode || !db) {
                 state.meals.push({ id: 'kitadb_' + Date.now() + '_' + added, ...data });
             } else {
                 const ref = await db.collection('meals').add(data);
@@ -786,9 +786,12 @@ window.loadKitaDB = async function () {
         }
         renderMealsList(); renderWeekPlan();
     } catch (err) {
-        handleWilde13Error(err);
+        console.error('KiTa-DB Import:', err.message);
+        // Trotzdem rendern was bereits geladen wurde
+        renderMealsList(); renderWeekPlan();
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '🍽️ ' + (t('kitaDbLoad') || 'KiTa-Gerichte laden') + (added ? ` (+${added})` : ''); }
+        const label = added > 0 ? `\u2705 ${added} ${t('kitaDbAdded')}` : `\u2705 ${t('kitaDbAllLoaded')}`;
+        if (btn) { btn.disabled = false; btn.textContent = label; }
     }
 };
 
