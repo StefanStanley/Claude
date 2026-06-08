@@ -70,6 +70,12 @@ Läuft das Backend, lädt das Frontend die Daten von der API und speichert
 zeigt **„Backend"** (verbunden) bzw. **„Demo"** (Seed-Fallback). Die API-URL
 lässt sich über `VITE_API_URL` überschreiben.
 
+### Veröffentlichung
+
+Schritt-für-Schritt-Anleitung zum Deployen (Frontend auf Vercel, Backend auf
+Render mit persistenter Disk) in **[DEPLOY.md](./DEPLOY.md)**. Konfiguration
+liegt bei: `vercel.json`, `render.yaml`, `.env.example`.
+
 ### API-Endpunkte
 
 | Methode | Pfad | Zweck |

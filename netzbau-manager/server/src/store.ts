@@ -6,7 +6,9 @@ import { massnahmen as seed } from '../../src/data/massnahmen'
 import type { Massnahme, Prioritaet, Sparte, MassnahmeArt } from '../../src/data/types'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const DB_PATH = path.join(__dirname, '..', 'data', 'db.json')
+// Datenpfad konfigurierbar (z. B. auf eine persistente Disk im Hosting zeigen)
+const DB_PATH =
+  process.env.DB_PATH ?? path.join(__dirname, '..', 'data', 'db.json')
 
 function load(): Massnahme[] | null {
   try {

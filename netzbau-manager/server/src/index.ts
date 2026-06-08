@@ -9,7 +9,10 @@ import {
 } from './store.ts'
 
 const app = express()
-app.use(cors())
+// CORS: im Hosting auf die Frontend-Domain(s) einschränken (CORS_ORIGIN,
+// kommagetrennt). Ohne Angabe sind alle Ursprünge erlaubt (Entwicklung).
+const corsOrigin = process.env.CORS_ORIGIN
+app.use(cors(corsOrigin ? { origin: corsOrigin.split(',').map((s) => s.trim()) } : undefined))
 app.use(express.json())
 
 const PORT = Number(process.env.PORT ?? 4000)
