@@ -19,8 +19,14 @@ bis zum Hausanschluss.
   Meilenstein-Timeline, abhakbare **Aufgaben & Gewerke**, Genehmigungen,
   Projektbeteiligte und Dokumente.
 - **Netzkarte** — echte Open-Source-Karte (**Leaflet + OpenStreetMap**),
-  zentriert auf **Düsseldorf**, mit Status-Pins an realen Standorten;
-  Popup je Baustelle mit Sprung in die Detailansicht.
+  zentriert auf **Düsseldorf**:
+  - Status-Pins an realen Standorten, Popup mit Sprung in die Detailansicht
+  - **Trassenverläufe als Linien**, eingefärbt nach Spannungsebene
+    (geplante Trassen gestrichelt)
+  - **Amtliche NRW-Geobasisdaten** als WMS-Layer (Luftbild DOP, ALKIS-
+    Liegenschaften von Geobasis NRW)
+  - **Layer-Umschalter** (Basiskarten + ein-/ausblendbare Overlays)
+  - **Status-Filter**, der Pins und Trassen synchron filtert
 - **Terminplan** — Gantt-Bauzeitenplan über alle Maßnahmen: Balken nach
   Statusphase, Fortschrittsfüllung, Meilenstein-Rauten und Heute-Linie.
 - **Ressourcen & Gewerke** — Bindung von Tiefbaufirmen und Bauleitung über
@@ -60,8 +66,8 @@ erforderlich). Beispieldaten sind im Versorgungsgebiet Düsseldorf verortet
 ## Mögliche nächste Schritte
 
 - Backend & Persistenz (z. B. FastAPI/PostgreSQL oder Node/Prisma)
-- Netztopologie auf der Karte (Trassen/Leitungen als Linien, GeoJSON-Layer,
-  ggf. amtliche Geobasisdaten NRW / OpenStreetMap-Overpass)
+- Vollständige Netztopologie als GeoJSON (alle Bestandsleitungen/-stationen,
+  nicht nur Bauvorhaben)
 - Gantt-Terminplanung mit Abhängigkeiten und Ressourcen
 - Rollen-/Rechtekonzept (Bauleitung, Planung, Auftragnehmer)
 - Schnittstellen zu GIS-, ERP- und Dokumentenmanagement-Systemen

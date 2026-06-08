@@ -989,6 +989,15 @@ button {
 .leaflet-popup-content {
   margin: 12px 14px;
 }
+.legend-dash {
+  width: 16px;
+  height: 0;
+  border-top: 3px dashed var(--text-muted);
+}
+.leaflet-shell .map-legend {
+  max-height: 360px;
+  overflow-y: auto;
+}
 
 /* ---------- Modal ---------- */
 .modal-overlay {

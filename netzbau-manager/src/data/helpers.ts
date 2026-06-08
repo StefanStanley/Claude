@@ -28,6 +28,16 @@ export function statusFarbe(status: Status): string {
   return map[status]
 }
 
+export function spannungsFarbe(ebene: string): string {
+  const map: Record<string, string> = {
+    Niederspannung: '#0891b2',
+    Mittelspannung: '#d97706',
+    Hochspannung: '#7c3aed',
+    '—': '#64748b',
+  }
+  return map[ebene] ?? '#64748b'
+}
+
 export function prioritaetFarbe(p: Prioritaet): string {
   const map: Record<Prioritaet, string> = {
     Niedrig: '#64748b',

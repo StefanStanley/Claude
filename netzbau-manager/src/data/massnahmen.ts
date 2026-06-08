@@ -84,6 +84,13 @@ export const massnahmen: Massnahme[] = [
     beschreibung:
       'Neue MS-Kabeltrasse (NA2XS2Y 3x1x240) zur Anbindung des erweiterten Gewerbegebiets im Düsseldorfer Süden (Reisholz). Querung der B8 mittels Spülbohrung. Vorbereitung für Anschluss zweier Großkunden mit je 2 MW Leistungsbedarf.',
     geo: { lat: 51.1793, lng: 6.8472 },
+    trasse: [
+      { lat: 51.1758, lng: 6.8418 },
+      { lat: 51.1772, lng: 6.8441 },
+      { lat: 51.1793, lng: 6.8472 },
+      { lat: 51.1811, lng: 6.8503 },
+      { lat: 51.1829, lng: 6.8536 },
+    ],
     beteiligte: [
       { id: 'p5', name: 'Henning Vogt', rolle: 'Bauleitung VNB' },
       { id: 'p6', name: 'Claudia Maier', rolle: 'Genehmigungsmanagement' },
@@ -131,6 +138,11 @@ export const massnahmen: Massnahme[] = [
     beschreibung:
       'Erschließung von 28 Wohneinheiten mit Niederspannungs-Hausanschlüssen inkl. NS-Verteilerschrank. Koordination mit Gas- und Breitbandverlegung im selben Graben (Mehrspartenanschluss).',
     geo: { lat: 51.2287, lng: 6.8531 },
+    trasse: [
+      { lat: 51.2276, lng: 6.8508 },
+      { lat: 51.2287, lng: 6.8531 },
+      { lat: 51.2298, lng: 6.8555 },
+    ],
     beteiligte: [
       { id: 'p8', name: 'Andrea Kohl', rolle: 'Bauleitung VNB' },
       { id: 'p9', name: 'Jens Otto', rolle: 'Sachbearbeitung Hausanschluss' },
@@ -173,6 +185,13 @@ export const massnahmen: Massnahme[] = [
     beschreibung:
       'Verstärkung des NS-Netzes durch parallele Kabelverlegung und neuen Ortsnetztrafo wegen zunehmender PV-Einspeisung und Wärmepumpen. Behebung von Spannungsbandverletzungen im Stadtteil Eller.',
     geo: { lat: 51.1963, lng: 6.8401 },
+    trasse: [
+      { lat: 51.1939, lng: 6.8362 },
+      { lat: 51.1951, lng: 6.8382 },
+      { lat: 51.1963, lng: 6.8401 },
+      { lat: 51.1977, lng: 6.8424 },
+      { lat: 51.1991, lng: 6.8448 },
+    ],
     beteiligte: [
       { id: 'p10', name: 'Henning Vogt', rolle: 'Bauleitung VNB' },
       { id: 'p11', name: 'Marek Sobczak', rolle: 'Polier', firma: 'Erdbau Weller GmbH' },

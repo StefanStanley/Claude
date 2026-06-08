@@ -87,6 +87,8 @@ export interface Massnahme {
   trasseLaengeM?: number
   beschreibung: string
   geo: { lat: number; lng: number } // reale Koordinaten (WGS84)
+  // Trassenverlauf für Linien-Maßnahmen (Kabel/Erschließung)
+  trasse?: { lat: number; lng: number }[]
   beteiligte: Person[]
   meilensteine: Meilenstein[]
   aufgaben: Aufgabe[]
