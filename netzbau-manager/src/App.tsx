@@ -31,7 +31,7 @@ const titel: Record<View, string> = {
 }
 
 export default function App() {
-  const { online, ladend } = useStore()
+  const { online, verbindet, reconnect } = useStore()
   const [view, setView] = useState<View>('dashboard')
   const [detailId, setDetailId] = useState<string | null>(null)
   const [modalOffen, setModalOffen] = useState(false)
@@ -89,24 +89,49 @@ export default function App() {
             <span>🔍</span>
             <input placeholder="Maßnahme, Kennung, Ort suchen…" />
           </div>
-          <span
+          <button
             className="conn"
+            onClick={() => {
+              if (!online && !verbindet) reconnect()
+            }}
+            disabled={online}
             title={
               online
                 ? 'Backend verbunden – Änderungen werden gespeichert'
-                : 'Kein Backend – Demodaten, Änderungen nur lokal'
+                : verbindet
+                  ? 'Backend wird gestartet … (Kaltstart kann ~1 Min dauern)'
+                  : 'Kein Backend – Demodaten. Klicken für erneuten Verbindungsversuch.'
             }
             style={{
-              background: online ? 'var(--primary-soft)' : '#f1f5f9',
-              color: online ? 'var(--primary-dark)' : 'var(--text-muted)',
+              cursor: online ? 'default' : 'pointer',
+              background: online
+                ? 'var(--primary-soft)'
+                : verbindet
+                  ? '#fef3c7'
+                  : '#f1f5f9',
+              color: online
+                ? 'var(--primary-dark)'
+                : verbindet
+                  ? '#92400e'
+                  : 'var(--text-muted)',
             }}
           >
             <span
-              className="conn-dot"
-              style={{ background: online ? 'var(--primary)' : '#94a3b8' }}
+              className={`conn-dot${verbindet ? ' conn-dot-pulse' : ''}`}
+              style={{
+                background: online
+                  ? 'var(--primary)'
+                  : verbindet
+                    ? '#d97706'
+                    : '#94a3b8',
+              }}
             />
-            {ladend ? 'Verbinde…' : online ? 'Backend' : 'Demo'}
-          </span>
+            {online
+              ? 'Backend'
+              : verbindet
+                ? 'Backend wird gestartet…'
+                : 'Demo · neu verbinden'}
+          </button>
           <button className="icon-btn" title="Benachrichtigungen">
             🔔
           </button>

@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -11,6 +12,10 @@ import type { Massnahme, Prioritaet, Sparte, MassnahmeArt } from './types'
 const API: string =
   (import.meta.env.VITE_API_URL as string | undefined) ??
   'http://localhost:4000'
+
+const POLL_MS = 5000 // Abstand der Wiederverbindungsversuche
+const MAX_TRIES = 30 // ~2,5 min – deckt den Render-Kaltstart ab
+const FETCH_TIMEOUT = 8000
 
 export interface NeuMassnahmeInput {
   titel: string
@@ -25,45 +30,109 @@ export interface NeuMassnahmeInput {
 
 interface Store {
   massnahmen: Massnahme[]
-  online: boolean // true = API erreichbar, Änderungen werden persistiert
-  ladend: boolean
+  online: boolean // Backend verbunden, Änderungen werden persistiert
+  verbindet: boolean // Verbindungsversuch läuft (z. B. Backend-Kaltstart)
+  reconnect: () => void // manueller Sofort-Neuversuch
   toggleAufgabe: (mId: string, aId: string) => void
   addMassnahme: (input: NeuMassnahmeInput) => Promise<Massnahme>
 }
 
 const StoreContext = createContext<Store | null>(null)
 
+async function fetchMitTimeout(url: string, opts: RequestInit = {}) {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT)
+  try {
+    return await fetch(url, { ...opts, signal: ctrl.signal })
+  } finally {
+    clearTimeout(t)
+  }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [massnahmen, setMassnahmen] = useState<Massnahme[]>(seed)
   const [online, setOnline] = useState(false)
-  const [ladend, setLadend] = useState(true)
+  const [verbindet, setVerbindet] = useState(true)
 
-  // Beim Start: Daten von der API laden, sonst Seed-Fallback
-  useEffect(() => {
-    let abbruch = false
-    ;(async () => {
-      try {
-        const r = await fetch(`${API}/api/massnahmen`)
-        if (!r.ok) throw new Error(String(r.status))
-        const daten = (await r.json()) as Massnahme[]
-        if (!abbruch) {
-          setMassnahmen(daten)
-          setOnline(true)
-        }
-      } catch {
-        // Kein Backend erreichbar → Prototyp läuft mit Seed-Daten weiter
-        if (!abbruch) setOnline(false)
-      } finally {
-        if (!abbruch) setLadend(false)
-      }
-    })()
-    return () => {
-      abbruch = true
+  const aliveRef = useRef(true)
+  const timerRef = useRef<number | null>(null)
+  const triesRef = useRef(0)
+  const onlineRef = useRef(false)
+
+  const stopTimer = () => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
     }
+  }
+
+  // Einen Verbindungsversuch durchführen; Daten laden, wenn erreichbar
+  const versuch = async (): Promise<boolean> => {
+    try {
+      const r = await fetchMitTimeout(`${API}/api/massnahmen`)
+      if (!r.ok) throw new Error(String(r.status))
+      const daten = (await r.json()) as Massnahme[]
+      if (aliveRef.current) {
+        setMassnahmen(daten)
+        setOnline(true)
+        onlineRef.current = true
+        setVerbindet(false)
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  // Im Hintergrund weiter versuchen, bis das Backend wach ist
+  const pollen = () => {
+    stopTimer()
+    timerRef.current = window.setTimeout(async () => {
+      if (!aliveRef.current) return
+      triesRef.current += 1
+      const ok = await versuch()
+      if (ok || !aliveRef.current) return
+      if (triesRef.current >= MAX_TRIES) {
+        setVerbindet(false) // aufgeben → Demo-Modus
+        return
+      }
+      pollen()
+    }, POLL_MS)
+  }
+
+  const starteVerbindung = () => {
+    setVerbindet(true)
+    triesRef.current = 0
+    versuch().then((ok) => {
+      if (!ok && aliveRef.current) pollen()
+    })
+  }
+
+  const reconnect = () => {
+    if (onlineRef.current) return
+    stopTimer()
+    starteVerbindung()
+  }
+
+  useEffect(() => {
+    aliveRef.current = true
+    starteVerbindung()
+    return () => {
+      aliveRef.current = false
+      stopTimer()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Verbindung als verloren markieren und Wiederverbindung anstoßen
+  const verbindungVerloren = () => {
+    if (!onlineRef.current) return
+    setOnline(false)
+    onlineRef.current = false
+    starteVerbindung()
+  }
+
   const toggleAufgabe = (mId: string, aId: string) => {
-    // Optimistische lokale Aktualisierung
     setMassnahmen((prev) =>
       prev.map((m) => {
         if (m.id !== mId) return m
@@ -78,25 +147,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { ...m, aufgaben, fortschritt }
       }),
     )
-    if (online) {
-      fetch(`${API}/api/massnahmen/${mId}/aufgaben/${aId}`, {
+    if (onlineRef.current) {
+      fetchMitTimeout(`${API}/api/massnahmen/${mId}/aufgaben/${aId}`, {
         method: 'PATCH',
-      }).catch(() => {})
+      }).catch(() => verbindungVerloren())
     }
   }
 
   const addMassnahme = async (input: NeuMassnahmeInput): Promise<Massnahme> => {
-    if (online) {
-      const r = await fetch(`${API}/api/massnahmen`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      })
-      const neu = (await r.json()) as Massnahme
-      setMassnahmen((prev) => [neu, ...prev])
-      return neu
+    if (onlineRef.current) {
+      try {
+        const r = await fetchMitTimeout(`${API}/api/massnahmen`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+        })
+        if (!r.ok) throw new Error(String(r.status))
+        const neu = (await r.json()) as Massnahme
+        setMassnahmen((prev) => [neu, ...prev])
+        return neu
+      } catch {
+        verbindungVerloren()
+      }
     }
-    // Offline-Fallback: nur lokal anlegen
     const neu = lokaleMassnahme(input, massnahmen.length)
     setMassnahmen((prev) => [neu, ...prev])
     return neu
@@ -104,7 +177,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider
-      value={{ massnahmen, online, ladend, toggleAufgabe, addMassnahme }}
+      value={{
+        massnahmen,
+        online,
+        verbindet,
+        reconnect,
+        toggleAufgabe,
+        addMassnahme,
+      }}
     >
       {children}
     </StoreContext.Provider>

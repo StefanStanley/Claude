@@ -1102,6 +1102,20 @@ button {
   height: 7px;
   border-radius: 50%;
 }
+.conn-dot-pulse {
+  animation: conn-pulse 1s ease-in-out infinite;
+}
+@keyframes conn-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
 
 /* ---------- Misc ---------- */
 .row {
