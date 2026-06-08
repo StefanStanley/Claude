@@ -1,4 +1,4 @@
-import { massnahmen } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import {
   formatEuro,
   statusFarbe,
@@ -18,6 +18,7 @@ const ART_FARBEN: Record<string, string> = {
 }
 
 export function Berichte() {
+  const { massnahmen } = useStore()
   const budgetGesamt = massnahmen.reduce((s, m) => s + m.budget, 0)
   const ausgabenGesamt = massnahmen.reduce((s, m) => s + m.ausgaben, 0)
   const oFortschritt = Math.round(

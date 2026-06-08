@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { massnahmen, STATUS_REIHENFOLGE } from '../data/massnahmen'
+import { STATUS_REIHENFOLGE } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import { formatEuro, formatDatum, statusFarbe, sparteIcon } from '../data/helpers'
 import { StatusBadge, PrioPill, Progress } from '../components/ui'
 import type { Massnahme } from '../data/types'
@@ -13,6 +14,7 @@ export function MassnahmenListe({
   onOpen: (id: string) => void
   onNeu: () => void
 }) {
+  const { massnahmen } = useStore()
   const [ansicht, setAnsicht] = useState<Ansicht>('tabelle')
   const [filter, setFilter] = useState<string>('Alle')
 

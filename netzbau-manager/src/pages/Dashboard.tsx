@@ -1,4 +1,4 @@
-import { massnahmen } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import { formatEuro, formatDatum, tageBis, statusFarbe } from '../data/helpers'
 import { StatusBadge, PrioPill, Progress } from '../components/ui'
 import type { View } from '../App'
@@ -10,6 +10,7 @@ export function Dashboard({
   onOpen: (id: string) => void
   onNavigate: (v: View) => void
 }) {
+  const { massnahmen } = useStore()
   const aktiv = massnahmen.filter((m) => m.status !== 'Abgeschlossen')
   const inBau = massnahmen.filter((m) => m.status === 'Bau').length
   const budgetGesamt = massnahmen.reduce((s, m) => s + m.budget, 0)

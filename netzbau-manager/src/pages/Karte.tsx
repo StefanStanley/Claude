@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { massnahmen, STATUS_REIHENFOLGE } from '../data/massnahmen'
+import { STATUS_REIHENFOLGE } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import {
   statusFarbe,
   spannungsFarbe,
@@ -35,21 +36,24 @@ interface KartenItem {
 }
 
 export function Karte({ onOpen }: { onOpen: (id: string) => void }) {
+  const { massnahmen } = useStore()
   const containerRef = useRef<HTMLDivElement>(null)
   const onOpenRef = useRef(onOpen)
   onOpenRef.current = onOpen
 
   const [filter, setFilter] = useState<Filter>('Alle')
+  const filterRef = useRef(filter)
+  filterRef.current = filter
   const datenRef = useRef<{
     items: KartenItem[]
     baustellen: L.LayerGroup
     trassen: L.LayerGroup
   } | null>(null)
 
-  // Karte einmalig aufbauen
+  // Karte aufbauen (neu, sobald die Maßnahmen-Daten geladen/geändert sind)
   useEffect(() => {
     const el = containerRef.current
-    if (!el) return
+    if (!el || massnahmen.length === 0) return
 
     const map = L.map(el, { scrollWheelZoom: true }).setView(DUESSELDORF, 12)
 
@@ -158,14 +162,14 @@ export function Karte({ onOpen }: { onOpen: (id: string) => void }) {
       L.featureGroup(items.map((i) => i.marker)).getBounds().pad(0.18),
     )
 
-    // Anfangsbefüllung gemäß Filter
-    fuelle(datenRef.current, 'Alle')
+    // Befüllung gemäß aktuell gewähltem Filter
+    fuelle(datenRef.current, filterRef.current)
 
     return () => {
       map.remove()
       datenRef.current = null
     }
-  }, [])
+  }, [massnahmen])
 
   // Filter anwenden: Pins + Trassen synchron ein-/ausblenden
   useEffect(() => {

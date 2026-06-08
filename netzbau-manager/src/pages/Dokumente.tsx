@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { massnahmen } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import { formatDatum } from '../data/helpers'
 import type { Dokument } from '../data/types'
 
@@ -26,6 +26,7 @@ interface DokZeile extends Dokument {
 }
 
 export function Dokumente({ onOpen }: { onOpen: (id: string) => void }) {
+  const { massnahmen } = useStore()
   const [filter, setFilter] = useState<string>('Alle')
   const [suche, setSuche] = useState('')
 
@@ -39,7 +40,7 @@ export function Dokumente({ onOpen }: { onOpen: (id: string) => void }) {
           kennung: m.kennung,
         })),
       ),
-    [],
+    [massnahmen],
   )
 
   const typen = ['Alle', 'Plan', 'Vertrag', 'Foto', 'Bericht', 'Genehmigung']

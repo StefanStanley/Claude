@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { massnahmen } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import { statusFarbe, formatEuro, formatDatum } from '../data/helpers'
 import type { Massnahme } from '../data/types'
 
@@ -19,6 +19,7 @@ function laeuftHeute(m: Massnahme): boolean {
 }
 
 export function Ressourcen({ onOpen }: { onOpen: (id: string) => void }) {
+  const { massnahmen } = useStore()
   const [modus, setModus] = useState<Modus>('firmen')
 
   // Gemeinsame Zeitachse
@@ -28,7 +29,7 @@ export function Ressourcen({ onOpen }: { onOpen: (id: string) => void }) {
     const min = Math.min(...starts)
     const max = Math.max(...enden)
     return { tMin: min, spanne: max - min }
-  }, [])
+  }, [massnahmen])
 
   const pos = (iso: string) => ((+new Date(iso) - tMin) / spanne) * SPUR_BREITE
   const heuteLinks = ((+HEUTE - tMin) / spanne) * SPUR_BREITE
@@ -51,7 +52,7 @@ export function Ressourcen({ onOpen }: { onOpen: (id: string) => void }) {
     return [...map.values()].sort(
       (a, b) => b.massnahmen.length - a.massnahmen.length,
     )
-  }, [modus])
+  }, [modus, massnahmen])
 
   return (
     <>

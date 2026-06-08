@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { massnahmen } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import {
   formatEuro,
   formatDatum,
@@ -7,7 +6,7 @@ import {
   sparteIcon,
 } from '../data/helpers'
 import { StatusBadge, PrioPill, Progress } from '../components/ui'
-import type { Aufgabe, Genehmigung } from '../data/types'
+import type { Genehmigung } from '../data/types'
 
 const genehmigungFarbe: Record<Genehmigung['status'], string> = {
   Erteilt: '#0e7c5a',
@@ -31,14 +30,11 @@ export function MassnahmeDetail({
   id: string
   onBack: () => void
 }) {
+  const { massnahmen, toggleAufgabe } = useStore()
   const massnahme = massnahmen.find((m) => m.id === id)!
-  // Lokaler Zustand für die abhakbaren Aufgaben (Prototyp-Interaktivität)
-  const [aufgaben, setAufgaben] = useState<Aufgabe[]>(massnahme.aufgaben)
+  const aufgaben = massnahme.aufgaben
 
-  const toggle = (aId: string) =>
-    setAufgaben((prev) =>
-      prev.map((a) => (a.id === aId ? { ...a, erledigt: !a.erledigt } : a)),
-    )
+  const toggle = (aId: string) => toggleAufgabe(massnahme.id, aId)
 
   const erledigt = aufgaben.filter((a) => a.erledigt).length
   const budgetProzent = Math.round(

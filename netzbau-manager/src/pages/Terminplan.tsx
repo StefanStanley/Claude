@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { massnahmen } from '../data/massnahmen'
+import { useStore } from '../data/store'
 import { statusFarbe, formatDatum, sparteIcon } from '../data/helpers'
 import { StatusBadge } from '../components/ui'
 
@@ -31,6 +31,7 @@ function monatsOffset(datum: Date, start: MonatsSpalte): number {
 }
 
 export function Terminplan({ onOpen }: { onOpen: (id: string) => void }) {
+  const { massnahmen } = useStore()
   const [nurAktive, setNurAktive] = useState(false)
 
   const sichtbar = nurAktive
@@ -55,7 +56,7 @@ export function Terminplan({ onOpen }: { onOpen: (id: string) => void }) {
       }
     }
     return { spalten: cols, achsenStart: start }
-  }, [])
+  }, [massnahmen])
 
   const gesamtBreite = spalten.length * MONAT_BREITE
   const heuteLinks = monatsOffset(HEUTE, achsenStart)

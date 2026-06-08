@@ -4,8 +4,9 @@ Klickbarer Prototyp einer Software für das **Bauprojekt-Management bei
 Verteilnetzbetreibern (VNB)** — von der Kabeltrasse über die Ortsnetzstation
 bis zum Hausanschluss.
 
-> Status: Interaktiver UI-Prototyp mit realistischen Beispieldaten.
-> Es gibt noch kein Backend; Eingaben werden nicht dauerhaft gespeichert.
+> Status: Interaktiver Prototyp mit realistischen Beispieldaten und einem
+> schlanken Backend zur Persistenz. Ohne laufendes Backend arbeitet die App
+> automatisch im Demo-Modus mit Seed-Daten (Änderungen nur lokal).
 
 ## Funktionsumfang (Prototyp)
 
@@ -47,6 +48,8 @@ Monteure).
 
 ## Starten
 
+**Frontend:**
+
 ```bash
 npm install
 npm run dev      # Entwicklungsserver (http://localhost:5173)
@@ -54,10 +57,40 @@ npm run build    # Produktions-Build
 npm run preview  # Build lokal ansehen
 ```
 
+**Backend (für echte Persistenz):**
+
+```bash
+cd server
+npm install
+npm run dev      # API auf http://localhost:4000
+```
+
+Läuft das Backend, lädt das Frontend die Daten von der API und speichert
+Änderungen (neue Maßnahmen, abgehakte Aufgaben). Ein Statuschip oben rechts
+zeigt **„Backend"** (verbunden) bzw. **„Demo"** (Seed-Fallback). Die API-URL
+lässt sich über `VITE_API_URL` überschreiben.
+
+### API-Endpunkte
+
+| Methode | Pfad | Zweck |
+| --- | --- | --- |
+| `GET` | `/api/massnahmen` | alle Maßnahmen |
+| `GET` | `/api/massnahmen/:id` | eine Maßnahme |
+| `POST` | `/api/massnahmen` | Maßnahme anlegen |
+| `PATCH` | `/api/massnahmen/:id/aufgaben/:aId` | Aufgabe abhaken (Fortschritt wird neu berechnet) |
+
+Persistenz: JSON-Datei (`server/data/db.json`), beim ersten Start aus den
+Seed-Daten erzeugt.
+
 ## Technik
 
-React 18 · TypeScript · Vite · **Leaflet** (OpenStreetMap). Bewusst ohne
-UI-Framework — ein eigenes, schlankes Designsystem in `src/index.css`.
+**Frontend:** React 18 · TypeScript · Vite · **Leaflet** (OpenStreetMap).
+Bewusst ohne UI-Framework — ein eigenes, schlankes Designsystem in
+`src/index.css`. Zustand/Datenzugriff über einen `StoreProvider`
+(`src/data/store.tsx`) mit API-Anbindung und Seed-Fallback.
+
+**Backend:** Node · Express · TypeScript (Ausführung via `tsx`, kein
+Build-Schritt) mit JSON-Datei-Persistenz. Code unter `server/`.
 
 Die Karte lädt OpenStreetMap-Kacheln zur Laufzeit im Browser (Internet
 erforderlich). Beispieldaten sind im Versorgungsgebiet Düsseldorf verortet
@@ -65,7 +98,8 @@ erforderlich). Beispieldaten sind im Versorgungsgebiet Düsseldorf verortet
 
 ## Mögliche nächste Schritte
 
-- Backend & Persistenz (z. B. FastAPI/PostgreSQL oder Node/Prisma)
+- Persistenz auf eine echte Datenbank (PostgreSQL/Prisma) statt JSON-Datei;
+  Migrationen, Mehrbenutzer-Betrieb
 - Vollständige Netztopologie als GeoJSON (alle Bestandsleitungen/-stationen,
   nicht nur Bauvorhaben)
 - Gantt-Terminplanung mit Abhängigkeiten und Ressourcen
