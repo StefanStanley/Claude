@@ -5,7 +5,9 @@ import { MassnahmenListe } from './pages/MassnahmenListe'
 import { MassnahmeDetail } from './pages/MassnahmeDetail'
 import { Karte } from './pages/Karte'
 import { Terminplan } from './pages/Terminplan'
-import { Platzhalter } from './pages/Platzhalter'
+import { Ressourcen } from './pages/Ressourcen'
+import { Dokumente } from './pages/Dokumente'
+import { Berichte } from './pages/Berichte'
 import { NeueMassnahmeModal } from './components/NeueMassnahmeModal'
 
 export type View =
@@ -13,6 +15,7 @@ export type View =
   | 'massnahmen'
   | 'karte'
   | 'kalender'
+  | 'ressourcen'
   | 'dokumente'
   | 'berichte'
 
@@ -21,6 +24,7 @@ const titel: Record<View, string> = {
   massnahmen: 'Bau­maßnahmen',
   karte: 'Netzkarte',
   kalender: 'Terminplan',
+  ressourcen: 'Ressourcen & Gewerke',
   dokumente: 'Dokumente',
   berichte: 'Berichte & Kennzahlen',
 }
@@ -37,7 +41,7 @@ export default function App() {
 
   const oeffneDetail = (id: string) => setDetailId(id)
 
-  let inhalt: React.ReactNode
+  let inhalt: React.ReactNode = null
   if (detailId) {
     inhalt = (
       <MassnahmeDetail id={detailId} onBack={() => setDetailId(null)} />
@@ -61,8 +65,15 @@ export default function App() {
       case 'kalender':
         inhalt = <Terminplan onOpen={oeffneDetail} />
         break
-      default:
-        inhalt = <Platzhalter view={view} />
+      case 'ressourcen':
+        inhalt = <Ressourcen onOpen={oeffneDetail} />
+        break
+      case 'dokumente':
+        inhalt = <Dokumente onOpen={oeffneDetail} />
+        break
+      case 'berichte':
+        inhalt = <Berichte />
+        break
     }
   }
 

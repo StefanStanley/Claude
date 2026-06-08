@@ -20,9 +20,15 @@ bis zum Hausanschluss.
   Projektbeteiligte und Dokumente.
 - **Netzkarte** — schematische geografische Verortung aller Baustellen mit
   Status-Pins (Platzhalter für eine spätere GIS-/WebMap-Anbindung).
+- **Terminplan** — Gantt-Bauzeitenplan über alle Maßnahmen: Balken nach
+  Statusphase, Fortschrittsfüllung, Meilenstein-Rauten und Heute-Linie.
+- **Ressourcen & Gewerke** — Bindung von Tiefbaufirmen und Bauleitung über
+  die Maßnahmen, mit Parallelauslastung und Zeitspur.
+- **Dokumente** — zentrale Ablage aller Pläne, Verträge, Fotos, Berichte und
+  Genehmigungen mit Typfilter und Suche.
+- **Berichte & Kennzahlen** — Budget vs. Ausgaben, Statusverteilung,
+  Maßnahmen nach Art, Budget nach Gemeinde und Auslastung der Tiefbaufirmen.
 - **Neue Maßnahme** — Anlage-Dialog.
-- Bereiche *Terminplan*, *Dokumente* und *Berichte* sind als nächste
-  Ausbaustufen angedeutet.
 
 ## Fachlicher Hintergrund
 

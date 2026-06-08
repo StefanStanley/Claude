@@ -1189,6 +1189,158 @@ button {
   color: var(--text-muted);
 }
 
+/* ---------- Charts ---------- */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+.donut-legend {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.donut-legend .legend-row strong {
+  font-variant-numeric: tabular-nums;
+}
+.hbars {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.hbar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hbar-label {
+  width: 150px;
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hbar-track {
+  flex: 1;
+  min-width: 0;
+}
+.hbar-fill {
+  height: 22px;
+  border-radius: 5px;
+  min-width: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: width 0.4s ease;
+}
+.hbar-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px 0 0 4px;
+}
+.hbar-value {
+  width: 96px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Dokumente ---------- */
+.doc-grid-head {
+  display: grid;
+  grid-template-columns: 40px 1fr 130px 150px 110px 90px;
+  gap: 12px;
+  align-items: center;
+}
+.doc-list-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 130px 150px 110px 90px;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.doc-list-row:last-child {
+  border-bottom: none;
+}
+.doc-list-row:hover {
+  background: var(--surface-2);
+}
+.doc-type-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+/* ---------- Ressourcen ---------- */
+.res-card {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+}
+.res-info {
+  padding: 16px 18px;
+  border-right: 1px solid var(--border);
+}
+.res-info h4 {
+  font-size: 14px;
+  font-weight: 700;
+}
+.res-info .res-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.res-util {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.res-util-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 20px;
+  background: var(--border);
+  overflow: hidden;
+}
+.res-assignments {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.res-assignment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+.res-assignment .res-bar {
+  height: 18px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 @media (max-width: 1100px) {
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);

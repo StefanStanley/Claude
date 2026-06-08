@@ -15,6 +15,7 @@ const haupt: NavEntry[] = [
 
 const weiter: NavEntry[] = [
   { view: 'kalender', label: 'Terminplan', icon: '📅' },
+  { view: 'ressourcen', label: 'Ressourcen', icon: '👷' },
   { view: 'dokumente', label: 'Dokumente', icon: '📁' },
   { view: 'berichte', label: 'Berichte', icon: '📊' },
 ]
