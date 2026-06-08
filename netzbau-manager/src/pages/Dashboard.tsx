@@ -61,9 +61,9 @@ export function Dashboard({
 
   const aktivitaeten = [
     { farbe: '#0e7c5a', text: 'ONS Lindenstraße: Stationsgebäude gesetzt', zeit: 'vor 2 Std.' },
-    { farbe: '#d97706', text: 'Kreuzungsvereinbarung B27 in Prüfung beim Straßenbauamt', zeit: 'gestern' },
-    { farbe: '#6366f1', text: 'Neue Maßnahme „UW Westkreuz" angelegt', zeit: 'vor 2 Tagen' },
-    { farbe: '#0891b2', text: 'Hausanschlüsse Am Mühlbach: Tiefbau ausgeschrieben', zeit: 'vor 3 Tagen' },
+    { farbe: '#d97706', text: 'Kreuzungsvereinbarung B8 in Prüfung beim Straßenbauamt', zeit: 'gestern' },
+    { farbe: '#6366f1', text: 'Neue Maßnahme „UW Oberkassel" angelegt', zeit: 'vor 2 Tagen' },
+    { farbe: '#0891b2', text: 'Hausanschlüsse Am Quellenbusch (Gerresheim): Tiefbau ausgeschrieben', zeit: 'vor 3 Tagen' },
   ]
 
   return (

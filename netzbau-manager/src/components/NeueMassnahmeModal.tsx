@@ -26,7 +26,7 @@ export function NeueMassnahmeModal({ onClose }: { onClose: () => void }) {
             <div className="modal-body">
               <div className="field">
                 <label>Bezeichnung der Maßnahme</label>
-                <input placeholder="z. B. Kabeltrasse Ringschluss Nordstadt" />
+                <input placeholder="z. B. Kabeltrasse Ringschluss Düsseltal" />
               </div>
               <div className="field-row">
                 <div className="field">
@@ -54,7 +54,7 @@ export function NeueMassnahmeModal({ onClose }: { onClose: () => void }) {
               <div className="field-row">
                 <div className="field">
                   <label>Gemeinde / Ort</label>
-                  <input placeholder="Musterstadt" />
+                  <input placeholder="Düsseldorf-Bilk" />
                 </div>
                 <div className="field">
                   <label>Priorität</label>

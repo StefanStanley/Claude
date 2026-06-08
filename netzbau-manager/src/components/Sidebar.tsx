@@ -45,7 +45,7 @@ export function Sidebar({
         <div className="sidebar-logo">⚡</div>
         <div>
           <h1>NetzBau Manager</h1>
-          <span>Stadtwerke Musterstadt</span>
+          <span>Rheinnetz Düsseldorf</span>
         </div>
       </div>
       <nav className="sidebar-nav">

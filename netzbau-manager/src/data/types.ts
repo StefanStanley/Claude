@@ -86,7 +86,7 @@ export interface Massnahme {
   ende: string // ISO geplant
   trasseLaengeM?: number
   beschreibung: string
-  koordinaten: { x: number; y: number } // % auf der Mock-Karte
+  geo: { lat: number; lng: number } // reale Koordinaten (WGS84)
   beteiligte: Person[]
   meilensteine: Meilenstein[]
   aufgaben: Aufgabe[]

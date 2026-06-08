@@ -21,7 +21,7 @@ export const massnahmen: Massnahme[] = [
     prioritaet: 'Hoch',
     fortschritt: 62,
     ort: 'Lindenstraße 14',
-    gemeinde: 'Musterstadt',
+    gemeinde: 'Flingern',
     bauleiter: 'Andrea Kohl',
     tiefbaufirma: 'Erdbau Weller GmbH',
     budget: 285000,
@@ -30,8 +30,8 @@ export const massnahmen: Massnahme[] = [
     ende: '2026-07-15',
     trasseLaengeM: 0,
     beschreibung:
-      'Austausch der bestehenden Ortsnetzstation Baujahr 1987 inkl. Trafo 630 kVA, Mittelspannungsschaltanlage und Niederspannungsverteilung. Erhöhung der Versorgungssicherheit im Quartier Nordstadt.',
-    koordinaten: { x: 41, y: 38 },
+      'Austausch der bestehenden Ortsnetzstation Baujahr 1987 inkl. Trafo 630 kVA, Mittelspannungsschaltanlage und Niederspannungsverteilung. Erhöhung der Versorgungssicherheit im Stadtteil Flingern.',
+    geo: { lat: 51.2271, lng: 6.8041 },
     beteiligte: [
       { id: 'p1', name: 'Andrea Kohl', rolle: 'Bauleitung VNB' },
       { id: 'p2', name: 'Marek Sobczak', rolle: 'Polier', firma: 'Erdbau Weller GmbH' },
@@ -53,7 +53,7 @@ export const massnahmen: Massnahme[] = [
       { id: 'a5', titel: 'Schutzprüfung durchführen', zustaendig: 'Andrea Kohl', faellig: '2026-07-05', erledigt: false, gewerk: 'Abnahme' },
     ],
     genehmigungen: [
-      { id: 'g1', art: 'Aufgrabungsgenehmigung', behoerde: 'Tiefbauamt Musterstadt', status: 'Erteilt', datum: '2026-02-28' },
+      { id: 'g1', art: 'Aufgrabungsgenehmigung', behoerde: 'Tiefbauamt Düsseldorf', status: 'Erteilt', datum: '2026-02-28' },
       { id: 'g2', art: 'Baugenehmigung Station', behoerde: 'Bauordnungsamt', status: 'Erteilt', datum: '2026-02-15' },
     ],
     dokumente: [
@@ -72,8 +72,8 @@ export const massnahmen: Massnahme[] = [
     status: 'Genehmigung',
     prioritaet: 'Kritisch',
     fortschritt: 18,
-    ort: 'Industriering / B27',
-    gemeinde: 'Musterstadt',
+    ort: 'Henkelstraße / Reisholz',
+    gemeinde: 'Reisholz',
     bauleiter: 'Henning Vogt',
     tiefbaufirma: 'noch nicht vergeben',
     budget: 1240000,
@@ -82,8 +82,8 @@ export const massnahmen: Massnahme[] = [
     ende: '2026-12-04',
     trasseLaengeM: 3200,
     beschreibung:
-      'Neue MS-Kabeltrasse (NA2XS2Y 3x1x240) zur Anbindung des erweiterten Gewerbegebiets Süd. Querung der B27 mittels Spülbohrung. Vorbereitung für Anschluss zweier Großkunden mit je 2 MW Leistungsbedarf.',
-    koordinaten: { x: 58, y: 71 },
+      'Neue MS-Kabeltrasse (NA2XS2Y 3x1x240) zur Anbindung des erweiterten Gewerbegebiets im Düsseldorfer Süden (Reisholz). Querung der B8 mittels Spülbohrung. Vorbereitung für Anschluss zweier Großkunden mit je 2 MW Leistungsbedarf.',
+    geo: { lat: 51.1793, lng: 6.8472 },
     beteiligte: [
       { id: 'p5', name: 'Henning Vogt', rolle: 'Bauleitung VNB' },
       { id: 'p6', name: 'Claudia Maier', rolle: 'Genehmigungsmanagement' },
@@ -91,7 +91,7 @@ export const massnahmen: Massnahme[] = [
     ],
     meilensteine: [
       { id: 'ms6', titel: 'Trassenplanung abgeschlossen', datum: '2026-04-30', erledigt: true },
-      { id: 'ms7', titel: 'Kreuzungsvereinbarung B27', datum: '2026-06-15', erledigt: false },
+      { id: 'ms7', titel: 'Kreuzungsvereinbarung B8', datum: '2026-06-15', erledigt: false },
       { id: 'ms8', titel: 'Ausschreibung Tiefbau', datum: '2026-07-01', erledigt: false },
       { id: 'ms9', titel: 'Baubeginn', datum: '2026-08-10', erledigt: false },
     ],
@@ -101,8 +101,8 @@ export const massnahmen: Massnahme[] = [
       { id: 'a8', titel: 'Leistungsverzeichnis erstellen', zustaendig: 'Henning Vogt', faellig: '2026-06-28', erledigt: false, gewerk: 'Ausschreibung' },
     ],
     genehmigungen: [
-      { id: 'g3', art: 'Kreuzungsvereinbarung B27', behoerde: 'Landesbetrieb Straßenbau', status: 'In Prüfung', datum: '2026-05-10' },
-      { id: 'g4', art: 'Aufgrabungsgenehmigung', behoerde: 'Tiefbauamt Musterstadt', status: 'Beantragt', datum: '2026-05-12' },
+      { id: 'g3', art: 'Kreuzungsvereinbarung B8', behoerde: 'Landesbetrieb Straßenbau', status: 'In Prüfung', datum: '2026-05-10' },
+      { id: 'g4', art: 'Aufgrabungsgenehmigung', behoerde: 'Tiefbauamt Düsseldorf', status: 'Beantragt', datum: '2026-05-12' },
     ],
     dokumente: [
       { id: 'd4', name: 'Trassenplan_GewerbeSued_V3.dwg', typ: 'Plan', groesse: '5,8 MB', geaendert: '2026-04-29' },
@@ -112,15 +112,15 @@ export const massnahmen: Massnahme[] = [
   {
     id: 'm3',
     kennung: 'STR-2026-0205',
-    titel: 'Hausanschlüsse Neubaugebiet Am Mühlbach (28 WE)',
+    titel: 'Hausanschlüsse Neubaugebiet Am Quellenbusch, Gerresheim (28 WE)',
     sparte: 'Strom',
     art: 'Hausanschluss',
     spannungsebene: 'Niederspannung',
     status: 'Ausschreibung',
     prioritaet: 'Mittel',
     fortschritt: 30,
-    ort: 'Am Mühlbach',
-    gemeinde: 'Kleinbach',
+    ort: 'Am Quellenbusch',
+    gemeinde: 'Gerresheim',
     bauleiter: 'Andrea Kohl',
     tiefbaufirma: 'Tiefbau Sander KG',
     budget: 196000,
@@ -130,7 +130,7 @@ export const massnahmen: Massnahme[] = [
     trasseLaengeM: 740,
     beschreibung:
       'Erschließung von 28 Wohneinheiten mit Niederspannungs-Hausanschlüssen inkl. NS-Verteilerschrank. Koordination mit Gas- und Breitbandverlegung im selben Graben (Mehrspartenanschluss).',
-    koordinaten: { x: 24, y: 60 },
+    geo: { lat: 51.2287, lng: 6.8531 },
     beteiligte: [
       { id: 'p8', name: 'Andrea Kohl', rolle: 'Bauleitung VNB' },
       { id: 'p9', name: 'Jens Otto', rolle: 'Sachbearbeitung Hausanschluss' },
@@ -145,7 +145,7 @@ export const massnahmen: Massnahme[] = [
       { id: 'a10', titel: 'Angebote Tiefbau auswerten', zustaendig: 'Andrea Kohl', faellig: '2026-06-19', erledigt: false, gewerk: 'Ausschreibung' },
     ],
     genehmigungen: [
-      { id: 'g5', art: 'Aufgrabungsgenehmigung', behoerde: 'Gemeinde Kleinbach', status: 'Erteilt', datum: '2026-05-28' },
+      { id: 'g5', art: 'Aufgrabungsgenehmigung', behoerde: 'Stadt Düsseldorf', status: 'Erteilt', datum: '2026-05-28' },
     ],
     dokumente: [
       { id: 'd6', name: 'Erschliessungsplan_Muehlbach.pdf', typ: 'Plan', groesse: '3,3 MB', geaendert: '2026-05-19' },
@@ -154,15 +154,15 @@ export const massnahmen: Massnahme[] = [
   {
     id: 'm4',
     kennung: 'STR-2025-0991',
-    titel: 'Netzverstärkung NS Wohnquartier Ostfeld (PV/Wärmepumpen)',
+    titel: 'Netzverstärkung NS Wohnquartier Eller (PV/Wärmepumpen)',
     sparte: 'Strom',
     art: 'Netzverstärkung',
     spannungsebene: 'Niederspannung',
     status: 'Abnahme',
     prioritaet: 'Hoch',
     fortschritt: 91,
-    ort: 'Ostfeldweg',
-    gemeinde: 'Musterstadt',
+    ort: 'Gumbertstraße',
+    gemeinde: 'Eller',
     bauleiter: 'Henning Vogt',
     tiefbaufirma: 'Erdbau Weller GmbH',
     budget: 412000,
@@ -171,8 +171,8 @@ export const massnahmen: Massnahme[] = [
     ende: '2026-06-20',
     trasseLaengeM: 1850,
     beschreibung:
-      'Verstärkung des NS-Netzes durch parallele Kabelverlegung und neuen Ortsnetztrafo wegen zunehmender PV-Einspeisung und Wärmepumpen. Behebung von Spannungsbandverletzungen im Quartier Ostfeld.',
-    koordinaten: { x: 73, y: 44 },
+      'Verstärkung des NS-Netzes durch parallele Kabelverlegung und neuen Ortsnetztrafo wegen zunehmender PV-Einspeisung und Wärmepumpen. Behebung von Spannungsbandverletzungen im Stadtteil Eller.',
+    geo: { lat: 51.1963, lng: 6.8401 },
     beteiligte: [
       { id: 'p10', name: 'Henning Vogt', rolle: 'Bauleitung VNB' },
       { id: 'p11', name: 'Marek Sobczak', rolle: 'Polier', firma: 'Erdbau Weller GmbH' },
@@ -188,25 +188,25 @@ export const massnahmen: Massnahme[] = [
       { id: 'a12', titel: 'Bestandsdokumentation einpflegen', zustaendig: 'Henning Vogt', faellig: '2026-06-16', erledigt: false, gewerk: 'Dokumentation' },
     ],
     genehmigungen: [
-      { id: 'g6', art: 'Aufgrabungsgenehmigung', behoerde: 'Tiefbauamt Musterstadt', status: 'Erteilt', datum: '2025-09-01' },
+      { id: 'g6', art: 'Aufgrabungsgenehmigung', behoerde: 'Tiefbauamt Düsseldorf', status: 'Erteilt', datum: '2025-09-01' },
     ],
     dokumente: [
-      { id: 'd7', name: 'Bestandsplan_Ostfeld.pdf', typ: 'Plan', groesse: '4,1 MB', geaendert: '2026-05-30' },
+      { id: 'd7', name: 'Bestandsplan_Eller.pdf', typ: 'Plan', groesse: '4,1 MB', geaendert: '2026-05-30' },
       { id: 'd8', name: 'Abnahmeprotokoll_Trafo.pdf', typ: 'Bericht', groesse: '620 KB', geaendert: '2026-04-23' },
     ],
   },
   {
     id: 'm5',
     kennung: 'BRB-2026-0033',
-    titel: 'Smart-Meter-Rollout Ortsteil Hügelheim (420 Zähler)',
+    titel: 'Smart-Meter-Rollout Stadtteil Garath (420 Zähler)',
     sparte: 'Strom',
     art: 'Smart-Meter-Rollout',
     spannungsebene: '—',
     status: 'Planung',
     prioritaet: 'Mittel',
     fortschritt: 8,
-    ort: 'Ortsteil Hügelheim',
-    gemeinde: 'Kleinbach',
+    ort: 'Stadtteil Garath',
+    gemeinde: 'Garath',
     bauleiter: 'Sandra Eichel',
     tiefbaufirma: '—',
     budget: 168000,
@@ -215,7 +215,7 @@ export const massnahmen: Massnahme[] = [
     ende: '2027-03-31',
     beschreibung:
       'Turnusmäßiger Einbau intelligenter Messsysteme (iMSys) nach MsbG. Routenplanung, Kundenterminierung und Inbetriebnahme der Smart-Meter-Gateways für 420 Messstellen.',
-    koordinaten: { x: 33, y: 28 },
+    geo: { lat: 51.1487, lng: 6.8731 },
     beteiligte: [
       { id: 'p12', name: 'Sandra Eichel', rolle: 'Projektleitung MSB' },
       { id: 'p13', name: 'Jens Otto', rolle: 'Zählermontage-Koordination' },
@@ -235,15 +235,15 @@ export const massnahmen: Massnahme[] = [
   {
     id: 'm6',
     kennung: 'STR-2026-0117',
-    titel: 'Umspannwerk Westkreuz — Schaltfeld-Erweiterung',
+    titel: 'Umspannwerk Oberkassel — Schaltfeld-Erweiterung',
     sparte: 'Strom',
     art: 'Umspannwerk',
     spannungsebene: 'Hochspannung',
     status: 'Planung',
     prioritaet: 'Kritisch',
     fortschritt: 12,
-    ort: 'Westkreuz',
-    gemeinde: 'Musterstadt',
+    ort: 'Oberkasseler Straße',
+    gemeinde: 'Oberkassel',
     bauleiter: 'Dr. Ines Brandt',
     tiefbaufirma: '—',
     budget: 2750000,
@@ -251,8 +251,8 @@ export const massnahmen: Massnahme[] = [
     start: '2026-09-01',
     ende: '2027-11-30',
     beschreibung:
-      'Erweiterung des UW Westkreuz um zwei 20-kV-Schaltfelder zur Aufnahme neuer Einspeiseleistung aus dem Windpark Höhenzug. Umfasst Sekundärtechnik, Schutzkonzept und SCADA-Anbindung.',
-    koordinaten: { x: 12, y: 47 },
+      'Erweiterung des UW Oberkassel um zwei 20-kV-Schaltfelder zur Aufnahme neuer Einspeiseleistung aus dem Umland. Umfasst Sekundärtechnik, Schutzkonzept und SCADA-Anbindung.',
+    geo: { lat: 51.2334, lng: 6.7512 },
     beteiligte: [
       { id: 'p14', name: 'Dr. Ines Brandt', rolle: 'Projektleitung Netzplanung' },
       { id: 'p15', name: 'Claudia Maier', rolle: 'Genehmigungsmanagement' },
@@ -268,7 +268,7 @@ export const massnahmen: Massnahme[] = [
       { id: 'g7', art: 'BImSchG-Anzeige', behoerde: 'Regierungspräsidium', status: 'Beantragt', datum: '2026-05-30' },
     ],
     dokumente: [
-      { id: 'd10', name: 'Lageplan_UW_Westkreuz.pdf', typ: 'Plan', groesse: '6,2 MB', geaendert: '2026-05-28' },
+      { id: 'd10', name: 'Lageplan_UW_Oberkassel.pdf', typ: 'Plan', groesse: '6,2 MB', geaendert: '2026-05-28' },
     ],
   },
 ]

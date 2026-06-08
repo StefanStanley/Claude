@@ -18,8 +18,9 @@ bis zum Hausanschluss.
 - **Maßnahmen-Detail** — Stammdaten, Fortschritt, Budget/Ausgaben, Bauzeitraum,
   Meilenstein-Timeline, abhakbare **Aufgaben & Gewerke**, Genehmigungen,
   Projektbeteiligte und Dokumente.
-- **Netzkarte** — schematische geografische Verortung aller Baustellen mit
-  Status-Pins (Platzhalter für eine spätere GIS-/WebMap-Anbindung).
+- **Netzkarte** — echte Open-Source-Karte (**Leaflet + OpenStreetMap**),
+  zentriert auf **Düsseldorf**, mit Status-Pins an realen Standorten;
+  Popup je Baustelle mit Sprung in die Detailansicht.
 - **Terminplan** — Gantt-Bauzeitenplan über alle Maßnahmen: Balken nach
   Statusphase, Fortschrittsfüllung, Meilenstein-Rauten und Heute-Linie.
 - **Ressourcen & Gewerke** — Bindung von Tiefbaufirmen und Bauleitung über
@@ -49,13 +50,18 @@ npm run preview  # Build lokal ansehen
 
 ## Technik
 
-React 18 · TypeScript · Vite. Bewusst ohne UI-Framework — ein eigenes,
-schlankes Designsystem in `src/index.css`.
+React 18 · TypeScript · Vite · **Leaflet** (OpenStreetMap). Bewusst ohne
+UI-Framework — ein eigenes, schlankes Designsystem in `src/index.css`.
+
+Die Karte lädt OpenStreetMap-Kacheln zur Laufzeit im Browser (Internet
+erforderlich). Beispieldaten sind im Versorgungsgebiet Düsseldorf verortet
+(Flingern, Reisholz, Gerresheim, Eller, Garath, Oberkassel).
 
 ## Mögliche nächste Schritte
 
 - Backend & Persistenz (z. B. FastAPI/PostgreSQL oder Node/Prisma)
-- Echte Kartenintegration (Leaflet/MapLibre + Geodaten der Netztopologie)
+- Netztopologie auf der Karte (Trassen/Leitungen als Linien, GeoJSON-Layer,
+  ggf. amtliche Geobasisdaten NRW / OpenStreetMap-Overpass)
 - Gantt-Terminplanung mit Abhängigkeiten und Ressourcen
 - Rollen-/Rechtekonzept (Bauleitung, Planung, Auftragnehmer)
 - Schnittstellen zu GIS-, ERP- und Dokumentenmanagement-Systemen
