@@ -1,0 +1,30 @@
+# Render-Blueprint für das NetzBau-Manager-Backend.
+# Verwendung: diese Datei ins Repo-Root legen ODER bei Render als Blueprint
+# auswählen. Alternativ den Service manuell mit denselben Werten anlegen
+# (siehe DEPLOY.md).
+services:
+  - type: web
+    name: netzbau-manager-api
+    runtime: node
+    # Wurzelverzeichnis des Backends im Monorepo
+    rootDir: netzbau-manager/server
+    # Persistente Disk erfordert einen kostenpflichtigen Instanztyp (Starter).
+    # Auf dem Free-Plan ohne Disk laufen die Daten beim Neustart auf den
+    # Seed-Stand zurück (DB_PATH dann weglassen).
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DB_PATH
+        value: /var/data/db.json
+      # Auf die Vercel-Frontend-Domain setzen, z. B.
+      # https://netzbau-manager.vercel.app  (im Render-Dashboard eintragen)
+      - key: CORS_ORIGIN
+        sync: false
+    disk:
+      name: netzbau-data
+      mountPath: /var/data
+      sizeGB: 1
