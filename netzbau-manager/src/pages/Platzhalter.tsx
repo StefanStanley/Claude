@@ -1,10 +1,6 @@
 import type { View } from '../App'
 
 const infos: Partial<Record<View, { icon: string; text: string }>> = {
-  kalender: {
-    icon: '📅',
-    text: 'Gantt-Terminplan über alle Maßnahmen mit Gewerken, Abhängigkeiten und Ressourcenauslastung.',
-  },
   dokumente: {
     icon: '📁',
     text: 'Zentrale Dokumentenablage: Pläne, Verträge, Aufmaße, Abnahmeprotokolle und Baustellenfotos je Maßnahme.',

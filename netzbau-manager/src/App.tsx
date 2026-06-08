@@ -4,6 +4,7 @@ import { Dashboard } from './pages/Dashboard'
 import { MassnahmenListe } from './pages/MassnahmenListe'
 import { MassnahmeDetail } from './pages/MassnahmeDetail'
 import { Karte } from './pages/Karte'
+import { Terminplan } from './pages/Terminplan'
 import { Platzhalter } from './pages/Platzhalter'
 import { NeueMassnahmeModal } from './components/NeueMassnahmeModal'
 
@@ -56,6 +57,9 @@ export default function App() {
         break
       case 'karte':
         inhalt = <Karte onOpen={oeffneDetail} />
+        break
+      case 'kalender':
+        inhalt = <Terminplan onOpen={oeffneDetail} />
         break
       default:
         inhalt = <Platzhalter view={view} />
