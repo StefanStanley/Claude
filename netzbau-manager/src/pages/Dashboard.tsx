@@ -1,6 +1,7 @@
 import { useStore } from '../data/store'
 import { formatEuro, formatDatum, tageBis, statusFarbe } from '../data/helpers'
 import { StatusBadge, PrioPill, Progress } from '../components/ui'
+import { Icon } from '../components/icons'
 import type { View } from '../App'
 
 export function Dashboard({
@@ -34,28 +35,28 @@ export function Dashboard({
       label: 'Aktive Maßnahmen',
       value: aktiv.length,
       sub: `davon ${inBau} in Bauausführung`,
-      icon: '🏗️',
-      farbe: '#0e7c5a',
+      icon: 'projects',
+      farbe: '#0f766e',
     },
     {
       label: 'Budgetvolumen 2026',
       value: formatEuro(budgetGesamt),
       sub: `${Math.round((ausgabenGesamt / budgetGesamt) * 100)} % verausgabt`,
-      icon: '💶',
+      icon: 'euro',
       farbe: '#1e3a5f',
     },
     {
       label: 'Kritische Vorhaben',
       value: kritisch,
       sub: 'erfordern Aufmerksamkeit',
-      icon: '⚠️',
+      icon: 'alert',
       farbe: '#dc2626',
     },
     {
       label: 'Fällige Meilensteine',
       value: meilensteine.filter((m) => tageBis(m.datum) <= 14).length,
       sub: 'in den nächsten 14 Tagen',
-      icon: '📌',
+      icon: 'calendar',
       farbe: '#d97706',
     },
   ]
@@ -78,7 +79,7 @@ export function Dashboard({
                 className="kpi-icon"
                 style={{ background: `${k.farbe}1a`, color: k.farbe }}
               >
-                {k.icon}
+                <Icon name={k.icon} size={18} />
               </span>
             </div>
             <div className="kpi-value">{k.value}</div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from './data/store'
 import { Sidebar } from './components/Sidebar'
+import { Icon } from './components/icons'
 import { Dashboard } from './pages/Dashboard'
 import { MassnahmenListe } from './pages/MassnahmenListe'
 import { MassnahmeDetail } from './pages/MassnahmeDetail'
@@ -86,7 +87,7 @@ export default function App() {
         <header className="topbar">
           <h2>{detailId ? 'Maßnahmen-Detail' : titel[view]}</h2>
           <div className="topbar-search">
-            <span>🔍</span>
+            <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
             <input placeholder="Maßnahme, Kennung, Ort suchen…" />
           </div>
           <button
@@ -133,13 +134,14 @@ export default function App() {
                 : 'Demo · neu verbinden'}
           </button>
           <button className="icon-btn" title="Benachrichtigungen">
-            🔔
+            <Icon name="bell" size={17} />
           </button>
           <button
             className="btn btn-primary btn-sm"
             onClick={() => setModalOffen(true)}
           >
-            + Neue Maßnahme
+            <Icon name="plus" size={16} strokeWidth={2.2} />
+            Neue Maßnahme
           </button>
         </header>
         <main className="content">{inhalt}</main>

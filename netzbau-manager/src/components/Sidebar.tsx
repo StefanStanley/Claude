@@ -1,4 +1,5 @@
 import type { View } from '../App'
+import { Icon } from './icons'
 
 interface NavEntry {
   view: View
@@ -8,16 +9,16 @@ interface NavEntry {
 }
 
 const haupt: NavEntry[] = [
-  { view: 'dashboard', label: 'Dashboard', icon: '▦' },
-  { view: 'massnahmen', label: 'Maßnahmen', icon: '🏗️', badge: 6 },
-  { view: 'karte', label: 'Netzkarte', icon: '🗺️' },
+  { view: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { view: 'massnahmen', label: 'Maßnahmen', icon: 'projects', badge: 6 },
+  { view: 'karte', label: 'Netzkarte', icon: 'map' },
 ]
 
 const weiter: NavEntry[] = [
-  { view: 'kalender', label: 'Terminplan', icon: '📅' },
-  { view: 'ressourcen', label: 'Ressourcen', icon: '👷' },
-  { view: 'dokumente', label: 'Dokumente', icon: '📁' },
-  { view: 'berichte', label: 'Berichte', icon: '📊' },
+  { view: 'kalender', label: 'Terminplan', icon: 'calendar' },
+  { view: 'ressourcen', label: 'Ressourcen', icon: 'resources' },
+  { view: 'dokumente', label: 'Dokumente', icon: 'documents' },
+  { view: 'berichte', label: 'Berichte', icon: 'reports' },
 ]
 
 export function Sidebar({
@@ -33,7 +34,9 @@ export function Sidebar({
       className={`nav-item ${active === e.view ? 'active' : ''}`}
       onClick={() => onNavigate(e.view)}
     >
-      <span className="nav-icon">{e.icon}</span>
+      <span className="nav-icon">
+        <Icon name={e.icon} size={18} />
+      </span>
       {e.label}
       {e.badge !== undefined && <span className="nav-badge">{e.badge}</span>}
     </button>
@@ -42,7 +45,9 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-logo">⚡</div>
+        <div className="sidebar-logo">
+          <Icon name="zap" size={20} strokeWidth={2.2} />
+        </div>
         <div>
           <h1>NetzBau Manager</h1>
           <span>Rheinnetz Düsseldorf</span>

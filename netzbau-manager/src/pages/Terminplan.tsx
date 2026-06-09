@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
-import { statusFarbe, formatDatum, sparteIcon } from '../data/helpers'
+import { statusFarbe, formatDatum } from '../data/helpers'
 import { StatusBadge } from '../components/ui'
+import { SparteIcon } from '../components/icons'
 
 const MONAT_BREITE = 70 // px je Monat
 const HEUTE = new Date('2026-06-08')
@@ -137,8 +138,12 @@ export function Terminplan({ onOpen }: { onOpen: (id: string) => void }) {
                 >
                   <div className="gantt-row-label">
                     <div className="gantt-row-title">{m.titel}</div>
-                    <div className="gantt-row-sub">
-                      {sparteIcon(m.sparte)} {m.kennung} · {m.gemeinde}
+                    <div
+                      className="gantt-row-sub"
+                      style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                    >
+                      <SparteIcon sparte={m.sparte} size={12} />
+                      {m.kennung} · {m.gemeinde}
                     </div>
                   </div>
                   <div

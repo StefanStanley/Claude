@@ -1,4 +1,4 @@
-import type { Status, Prioritaet, Sparte } from './types'
+import type { Status, Prioritaet } from './types'
 
 export function formatEuro(value: number): string {
   return value.toLocaleString('de-DE', {
@@ -46,17 +46,6 @@ export function prioritaetFarbe(p: Prioritaet): string {
     Kritisch: '#dc2626',
   }
   return map[p]
-}
-
-export function sparteIcon(sparte: Sparte): string {
-  const map: Record<Sparte, string> = {
-    Strom: '⚡',
-    Gas: '🔥',
-    Wasser: '💧',
-    Fernwärme: '♨️',
-    Breitband: '🛜',
-  }
-  return map[sparte]
 }
 
 export function tageBis(iso: string): number {

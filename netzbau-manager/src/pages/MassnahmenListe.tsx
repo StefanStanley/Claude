@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { STATUS_REIHENFOLGE } from '../data/massnahmen'
 import { useStore } from '../data/store'
-import { formatEuro, formatDatum, statusFarbe, sparteIcon } from '../data/helpers'
+import { formatEuro, formatDatum, statusFarbe } from '../data/helpers'
 import { StatusBadge, PrioPill, Progress } from '../components/ui'
+import { Icon, SparteIcon } from '../components/icons'
 import type { Massnahme } from '../data/types'
 
 type Ansicht = 'tabelle' | 'kanban'
@@ -43,13 +44,13 @@ export function MassnahmenListe({
             className={ansicht === 'tabelle' ? 'active' : ''}
             onClick={() => setAnsicht('tabelle')}
           >
-            ☰ Tabelle
+            <Icon name="table" size={14} /> Tabelle
           </button>
           <button
             className={ansicht === 'kanban' ? 'active' : ''}
             onClick={() => setAnsicht('kanban')}
           >
-            ▦ Kanban
+            <Icon name="board" size={14} /> Kanban
           </button>
         </div>
       </div>
@@ -90,8 +91,12 @@ function Tabelle({
             <td>
               <div className="proj-kennung">{m.kennung}</div>
               <div className="proj-title">{m.titel}</div>
-              <div className="proj-kennung">
-                {sparteIcon(m.sparte)} {m.gemeinde}
+              <div
+                className="proj-kennung"
+                style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+              >
+                <SparteIcon sparte={m.sparte} size={12} />
+                {m.gemeinde}
               </div>
             </td>
             <td className="cell-muted">{m.art}</td>
@@ -152,7 +157,8 @@ function Kanban({
                   </div>
                   <h4>{m.titel}</h4>
                   <div className="kanban-meta">
-                    {sparteIcon(m.sparte)} {m.art} · {m.gemeinde}
+                    <SparteIcon sparte={m.sparte} size={12} />
+                    {m.art} · {m.gemeinde}
                   </div>
                   <Progress value={m.fortschritt} color={statusFarbe(status)} />
                 </div>
