@@ -36,6 +36,7 @@ export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [detailId, setDetailId] = useState<string | null>(null)
   const [modalOffen, setModalOffen] = useState(false)
+  const [sidebarOffen, setSidebarOffen] = useState(true)
 
   const navigate = (v: View) => {
     setDetailId(null)
@@ -81,10 +82,17 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${sidebarOffen ? '' : ' sidebar-zu'}`}>
       <Sidebar active={view} onNavigate={navigate} />
       <div className="main">
         <header className="topbar">
+          <button
+            className="icon-btn topbar-menu"
+            onClick={() => setSidebarOffen((o) => !o)}
+            title={sidebarOffen ? 'Seitenleiste ausblenden' : 'Seitenleiste einblenden'}
+          >
+            <Icon name="menu" size={18} />
+          </button>
           <h2>{detailId ? 'Maßnahmen-Detail' : titel[view]}</h2>
           <div className="topbar-search">
             <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />

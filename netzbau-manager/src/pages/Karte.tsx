@@ -162,7 +162,13 @@ export function Karte({ onOpen }: { onOpen: (id: string) => void }) {
     // Befüllung gemäß aktuell gewähltem Filter
     fuelle(datenRef.current, filterRef.current)
 
+    // Karte neu vermessen, wenn sich die Containergröße ändert
+    // (z. B. beim Ein-/Ausblenden der Seitenleiste) – verhindert graue Kacheln
+    const ro = new ResizeObserver(() => map.invalidateSize())
+    ro.observe(el)
+
     return () => {
+      ro.disconnect()
       map.remove()
       datenRef.current = null
     }

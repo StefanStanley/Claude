@@ -48,6 +48,7 @@ export const ICONS: Record<string, string> = {
     '<path d="M16 2 22 8 8 22 2 16 16 2Z"/><path d="m7.5 10.5 2 2M11 7l2 2M14.5 3.5l2 2M4 13.5l2 2"/>',
   shield:
     '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+  menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
 }
 
 export const DOK_TYP_ICON: Record<string, string> = {

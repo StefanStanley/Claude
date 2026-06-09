@@ -73,6 +73,16 @@ button {
   bottom: 0;
   left: 0;
   z-index: 20;
+  transition: transform 0.24s ease;
+}
+.app.sidebar-zu .sidebar {
+  transform: translateX(-100%);
+}
+.app.sidebar-zu .main {
+  margin-left: 0;
+}
+.topbar-menu {
+  margin-right: -4px;
 }
 
 .sidebar-brand {
@@ -207,6 +217,7 @@ button {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  transition: margin-left 0.24s ease;
 }
 
 .topbar {
