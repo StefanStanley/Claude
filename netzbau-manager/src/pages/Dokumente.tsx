@@ -1,22 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../data/store'
 import { formatDatum } from '../data/helpers'
+import { Icon, DOK_TYP_ICON } from '../components/icons'
 import type { Dokument } from '../data/types'
 
 const TYP_FARBEN: Record<Dokument['typ'], string> = {
-  Plan: '#0e7c5a',
+  Plan: '#0f766e',
   Vertrag: '#1e3a5f',
   Foto: '#0891b2',
   Bericht: '#7c3aed',
   Genehmigung: '#d97706',
-}
-
-const TYP_ICON: Record<Dokument['typ'], string> = {
-  Plan: '📐',
-  Vertrag: '📄',
-  Foto: '🖼️',
-  Bericht: '📊',
-  Genehmigung: '✅',
 }
 
 interface DokZeile extends Dokument {
@@ -69,9 +62,9 @@ export function Dokumente({ onOpen }: { onOpen: (id: string) => void }) {
                 <span className="kpi-label">{t}</span>
                 <span
                   className="kpi-icon"
-                  style={{ background: `${TYP_FARBEN[t]}1a` }}
+                  style={{ background: `${TYP_FARBEN[t]}1a`, color: TYP_FARBEN[t] }}
                 >
-                  {TYP_ICON[t]}
+                  <Icon name={DOK_TYP_ICON[t]} size={17} />
                 </span>
               </div>
               <div className="kpi-value">{proTyp(t)}</div>
@@ -91,7 +84,7 @@ export function Dokumente({ onOpen }: { onOpen: (id: string) => void }) {
           </button>
         ))}
         <div className="topbar-search" style={{ marginLeft: 'auto' }}>
-          <span>🔍</span>
+          <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
           <input
             placeholder="Dokument oder Maßnahme suchen…"
             value={suche}
@@ -120,7 +113,9 @@ export function Dokumente({ onOpen }: { onOpen: (id: string) => void }) {
             key={d.id}
             onClick={() => onOpen(d.massnahmeId)}
           >
-            <div className="doc-icon">{TYP_ICON[d.typ]}</div>
+            <div className="doc-icon" style={{ color: TYP_FARBEN[d.typ] }}>
+              <Icon name={DOK_TYP_ICON[d.typ]} size={16} />
+            </div>
             <div style={{ minWidth: 0 }}>
               <div className="proj-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {d.name}

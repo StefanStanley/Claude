@@ -5,6 +5,7 @@ import {
   prioritaetFarbe,
 } from '../data/helpers'
 import { Donut, HBars } from '../components/charts'
+import { Icon } from '../components/icons'
 import type { Status } from '../data/types'
 
 const ART_FARBEN: Record<string, string> = {
@@ -98,15 +99,16 @@ export function Berichte() {
     .sort((a, b) => b.value - a.value)
 
   const kpis = [
-    { label: 'Gesamtbudget', value: formatEuro(budgetGesamt), farbe: '#1e3a5f' },
+    { label: 'Gesamtbudget', value: formatEuro(budgetGesamt), farbe: '#1e3a5f', icon: 'euro' },
     {
       label: 'Verausgabt',
       value: `${Math.round((ausgabenGesamt / budgetGesamt) * 100)} %`,
       sub: formatEuro(ausgabenGesamt),
-      farbe: '#0e7c5a',
+      farbe: '#0f766e',
+      icon: 'reports',
     },
-    { label: 'Ø Fortschritt', value: `${oFortschritt} %`, farbe: '#0891b2' },
-    { label: 'Maßnahmen gesamt', value: massnahmen.length, farbe: '#7c3aed' },
+    { label: 'Ø Fortschritt', value: `${oFortschritt} %`, farbe: '#0891b2', icon: 'reports' },
+    { label: 'Maßnahmen gesamt', value: massnahmen.length, farbe: '#7c3aed', icon: 'projects' },
   ]
 
   return (
@@ -120,7 +122,7 @@ export function Berichte() {
                 className="kpi-icon"
                 style={{ background: `${k.farbe}1a`, color: k.farbe }}
               >
-                📊
+                <Icon name={k.icon} size={18} />
               </span>
             </div>
             <div className="kpi-value" style={{ fontSize: 22 }}>

@@ -1,11 +1,7 @@
 import { useStore } from '../data/store'
-import {
-  formatEuro,
-  formatDatum,
-  statusFarbe,
-  sparteIcon,
-} from '../data/helpers'
+import { formatEuro, formatDatum, statusFarbe } from '../data/helpers'
 import { StatusBadge, PrioPill, Progress } from '../components/ui'
+import { Icon, SparteIcon, DOK_TYP_ICON } from '../components/icons'
 import type { Genehmigung } from '../data/types'
 
 const genehmigungFarbe: Record<Genehmigung['status'], string> = {
@@ -15,12 +11,12 @@ const genehmigungFarbe: Record<Genehmigung['status'], string> = {
   Abgelehnt: '#dc2626',
 }
 
-const dokIcon: Record<string, string> = {
-  Plan: '📐',
-  Vertrag: '📄',
-  Foto: '🖼️',
-  Bericht: '📊',
-  Genehmigung: '✅',
+const DOK_FARBE: Record<string, string> = {
+  Plan: '#0f766e',
+  Vertrag: '#1e3a5f',
+  Foto: '#0891b2',
+  Bericht: '#7c3aed',
+  Genehmigung: '#d97706',
 }
 
 export function MassnahmeDetail({
@@ -44,15 +40,23 @@ export function MassnahmeDetail({
   return (
     <>
       <button className="detail-back" onClick={onBack}>
-        ← Zurück zur Übersicht
+        <Icon name="back" size={15} /> Zurück zur Übersicht
       </button>
 
       <div className="detail-header">
         <div className="detail-header-top">
           <div>
-            <div className="proj-kennung" style={{ marginBottom: 4 }}>
-              {sparteIcon(massnahme.sparte)} {massnahme.sparte} ·{' '}
-              {massnahme.kennung}
+            <div
+              className="proj-kennung"
+              style={{
+                marginBottom: 4,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <SparteIcon sparte={massnahme.sparte} size={13} />
+              {massnahme.sparte} · {massnahme.kennung}
             </div>
             <h2>{massnahme.titel}</h2>
             <div className="detail-tags">
@@ -64,7 +68,9 @@ export function MassnahmeDetail({
             </div>
           </div>
           <div className="detail-actions">
-            <button className="btn btn-ghost btn-sm">✎ Bearbeiten</button>
+            <button className="btn btn-ghost btn-sm">
+              <Icon name="edit" size={14} /> Bearbeiten
+            </button>
             <button className="btn btn-primary btn-sm">Status ändern</button>
           </div>
         </div>
@@ -234,7 +240,9 @@ export function MassnahmeDetail({
             <div className="mini-list">
               {massnahme.dokumente.map((d) => (
                 <div className="mini-row" key={d.id}>
-                  <div className="doc-icon">{dokIcon[d.typ] ?? '📄'}</div>
+                  <div className="doc-icon" style={{ color: DOK_FARBE[d.typ] }}>
+                    <Icon name={DOK_TYP_ICON[d.typ] ?? 'file'} size={15} />
+                  </div>
                   <div className="mini-row-info">
                     <strong>{d.name}</strong>
                     <span>

@@ -3,12 +3,8 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { STATUS_REIHENFOLGE } from '../data/massnahmen'
 import { useStore } from '../data/store'
-import {
-  statusFarbe,
-  spannungsFarbe,
-  sparteIcon,
-  formatEuro,
-} from '../data/helpers'
+import { statusFarbe, spannungsFarbe, formatEuro } from '../data/helpers'
+import { sparteIconSvg } from '../components/icons'
 import type { Massnahme } from '../data/types'
 
 // Open-Source-Karte: Leaflet + OpenStreetMap, zentriert auf Düsseldorf,
@@ -95,9 +91,10 @@ export function Karte({ onOpen }: { onOpen: (id: string) => void }) {
       const farbe = statusFarbe(m.status)
       const icon = L.divIcon({
         className: 'leaflet-pin-wrap',
-        html: `<div class="leaflet-pin" style="background:${farbe}"><span>${sparteIcon(
+        html: `<div class="leaflet-pin" style="background:${farbe}">${sparteIconSvg(
           m.sparte,
-        )}</span></div>`,
+          '#fff',
+        )}</div>`,
         iconSize: [30, 30],
         iconAnchor: [15, 30],
         popupAnchor: [0, -30],
@@ -106,7 +103,7 @@ export function Karte({ onOpen }: { onOpen: (id: string) => void }) {
       marker.bindTooltip(m.titel, { direction: 'top', offset: [0, -28] })
       marker.bindPopup(
         `<div class="map-popup">
-           <div class="map-popup-kennung">${sparteIcon(m.sparte)} ${m.kennung} · ${m.gemeinde}</div>
+           <div class="map-popup-kennung" style="display:inline-flex;align-items:center;gap:5px">${sparteIconSvg(m.sparte)} ${m.kennung} · ${m.gemeinde}</div>
            <strong>${m.titel}</strong>
            <div class="map-popup-status"><span style="background:${farbe}"></span>${m.status} · ${m.fortschritt}%</div>
            <div class="map-popup-meta">${m.art} · ${m.spannungsebene} · ${formatEuro(m.budget)}</div>
@@ -149,10 +146,10 @@ export function Karte({ onOpen }: { onOpen: (id: string) => void }) {
       .layers(
         { OpenStreetMap: osm, 'Positron (hell)': positron },
         {
-          '🏗️ Baustellen': baustellen,
-          '⚡ Geplante Trassen': trassen,
-          '🛰️ Luftbild NRW (DOP)': dopNRW,
-          '📐 Liegenschaften ALKIS (NRW)': alkisNRW,
+          Baustellen: baustellen,
+          'Geplante Trassen': trassen,
+          'Luftbild NRW (DOP)': dopNRW,
+          'Liegenschaften ALKIS (NRW)': alkisNRW,
         },
         { collapsed: false },
       )

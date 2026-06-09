@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../data/store'
+import { Icon } from './icons'
 import type { Sparte, MassnahmeArt, Prioritaet } from '../data/types'
 
 export function NeueMassnahmeModal({
@@ -51,13 +52,15 @@ export function NeueMassnahmeModal({
         <div className="modal-head">
           <h3>Neue Baumaßnahme anlegen</h3>
           <button className="icon-btn" onClick={onClose}>
-            ✕
+            <Icon name="close" size={16} />
           </button>
         </div>
 
         {gespeichert ? (
           <div className="modal-body" style={{ textAlign: 'center', padding: 40 }}>
-            <div style={{ fontSize: 44, marginBottom: 12 }}>✅</div>
+            <div className="modal-success-icon">
+              <Icon name="check" size={30} strokeWidth={2.4} />
+            </div>
             <h3 style={{ marginBottom: 6 }}>Maßnahme angelegt</h3>
             <p className="cell-muted">
               {online
@@ -77,9 +80,12 @@ export function NeueMassnahmeModal({
             <div className="modal-body">
               {!online && (
                 <div className="hinweis-offline">
-                  ⚠️ Backend nicht erreichbar – Anlage erfolgt nur lokal
-                  (nicht persistent). Server mit <code>npm run dev</code> im
-                  Ordner <code>server/</code> starten.
+                  <Icon name="alert" size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span>
+                    Backend nicht erreichbar – Anlage erfolgt nur lokal (nicht
+                    persistent). Server mit <code>npm run dev</code> im Ordner{' '}
+                    <code>server/</code> starten.
+                  </span>
                 </div>
               )}
               <div className="field">
