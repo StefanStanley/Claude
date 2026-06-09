@@ -7,15 +7,18 @@ import {
   type ReactNode,
 } from 'react'
 import { massnahmen as seed } from './massnahmen'
-import type { Massnahme, Prioritaet, Sparte, MassnahmeArt } from './types'
-
-const API: string =
-  (import.meta.env.VITE_API_URL as string | undefined) ??
-  'http://localhost:4000'
+import { netzanschluesse as anschlussSeed } from './netzanschluesse'
+import { API, fetchMitTimeout } from './api'
+import type {
+  Massnahme,
+  Netzanschluss,
+  Prioritaet,
+  Sparte,
+  MassnahmeArt,
+} from './types'
 
 const POLL_MS = 5000 // Abstand der Wiederverbindungsversuche
 const MAX_TRIES = 30 // ~2,5 min – deckt den Render-Kaltstart ab
-const FETCH_TIMEOUT = 8000
 
 export interface NeuMassnahmeInput {
   titel: string
@@ -30,6 +33,7 @@ export interface NeuMassnahmeInput {
 
 interface Store {
   massnahmen: Massnahme[]
+  netzanschluesse: Netzanschluss[]
   online: boolean // Backend verbunden, Änderungen werden persistiert
   verbindet: boolean // Verbindungsversuch läuft (z. B. Backend-Kaltstart)
   reconnect: () => void // manueller Sofort-Neuversuch
@@ -39,18 +43,10 @@ interface Store {
 
 const StoreContext = createContext<Store | null>(null)
 
-async function fetchMitTimeout(url: string, opts: RequestInit = {}) {
-  const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT)
-  try {
-    return await fetch(url, { ...opts, signal: ctrl.signal })
-  } finally {
-    clearTimeout(t)
-  }
-}
-
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [massnahmen, setMassnahmen] = useState<Massnahme[]>(seed)
+  const [netzanschluesse, setNetzanschluesse] =
+    useState<Netzanschluss[]>(anschlussSeed)
   const [online, setOnline] = useState(false)
   const [verbindet, setVerbindet] = useState(true)
 
@@ -78,6 +74,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         onlineRef.current = true
         setVerbindet(false)
       }
+      // Netzanschlüsse best effort nachladen
+      fetchMitTimeout(`${API}/api/netzanschluesse`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((na) => {
+          if (na && aliveRef.current) setNetzanschluesse(na as Netzanschluss[])
+        })
+        .catch(() => {})
       return true
     } catch {
       return false
@@ -179,6 +182,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     <StoreContext.Provider
       value={{
         massnahmen,
+        netzanschluesse,
         online,
         verbindet,
         reconnect,

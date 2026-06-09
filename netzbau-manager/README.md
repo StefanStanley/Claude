@@ -10,6 +10,16 @@ bis zum Hausanschluss.
 
 ## Funktionsumfang (Prototyp)
 
+- **Steuerungs-Cockpit** — proaktive Startseite: erklärbarer **Risiko-Score**
+  je Maßnahme (Termin/Genehmigung/Budget/Kapazität), **nächste beste Aktionen**,
+  Engpass-Analyse (Tiefbau-Auslastung, hängende Genehmigungen) und
+  Netzanschluss-Frühindikatoren.
+- **Netzanschluss-Cockpit** — Energiewende-Pipeline (PV, Wärmepumpe,
+  E-Mobilität) mit **SLA-Ampel**, Fristen-Tracking, §14a-Kennzeichnung und
+  Priorisierung (überfällige zuerst).
+- **KI-Steuerungsassistent** — Chat über das Portfolio (Risiken, Genehmigungen,
+  Budgets, Anschlüsse). Nutzt die **Claude-API** im Backend, mit
+  regelbasiertem Fallback ohne API-Key.
 - **Dashboard** — Kennzahlen (aktive Maßnahmen, Budgetvolumen, kritische
   Vorhaben, fällige Meilensteine), laufende Bauausführung, Aktivitätsfeed und
   anstehende Meilensteine.
@@ -84,6 +94,12 @@ liegt bei: `vercel.json`, `render.yaml`, `.env.example`.
 | `GET` | `/api/massnahmen/:id` | eine Maßnahme |
 | `POST` | `/api/massnahmen` | Maßnahme anlegen |
 | `PATCH` | `/api/massnahmen/:id/aufgaben/:aId` | Aufgabe abhaken (Fortschritt wird neu berechnet) |
+| `GET` | `/api/netzanschluesse` | alle Netzanschluss-Anträge |
+| `POST` | `/api/assistent` | KI-Assistent (Claude, sonst Regel-Fallback) |
+
+**KI-Assistent aktivieren:** Im Backend `ANTHROPIC_API_KEY` setzen (optional
+`ASSISTANT_MODEL`, Standard `claude-opus-4-8`). Ohne Key antwortet der Assistent
+regelbasiert direkt aus den Daten.
 
 Persistenz: JSON-Datei (`server/data/db.json`), beim ersten Start aus den
 Seed-Daten erzeugt.

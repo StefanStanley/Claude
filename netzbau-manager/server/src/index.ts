@@ -7,6 +7,8 @@ import {
   addMassnahme,
   type NeuMassnahmeInput,
 } from './store.ts'
+import { netzanschluesse } from '../../src/data/netzanschluesse.ts'
+import { frageAssistent, type Nachricht } from './assistent.ts'
 
 const app = express()
 // CORS: im Hosting auf die Frontend-Domain(s) einschränken (CORS_ORIGIN,
@@ -45,6 +47,23 @@ app.patch('/api/massnahmen/:id/aufgaben/:aId', (req, res) => {
   const m = toggleAufgabe(req.params.id, req.params.aId)
   if (!m) return res.status(404).json({ fehler: 'Maßnahme/Aufgabe nicht gefunden' })
   res.json(m)
+})
+
+app.get('/api/netzanschluesse', (_req, res) => {
+  res.json(netzanschluesse)
+})
+
+app.post('/api/assistent', async (req, res) => {
+  const frage = String(req.body?.frage ?? '').trim()
+  const verlauf = (req.body?.verlauf ?? []) as Nachricht[]
+  if (!frage) return res.status(400).json({ fehler: 'frage ist erforderlich' })
+  try {
+    const antwort = await frageAssistent(frage, verlauf)
+    res.json(antwort)
+  } catch (e) {
+    console.error('Assistent-Fehler:', e)
+    res.status(500).json({ fehler: 'Assistent nicht verfügbar' })
+  }
 })
 
 app.listen(PORT, () => {

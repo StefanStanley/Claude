@@ -2,40 +2,49 @@ import { useState } from 'react'
 import { useStore } from './data/store'
 import { Sidebar } from './components/Sidebar'
 import { Icon } from './components/icons'
+import { Cockpit } from './pages/Cockpit'
 import { Dashboard } from './pages/Dashboard'
 import { MassnahmenListe } from './pages/MassnahmenListe'
 import { MassnahmeDetail } from './pages/MassnahmeDetail'
 import { Karte } from './pages/Karte'
 import { Terminplan } from './pages/Terminplan'
 import { Ressourcen } from './pages/Ressourcen'
+import { Anschluesse } from './pages/Anschluesse'
 import { Dokumente } from './pages/Dokumente'
 import { Berichte } from './pages/Berichte'
 import { NeueMassnahmeModal } from './components/NeueMassnahmeModal'
+import { Assistent } from './components/Assistent'
 
 export type View =
+  | 'cockpit'
   | 'dashboard'
   | 'massnahmen'
   | 'karte'
   | 'kalender'
   | 'ressourcen'
+  | 'anschluesse'
   | 'dokumente'
   | 'berichte'
 
 const titel: Record<View, string> = {
+  cockpit: 'Steuerungs-Cockpit',
   dashboard: 'Dashboard',
   massnahmen: 'Bau­maßnahmen',
   karte: 'Netzkarte',
   kalender: 'Terminplan',
   ressourcen: 'Ressourcen & Gewerke',
+  anschluesse: 'Netzanschlüsse',
   dokumente: 'Dokumente',
   berichte: 'Berichte & Kennzahlen',
 }
 
 export default function App() {
   const { online, verbindet, reconnect } = useStore()
-  const [view, setView] = useState<View>('dashboard')
+  const [view, setView] = useState<View>('cockpit')
   const [detailId, setDetailId] = useState<string | null>(null)
   const [modalOffen, setModalOffen] = useState(false)
+  const [sidebarOffen, setSidebarOffen] = useState(true)
+  const [assistentOffen, setAssistentOffen] = useState(false)
 
   const navigate = (v: View) => {
     setDetailId(null)
@@ -51,6 +60,9 @@ export default function App() {
     )
   } else {
     switch (view) {
+      case 'cockpit':
+        inhalt = <Cockpit onOpen={oeffneDetail} onNavigate={navigate} />
+        break
       case 'dashboard':
         inhalt = <Dashboard onOpen={oeffneDetail} onNavigate={navigate} />
         break
@@ -71,6 +83,9 @@ export default function App() {
       case 'ressourcen':
         inhalt = <Ressourcen onOpen={oeffneDetail} />
         break
+      case 'anschluesse':
+        inhalt = <Anschluesse onOpen={oeffneDetail} onNavigate={navigate} />
+        break
       case 'dokumente':
         inhalt = <Dokumente onOpen={oeffneDetail} />
         break
@@ -81,10 +96,17 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${sidebarOffen ? '' : ' sidebar-zu'}`}>
       <Sidebar active={view} onNavigate={navigate} />
       <div className="main">
         <header className="topbar">
+          <button
+            className="icon-btn topbar-menu"
+            onClick={() => setSidebarOffen((o) => !o)}
+            title={sidebarOffen ? 'Seitenleiste ausblenden' : 'Seitenleiste einblenden'}
+          >
+            <Icon name="menu" size={18} />
+          </button>
           <h2>{detailId ? 'Maßnahmen-Detail' : titel[view]}</h2>
           <div className="topbar-search">
             <Icon name="search" size={15} style={{ color: 'var(--text-soft)' }} />
@@ -133,6 +155,14 @@ export default function App() {
                 ? 'Backend wird gestartet…'
                 : 'Demo · neu verbinden'}
           </button>
+          <button
+            className="btn btn-assistent btn-sm"
+            onClick={() => setAssistentOffen(true)}
+            title="KI-Steuerungsassistent"
+          >
+            <Icon name="sparkles" size={15} />
+            Assistent
+          </button>
           <button className="icon-btn" title="Benachrichtigungen">
             <Icon name="bell" size={17} />
           </button>
@@ -149,6 +179,10 @@ export default function App() {
       {modalOffen && (
         <NeueMassnahmeModal onClose={() => setModalOffen(false)} />
       )}
+      <Assistent
+        offen={assistentOffen}
+        onClose={() => setAssistentOffen(false)}
+      />
     </div>
   )
 }
