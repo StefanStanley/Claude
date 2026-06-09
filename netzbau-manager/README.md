@@ -86,6 +86,9 @@ Schritt-für-Schritt-Anleitung zum Deployen (Frontend auf Vercel, Backend auf
 Render mit persistenter Disk) in **[DEPLOY.md](./DEPLOY.md)**. Konfiguration
 liegt bei: `vercel.json`, `render.yaml`, `.env.example`.
 
+Für **Azure** (Static Web Apps + App Service, Portal-Anleitung):
+**[DEPLOY-AZURE.md](./DEPLOY-AZURE.md)**.
+
 ### API-Endpunkte
 
 | Methode | Pfad | Zweck |
