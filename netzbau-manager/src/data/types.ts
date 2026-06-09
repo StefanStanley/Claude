@@ -95,3 +95,37 @@ export interface Massnahme {
   genehmigungen: Genehmigung[]
   dokumente: Dokument[]
 }
+
+// ---- Netzanschluss-Antragsprozess (Energiewende-Pipeline) ----
+
+export type AnschlussTyp =
+  | 'PV-Einspeisung'
+  | 'Wärmepumpe'
+  | 'E-Ladepunkt'
+  | 'Neubau Hausanschluss'
+  | 'Gewerbeanschluss'
+  | 'Batteriespeicher'
+
+export type AnschlussStatus =
+  | 'Eingegangen'
+  | 'Technische Prüfung'
+  | 'Angebot'
+  | 'Zusage'
+  | 'Umsetzung'
+  | 'Inbetriebnahme'
+
+export interface Netzanschluss {
+  id: string
+  kennung: string // z.B. "NA-2026-04812"
+  typ: AnschlussTyp
+  kunde: string
+  adresse: string
+  gemeinde: string
+  leistungKw: number
+  status: AnschlussStatus
+  eingang: string // ISO – Antragseingang
+  slaTage: number // gesetzliche/interne Bearbeitungsfrist
+  sachbearbeiter: string
+  paragraf14a?: boolean // steuerbare Verbrauchseinrichtung (§14a EnWG)
+  massnahmeId?: string // verknüpfte Baumaßnahme
+}
