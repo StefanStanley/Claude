@@ -9,6 +9,7 @@ import {
 } from './store.ts'
 import { netzanschluesse } from '../../src/data/netzanschluesse.ts'
 import { frageAssistent, type Nachricht } from './assistent.ts'
+import { getEinheiten } from './mastr/store.ts'
 
 const app = express()
 // CORS: im Hosting auf die Frontend-Domain(s) einschränken (CORS_ORIGIN,
@@ -51,6 +52,21 @@ app.patch('/api/massnahmen/:id/aufgaben/:aId', (req, res) => {
 
 app.get('/api/netzanschluesse', (_req, res) => {
   res.json(netzanschluesse)
+})
+
+// MaStR-Anlagen im Versorgungsgebiet Düsseldorf (aus download:mastr oder Demo)
+app.get('/api/mastr', (req, res) => {
+  const { total, einheiten, demo } = getEinheiten({
+    q: req.query.q ? String(req.query.q) : undefined,
+    energietraeger: req.query.energietraeger
+      ? String(req.query.energietraeger)
+      : undefined,
+    richtung: req.query.richtung ? String(req.query.richtung) : undefined,
+    plz: req.query.plz ? String(req.query.plz) : undefined,
+    limit: req.query.limit ? Number(req.query.limit) : undefined,
+    offset: req.query.offset ? Number(req.query.offset) : undefined,
+  })
+  res.json({ total, demo, einheiten })
 })
 
 app.post('/api/assistent', async (req, res) => {

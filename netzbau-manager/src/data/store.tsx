@@ -8,6 +8,8 @@ import {
 } from 'react'
 import { massnahmen as seed } from './massnahmen'
 import { netzanschluesse as anschlussSeed } from './netzanschluesse'
+import { mastrSeed } from './mastr'
+import type { MaStrEinheit } from './mastr'
 import { API, fetchMitTimeout } from './api'
 import type {
   Massnahme,
@@ -34,6 +36,8 @@ export interface NeuMassnahmeInput {
 interface Store {
   massnahmen: Massnahme[]
   netzanschluesse: Netzanschluss[]
+  mastrEinheiten: MaStrEinheit[]
+  mastrDemo: boolean // true = Seed-Daten (noch kein download:mastr gelaufen)
   online: boolean // Backend verbunden, Änderungen werden persistiert
   verbindet: boolean // Verbindungsversuch läuft (z. B. Backend-Kaltstart)
   reconnect: () => void // manueller Sofort-Neuversuch
@@ -47,6 +51,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [massnahmen, setMassnahmen] = useState<Massnahme[]>(seed)
   const [netzanschluesse, setNetzanschluesse] =
     useState<Netzanschluss[]>(anschlussSeed)
+  const [mastrEinheiten, setMastrEinheiten] = useState<MaStrEinheit[]>(mastrSeed)
+  const [mastrDemo, setMastrDemo] = useState(true)
   const [online, setOnline] = useState(false)
   const [verbindet, setVerbindet] = useState(true)
 
@@ -79,6 +85,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .then((res) => (res.ok ? res.json() : null))
         .then((na) => {
           if (na && aliveRef.current) setNetzanschluesse(na as Netzanschluss[])
+        })
+        .catch(() => {})
+      // MaStR-Anlagen (Düsseldorf) best effort nachladen
+      fetchMitTimeout(`${API}/api/mastr`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((m) => {
+          if (m && aliveRef.current && Array.isArray(m.einheiten)) {
+            setMastrEinheiten(m.einheiten as MaStrEinheit[])
+            setMastrDemo(Boolean(m.demo))
+          }
         })
         .catch(() => {})
       return true
@@ -183,6 +199,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       value={{
         massnahmen,
         netzanschluesse,
+        mastrEinheiten,
+        mastrDemo,
         online,
         verbindet,
         reconnect,
