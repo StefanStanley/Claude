@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard'
 import { MassnahmenListe } from './pages/MassnahmenListe'
 import { MassnahmeDetail } from './pages/MassnahmeDetail'
 import { Karte } from './pages/Karte'
+import { MaStR } from './pages/MaStR'
 import { Terminplan } from './pages/Terminplan'
 import { Ressourcen } from './pages/Ressourcen'
 import { Anschluesse } from './pages/Anschluesse'
@@ -20,6 +21,7 @@ export type View =
   | 'dashboard'
   | 'massnahmen'
   | 'karte'
+  | 'mastr'
   | 'kalender'
   | 'ressourcen'
   | 'anschluesse'
@@ -31,6 +33,7 @@ const titel: Record<View, string> = {
   dashboard: 'Dashboard',
   massnahmen: 'Bau­maßnahmen',
   karte: 'Netzkarte',
+  mastr: 'MaStR-Anlagen Düsseldorf',
   kalender: 'Terminplan',
   ressourcen: 'Ressourcen & Gewerke',
   anschluesse: 'Netzanschlüsse',
@@ -76,6 +79,9 @@ export default function App() {
         break
       case 'karte':
         inhalt = <Karte onOpen={oeffneDetail} />
+        break
+      case 'mastr':
+        inhalt = <MaStR />
         break
       case 'kalender':
         inhalt = <Terminplan onOpen={oeffneDetail} />

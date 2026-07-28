@@ -38,6 +38,12 @@ bis zum Hausanschluss.
     Liegenschaften von Geobasis NRW)
   - **Layer-Umschalter** (Basiskarten + ein-/ausblendbare Overlays)
   - **Status-Filter**, der Pins und Trassen synchron filtert
+- **MaStR-Anlagen** — Anlagen aus dem **Marktstammdatenregister (MaStR)** der
+  Bundesnetzagentur, gefiltert auf den Standort **Düsseldorf**:
+  KPIs (Anlagenzahl, installierte Leistung, Erzeugung/Verbrauch), Verteilung
+  nach **Energieträger**, Karte der Standorte und filterbare Anlagentabelle.
+  Daten werden per `npm run download:mastr` aus der öffentlichen MaStR-Web-API
+  geladen; ohne Download zeigt die Seite realistische Demo-Anlagen.
 - **Terminplan** — Gantt-Bauzeitenplan über alle Maßnahmen: Balken nach
   Statusphase, Fortschrittsfüllung, Meilenstein-Rauten und Heute-Linie.
 - **Ressourcen & Gewerke** — Bindung von Tiefbaufirmen und Bauleitung über
@@ -95,7 +101,18 @@ liegt bei: `vercel.json`, `render.yaml`, `.env.example`.
 | `POST` | `/api/massnahmen` | Maßnahme anlegen |
 | `PATCH` | `/api/massnahmen/:id/aufgaben/:aId` | Aufgabe abhaken (Fortschritt wird neu berechnet) |
 | `GET` | `/api/netzanschluesse` | alle Netzanschluss-Anträge |
+| `GET` | `/api/mastr` | MaStR-Anlagen Düsseldorf (Query: `q`, `energietraeger`, `richtung`, `plz`, `limit`, `offset`) |
 | `POST` | `/api/assistent` | KI-Assistent (Claude, sonst Regel-Fallback) |
+
+**MaStR-Daten laden:** Im Backend `npm run download:mastr` ausführen. Das Skript
+lädt die Anlagen für Düsseldorf (Stromerzeugung/-verbrauch, Gaserzeugung/
+-verbrauch) seitenweise aus der öffentlichen MaStR-Web-API und schreibt
+`server/data/mastr-duesseldorf.json` (für die App) sowie eine `.csv`. Optionen:
+`-- --gemeinde Neuss` (andere Gemeinde), `-- --max 500` (Obergrenze je
+Kategorie). Voraussetzung: ausgehender Zugriff auf
+`www.marktstammdatenregister.de` (in abgeschotteten Umgebungen den Host zur
+Egress-Allowlist hinzufügen). Ohne geladene Datei liefert `/api/mastr`
+Demo-Anlagen.
 
 **KI-Assistent aktivieren:** Im Backend `ANTHROPIC_API_KEY` setzen (optional
 `ASSISTANT_MODEL`, Standard `claude-opus-4-8`). Ohne Key antwortet der Assistent

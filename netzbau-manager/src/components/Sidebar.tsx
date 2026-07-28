@@ -14,6 +14,7 @@ const haupt: NavEntry[] = [
   { view: 'massnahmen', label: 'Maßnahmen', icon: 'projects', badge: 6 },
   { view: 'anschluesse', label: 'Netzanschlüsse', icon: 'plug' },
   { view: 'karte', label: 'Netzkarte', icon: 'map' },
+  { view: 'mastr', label: 'MaStR-Anlagen', icon: 'database' },
 ]
 
 const weiter: NavEntry[] = [
