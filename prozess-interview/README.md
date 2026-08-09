@@ -21,6 +21,15 @@ Ohne `ANTHROPIC_API_KEY` läuft die App automatisch im **Offline-Mock-Modus**
 (deterministische Heuristik) — der Durchstick ist also ohne Cloud demofähig.
 Mit gesetztem Key nutzt sie Anthropic Claude für die echte Extraktion.
 
+### Oder mit Docker (On-Prem)
+
+```bash
+cd prozess-interview
+docker compose up --build      # → http://localhost:3000
+```
+
+Details siehe **[DEPLOY.md](./DEPLOY.md)**.
+
 **Bedienung:** Transkript einfügen (oder „Beispiel einfügen") → *Analysieren* →
 BPMN-Modell + IR-Struktur + Bewertung erscheinen. Das Modell lässt sich als
 `.bpmn` exportieren.
