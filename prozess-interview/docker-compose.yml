@@ -1,0 +1,47 @@
+# ProzessLupe — On-Prem-Start mit einem Befehl:  docker compose up --build
+#
+# Startet Postgres und die App. Die App wendet beim Start selbst die Prisma-
+# Migrationen an (docker-entrypoint.sh). Ohne ANTHROPIC_API_KEY läuft sie im
+# Offline-Mock-Modus; für die echte Claude-Extraktion eine .env anlegen.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: prozess-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-prozess}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prozess}
+      POSTGRES_DB: ${POSTGRES_DB:-prozess}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prozess}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+    image: prozess-interview:latest
+    container_name: prozess-app
+    ports:
+      - "3000:3000"
+    environment:
+      # migrate deploy + Server laufen beim Start automatisch (Entrypoint).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-prozess}:${POSTGRES_PASSWORD:-prozess}@db:5432/${POSTGRES_DB:-prozess}?schema=public
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-5}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+# Ausbaustufe (Phase 3+): MinIO (Datei-Upload), Whisper (Transkription) und ein
+# lokales, OpenAI-kompatibles LLM (vLLM/Ollama) kommen hier als weitere Services
+# dazu — die Anbindung erfolgt über das LLM-Gateway (src/lib/llm/).

@@ -1,0 +1,38 @@
+// Datenmodell für die Prozess-Persistenz.
+// Ein Process bündelt die Historie; jede Analyse erzeugt eine neue, unveränderliche
+// ProcessVersion (Revisionssicherheit — KI-Vorschlag bleibt nachvollziehbar).
+
+generator client {
+  provider = "prisma-client-js"
+  // "native" für die lokale Entwicklung (glibc), musl-Target für das Alpine-Docker-Image.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Process {
+  id        String           @id @default(cuid())
+  name      String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  versions  ProcessVersion[]
+}
+
+model ProcessVersion {
+  id         String   @id @default(cuid())
+  process    Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+  processId  String
+  version    Int
+  transcript String
+  provider   String
+  ir         Json // Process IR (validiert über Zod beim Schreiben)
+  assessment Json // Bewertung
+  bpmnXml    String
+  createdAt  DateTime @default(now())
+
+  @@unique([processId, version])
+  @@index([processId])
+}
