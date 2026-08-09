@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import type { AnalysisResponse } from "@/lib/analyze";
 import IrSummary from "@/components/IrSummary";
 import AssessmentPanel from "@/components/AssessmentPanel";
+import type { ProcessListItem, ProcessDetail } from "@/lib/processes";
+import type { ProcessIr, Assessment } from "@/lib/ir/schema";
 
-// bpmn-js läuft nur im Browser → ohne SSR laden.
 const BpmnViewer = dynamic(() => import("@/components/BpmnViewer"), { ssr: false });
+
+/** Was angezeigt/gespeichert wird — gemeinsame Form aus Vorschau und DB-Version. */
+interface Analysis {
+  ir: ProcessIr;
+  assessment: Assessment;
+  bpmnXml: string;
+  provider: string;
+}
 
 const SAMPLE = `Wenn ein Kunde einen Netzanschluss beantragt, geht der Antrag über unser Kundenportal ein.
 Die Sachbearbeitung prüft zuerst, ob die Unterlagen vollständig sind.
@@ -18,14 +26,67 @@ Danach erstellen wir ein Angebot und schicken es per E-Mail an den Kunden.
 Nach Auftragsbestätigung wird der Anschluss terminiert und der Bauauftrag ausgelöst.`;
 
 export default function Page() {
+  const [processes, setProcesses] = useState<ProcessListItem[]>([]);
+  const [current, setCurrent] = useState<ProcessDetail | null>(null);
+
   const [transcript, setTranscript] = useState("");
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [dirty, setDirty] = useState(false); // Vorschau stammt aus frischer Analyse (speicherbar)
+
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  const refreshList = useCallback(async () => {
+    try {
+      const res = await fetch("/api/processes");
+      const data = await res.json();
+      if (res.ok) setProcesses(data.processes ?? []);
+    } catch {
+      /* Liste ist optional; Fehler nicht blockierend */
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshList();
+  }, [refreshList]);
+
+  function newProcess() {
+    setCurrent(null);
+    setTranscript("");
+    setAnalysis(null);
+    setDirty(false);
+    setError(null);
+    setFlash(null);
+  }
+
+  async function openProcess(id: string, version?: number) {
+    setError(null);
+    setFlash(null);
+    try {
+      const url = version ? `/api/processes/${id}?version=${version}` : `/api/processes/${id}`;
+      const res = await fetch(url);
+      const data: ProcessDetail = await res.json();
+      if (!res.ok) throw new Error((data as any)?.error || "Konnte Prozess nicht laden.");
+      setCurrent(data);
+      setTranscript(data.current.transcript);
+      setAnalysis({
+        ir: data.current.ir,
+        assessment: data.current.assessment,
+        bpmnXml: data.current.bpmnXml,
+        provider: data.current.provider,
+      });
+      setDirty(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fehler beim Laden.");
+    }
+  }
 
   async function analyze() {
     setLoading(true);
     setError(null);
+    setFlash(null);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -34,25 +95,70 @@ export default function Page() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Analyse fehlgeschlagen.");
-      setResult(data as AnalysisResponse);
+      setAnalysis(data as Analysis);
+      setDirty(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler.");
-      setResult(null);
     } finally {
       setLoading(false);
     }
   }
 
+  async function save() {
+    if (!analysis) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = { transcript, analysis };
+      const res = current
+        ? await fetch(`/api/processes/${current.id}/versions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await fetch("/api/processes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Speichern fehlgeschlagen.");
+      setCurrent(data as ProcessDetail);
+      setDirty(false);
+      setFlash(`Version ${(data as ProcessDetail).current.version} gespeichert`);
+      await refreshList();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fehler beim Speichern.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!current) return;
+    if (!confirm(`Prozess „${current.name}“ mit allen Versionen löschen?`)) return;
+    try {
+      const res = await fetch(`/api/processes/${current.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Löschen fehlgeschlagen.");
+      newProcess();
+      await refreshList();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Fehler beim Löschen.");
+    }
+  }
+
   function downloadBpmn() {
-    if (!result) return;
-    const blob = new Blob([result.bpmnXml], { type: "application/xml" });
+    if (!analysis) return;
+    const blob = new Blob([analysis.bpmnXml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${result.ir.name.replace(/[^\wäöüß-]+/gi, "_").slice(0, 40) || "prozess"}.bpmn`;
+    a.download = `${analysis.ir.name.replace(/[^\wäöüß-]+/gi, "_").slice(0, 40) || "prozess"}.bpmn`;
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  const providerTag = analysis ? analysis.provider : "Phase-2 · Persistenz";
 
   return (
     <>
@@ -65,65 +171,123 @@ export default function Page() {
             </svg>
             <span>ProzessLupe</span>
           </div>
-          <span className="provider-tag">{result ? result.provider : "Phase-1 MVP"}</span>
+          <span className="provider-tag">{providerTag}</span>
         </div>
       </header>
 
       <main className="wrap">
-        <div className="grid">
-          <section className="panel">
-            <p className="eyebrow">Interview / Transkript</p>
-            <h2>Prozess beschreiben</h2>
-            <p className="hint">
-              Transkript oder freie Beschreibung einfügen — die KI extrahiert Struktur, zeichnet das BPMN-Modell und bewertet den Prozess.
-            </p>
-            <textarea
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
-              placeholder="z. B. „Wenn ein Kunde einen Netzanschluss beantragt, prüft die Sachbearbeitung zuerst …“"
-            />
-            <div className="row">
-              <button className="primary" onClick={analyze} disabled={loading || transcript.trim().length < 20}>
-                {loading ? "Analysiere …" : "Analysieren"}
-              </button>
-              <button className="ghost" onClick={() => setTranscript(SAMPLE)} disabled={loading}>
-                Beispiel einfügen
-              </button>
-              {transcript && (
-                <button className="link-btn" onClick={() => setTranscript("")} disabled={loading}>
-                  leeren
+        <div className="layout">
+          {/* Sidebar: gespeicherte Prozesse */}
+          <aside className="sidebar">
+            <div className="panel">
+              <div className="sidebar-head">
+                <h2>Prozesse</h2>
+                <button className="btn-new" onClick={newProcess}>
+                  + Neu
                 </button>
-              )}
+              </div>
+              <div className="proc-list">
+                {processes.length === 0 && <div className="proc-empty">Noch nichts gespeichert.</div>}
+                {processes.map((p) => (
+                  <button
+                    key={p.id}
+                    className={`proc-item${current?.id === p.id ? " active" : ""}`}
+                    onClick={() => openProcess(p.id)}
+                  >
+                    <span className="nm">{p.name}</span>
+                    <span className="pmeta">
+                      v{p.latestVersion} · {p.versionCount} Version{p.versionCount === 1 ? "" : "en"}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-            {error && <div className="error">{error}</div>}
-          </section>
+          </aside>
 
-          <div className="results">
-            {!result && !loading && (
-              <div className="empty">
-                Noch kein Ergebnis. Beschreibung einfügen und <b>Analysieren</b> klicken —
-                oder <b>Beispiel einfügen</b> für einen Netzanschluss-Prozess.
+          {/* Arbeitsbereich */}
+          <section className="workarea">
+            {current && (
+              <div className="version-bar" style={{ marginBottom: 22 }}>
+                <span className="vtitle">{current.name}</span>
+                <label className="badge" htmlFor="ver">
+                  Version
+                </label>
+                <select
+                  id="ver"
+                  value={analysis && !dirty ? current.current.version : "dirty"}
+                  onChange={(e) => openProcess(current.id, Number(e.target.value))}
+                >
+                  {dirty && <option value="dirty">• ungespeicherte Analyse</option>}
+                  {current.versions.map((v) => (
+                    <option key={v.version} value={v.version}>
+                      v{v.version} — {new Date(v.createdAt).toLocaleString("de-DE")}
+                    </option>
+                  ))}
+                </select>
+                <button className="btn-danger" onClick={remove}>
+                  Löschen
+                </button>
               </div>
             )}
-            {loading && <div className="empty">Pipeline läuft: Transkript → IR → BPMN → Bewertung …</div>}
 
-            {result && (
-              <>
-                <section className="panel">
-                  <div className="panel-head">
-                    <h2>BPMN-Modell</h2>
-                    <button className="ghost" onClick={downloadBpmn}>
-                      .bpmn herunterladen
+            <div className="grid">
+              <section className="panel">
+                <p className="eyebrow">Interview / Transkript</p>
+                <h2>Prozess beschreiben</h2>
+                <p className="hint">
+                  Transkript einfügen — die KI extrahiert Struktur, zeichnet das BPMN-Modell und bewertet den Prozess.
+                  Speichern legt eine neue, versionierte Fassung an.
+                </p>
+                <textarea
+                  value={transcript}
+                  onChange={(e) => setTranscript(e.target.value)}
+                  placeholder="z. B. „Wenn ein Kunde einen Netzanschluss beantragt, prüft die Sachbearbeitung zuerst …“"
+                />
+                <div className="row">
+                  <button className="primary" onClick={analyze} disabled={loading || transcript.trim().length < 20}>
+                    {loading ? "Analysiere …" : "Analysieren"}
+                  </button>
+                  <button className="ghost" onClick={() => { setTranscript(SAMPLE); setDirty(false); }} disabled={loading}>
+                    Beispiel einfügen
+                  </button>
+                  {analysis && dirty && (
+                    <button className="primary" onClick={save} disabled={saving} style={{ background: "var(--teal-fill, var(--teal))" }}>
+                      {saving ? "Speichere …" : current ? "Als neue Version speichern" : "Speichern"}
                     </button>
-                  </div>
-                  <BpmnViewer xml={result.bpmnXml} />
-                </section>
+                  )}
+                  {flash && <span className="saved-flash">✓ {flash}</span>}
+                </div>
+                {error && <div className="error">{error}</div>}
+              </section>
 
-                <IrSummary ir={result.ir} />
-                <AssessmentPanel assessment={result.assessment} />
-              </>
-            )}
-          </div>
+              <div className="results">
+                {!analysis && !loading && (
+                  <div className="empty">
+                    Noch kein Ergebnis. Beschreibung einfügen und <b>Analysieren</b> klicken — oder links einen
+                    gespeicherten Prozess öffnen.
+                  </div>
+                )}
+                {loading && <div className="empty">Pipeline läuft: Transkript → IR → BPMN → Bewertung …</div>}
+
+                {analysis && (
+                  <>
+                    <section className="panel">
+                      <div className="panel-head">
+                        <h2>BPMN-Modell</h2>
+                        <button className="ghost" onClick={downloadBpmn}>
+                          .bpmn herunterladen
+                        </button>
+                      </div>
+                      <BpmnViewer xml={analysis.bpmnXml} />
+                    </section>
+
+                    <IrSummary ir={analysis.ir} />
+                    <AssessmentPanel assessment={analysis.assessment} />
+                  </>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
       </main>
     </>

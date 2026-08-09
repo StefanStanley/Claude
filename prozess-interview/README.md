@@ -4,35 +4,37 @@ SaaS für den **Energiesektor**: Prozessaufnahme per **Interview**. Ein Fachexpe
 erzählt seinen Prozess (Audio) und hängt Fotos, PDFs und Videos an – heraus kommt
 ein **BPMN-Modell** und eine **Bewertung** des Prozesses.
 
-- **Stack:** Next.js + TypeScript
+- **Stack:** Next.js + TypeScript + PostgreSQL (Prisma)
 - **Betrieb:** On-Prem-fähig (KRITIS) – KI-Anbieter austauschbar (Cloud ↔ lokal)
-- **Status:** Phase-1-MVP (Durchstich lauffähig)
+- **Status:** Phase 2 – Durchstich + versionierte Persistenz
 
-## Schnellstart
+## Schnellstart (Docker, empfohlen)
+
+```bash
+cd prozess-interview
+docker compose up --build      # startet Postgres + Migration + App → http://localhost:3000
+```
+
+Ohne `ANTHROPIC_API_KEY` läuft die App im **Offline-Mock-Modus** (deterministische
+Heuristik) — also ohne Cloud demofähig. Mit Key nutzt sie Anthropic Claude.
+
+### Lokale Entwicklung
 
 ```bash
 cd prozess-interview
 npm install
-cp .env.example .env        # optional: ANTHROPIC_API_KEY eintragen
-npm run dev                 # http://localhost:3000
+docker compose up -d db        # nur Postgres
+export DATABASE_URL="postgresql://prozess:prozess@localhost:5432/prozess?schema=public"
+npx prisma migrate deploy
+npm run dev                    # http://localhost:3000
 ```
 
-Ohne `ANTHROPIC_API_KEY` läuft die App automatisch im **Offline-Mock-Modus**
-(deterministische Heuristik) — der Durchstick ist also ohne Cloud demofähig.
-Mit gesetztem Key nutzt sie Anthropic Claude für die echte Extraktion.
-
-### Oder mit Docker (On-Prem)
-
-```bash
-cd prozess-interview
-docker compose up --build      # → http://localhost:3000
-```
-
-Details siehe **[DEPLOY.md](./DEPLOY.md)**.
+Details & On-Prem-Hinweise: **[DEPLOY.md](./DEPLOY.md)**.
 
 **Bedienung:** Transkript einfügen (oder „Beispiel einfügen") → *Analysieren* →
-BPMN-Modell + IR-Struktur + Bewertung erscheinen. Das Modell lässt sich als
-`.bpmn` exportieren.
+BPMN-Modell + IR-Struktur + Bewertung. Mit **Speichern** wird der Prozess
+versioniert abgelegt; die Seitenleiste listet gespeicherte Prozesse, die
+Versions-Auswahl zeigt die Historie. Das Modell lässt sich als `.bpmn` exportieren.
 
 ## Architektur des Durchstichs
 
@@ -43,8 +45,11 @@ BPMN-Modell + IR-Struktur + Bewertung erscheinen. Das Modell lässt sich als
 | `src/lib/llm/anthropic.ts` | Cloud-Backend (Anthropic Claude) |
 | `src/lib/llm/mock.ts` | Offline-Backend (Heuristik, kein Key nötig) |
 | `src/lib/bpmn/generate.ts` | Deterministischer IR→BPMN-Generator + Auto-Layout |
-| `src/app/api/analyze/route.ts` | Pipeline-Endpunkt |
+| `src/app/api/analyze/route.ts` | Pipeline-Endpunkt (zustandslose Vorschau) |
 | `src/components/BpmnViewer.tsx` | bpmn-js-Viewer (on-prem, im Browser) |
+| `prisma/schema.prisma` | Datenmodell: `Process` + versionierte `ProcessVersion` |
+| `src/lib/processes.ts` | Persistenz-Logik (CRUD + Versionierung, atomar) |
+| `src/app/api/processes/**` | REST-API: Liste, Anlegen, Laden, Version anhängen, Löschen |
 
 ## Dokumentation
 
@@ -62,8 +67,13 @@ Audio/PDF/Foto/Video → Transkript/Extraktion → Process IR (validiertes JSON)
 Die **Process IR** (strukturierte Zwischenform) trennt „Verstehen" (LLM) vom
 „Zeichnen" (deterministischer Generator) – prüfbar, versionierbar, wenig Halluzination.
 
-## Nächste Schritte
+## Status & nächste Schritte
 
-1. Konzept freigeben, Produktnamen wählen
-2. IR-JSON-Schema entwerfen
-3. Phase-1-MVP-Durchstich bauen (Text → IR → BPMN → Bewertung)
+**Erledigt:** IR-Schema · KI-Pipeline (Cloud + Offline-Mock) · BPMN-Generierung &
+Viewer · Bewertung · Docker-Setup · **versionierte Persistenz (Postgres)**.
+
+**Als Nächstes (Phase 3):**
+1. BPMN-**Editor** statt nur Viewer (Korrekturen zurück in die IR)
+2. Rollen als BPMN-**Lanes** rendern
+3. **Datei-Upload** (Foto/PDF/Video) + Whisper-Transkription
+4. Auth / Mandantenfähigkeit (SSO)

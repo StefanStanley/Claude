@@ -1,44 +1,60 @@
 # ProzessLupe — On-Prem-Start mit einem Befehl:  docker compose up --build
 #
-# Ohne ANTHROPIC_API_KEY läuft die App automatisch im Offline-Mock-Modus.
-# Für die echte Claude-Extraktion einfach eine .env neben dieser Datei anlegen
-# (siehe .env.example) — docker compose liest sie automatisch ein.
+# Startet Postgres, führt die Prisma-Migrationen aus und startet die App.
+# Ohne ANTHROPIC_API_KEY läuft die App im Offline-Mock-Modus; für die echte
+# Claude-Extraktion eine .env neben dieser Datei anlegen (siehe .env.example).
 
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: prozess-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-prozess}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prozess}
+      POSTGRES_DB: ${POSTGRES_DB:-prozess}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prozess}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  # Einmalige Migration: nutzt die Builder-Stage (enthält Prisma-CLI + Schema).
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-prozess}:${POSTGRES_PASSWORD:-prozess}@db:5432/${POSTGRES_DB:-prozess}?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+
   app:
     build:
       context: .
     image: prozess-interview:latest
-    container_name: prozess-interview
+    container_name: prozess-app
     ports:
       - "3000:3000"
     environment:
-      # Substitution aus .env / Shell; Defaults sorgen für Lauffähigkeit ohne Konfiguration.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-prozess}:${POSTGRES_PASSWORD:-prozess}@db:5432/${POSTGRES_DB:-prozess}?schema=public
       LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-5}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
-# ------------------------------------------------------------------------------
-# Ausbaustufe (Phase 2+): Diese Dienste kommen dazu, sobald Persistenz,
-# Datei-Upload und lokale Transkription/LLM benötigt werden. Bewusst noch
-# auskommentiert, da der Phase-1-MVP zustandslos ist.
-#
-#  db:
-#    image: postgres:16-alpine
-#    environment:
-#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prozess}
-#    volumes: [ "pgdata:/var/lib/postgresql/data" ]
-#
-#  storage:
-#    image: minio/minio
-#    command: server /data --console-address ":9001"
-#    volumes: [ "miniodata:/data" ]
-#
-#  # Lokale, OpenAI-kompatible LLM-/ASR-Backends (air-gapped):
-#  #   ollama:  image: ollama/ollama
-#  #   whisper: image: <faster-whisper-server>
-#
-# volumes:
-#   pgdata:
-#   miniodata:
+volumes:
+  pgdata:
+
+# Ausbaustufe (Phase 3+): MinIO (Datei-Upload), Whisper (Transkription) und ein
+# lokales, OpenAI-kompatibles LLM (vLLM/Ollama) kommen hier als weitere Services
+# dazu — die Anbindung erfolgt über das LLM-Gateway (src/lib/llm/).
