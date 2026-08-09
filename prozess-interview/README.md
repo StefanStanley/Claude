@@ -29,6 +29,12 @@ npx prisma migrate deploy
 npm run dev                    # http://localhost:3000
 ```
 
+### In die Cloud (Render)
+
+Der Blueprint **`render.yaml`** (Repo-Root) legt Web-Service + managed Postgres
+(EU/Frankfurt) an: Render-Dashboard → **New → Blueprint** → Repo wählen. Die App
+migriert sich beim Start selbst.
+
 Details & On-Prem-Hinweise: **[DEPLOY.md](./DEPLOY.md)**.
 
 **Bedienung:** Transkript einfügen (oder „Beispiel einfügen") → *Analysieren* →

@@ -1,84 +1,104 @@
 # Deployment — ProzessLupe
 
-On-Prem-fähiger Betrieb. Die App speichert Prozesse **versioniert** in PostgreSQL
-(Prisma). Jede Analyse erzeugt eine neue, unveränderliche Version.
+Die App speichert Prozesse **versioniert** in PostgreSQL (Prisma) und **migriert
+sich beim Start selbst** (`docker-entrypoint.sh` → `prisma migrate deploy`).
+Dadurch ist jeder Host gleich einfach: Render, Docker Compose, plain Docker, On-Prem.
 
-## Mit Docker Compose (empfohlen)
+Zur Laufzeit braucht die App nur:
+- **`DATABASE_URL`** (PostgreSQL) — Pflicht für die Persistenz
+- **`ANTHROPIC_API_KEY`** (optional) — sonst Offline-Mock-Modus
+- **`LLM_PROVIDER`** = `anthropic` oder `mock` (Default-Fallback: `mock`)
+
+---
+
+## Cloud: Render (Blueprint)
+
+Die Datei **`render.yaml`** (im Repo-Root) beschreibt Web-Service **und** managed
+PostgreSQL (Region Frankfurt / EU) in einem.
+
+1. Code auf GitHub pushen (dieser Branch/PR genügt).
+2. Render-Dashboard → **New → Blueprint** → dieses Repo auswählen.
+   Render liest `render.yaml` und legt **Web-Service + Datenbank** an.
+3. Warten, bis der erste Build durch ist. Beim Start wandert die App durch
+   `prisma migrate deploy` und ist dann unter der Render-URL erreichbar.
+4. **Echte KI aktivieren (optional):** im Web-Service unter *Environment*
+   `ANTHROPIC_API_KEY` eintragen und `LLM_PROVIDER` auf `anthropic` setzen →
+   *Save* löst ein Redeploy aus. Ohne Key läuft alles im Mock-Modus.
+
+**`DATABASE_URL`** wird automatisch aus der managed Datenbank injiziert
+(`fromDatabase`), nichts weiter zu tun.
+
+> Kosten/Grenzen: Im Blueprint stehen `plan: free` (Web spinnt bei Inaktivität
+> herunter; die Free-Datenbank ist auf ~30 Tage befristet). Für Dauerbetrieb den
+> Web-Service auf `starter` und die Datenbank auf `basic-256mb` (o.ä.) hochstufen.
+
+---
+
+## Lokal / On-Prem: Docker Compose
 
 ```bash
 cd prozess-interview
-docker compose up --build
-# → http://localhost:3000
+docker compose up --build      # startet Postgres + App → http://localhost:3000
 ```
 
-Compose startet drei Dienste:
+Die App migriert selbst und startet, sobald Postgres gesund ist.
+Stoppen: `docker compose down` · inkl. Daten: `docker compose down -v`.
 
-1. **db** — PostgreSQL 16 (Volume `pgdata`, Healthcheck).
-2. **migrate** — führt einmalig `prisma migrate deploy` aus (nutzt die
-   Builder-Stage mit Prisma-CLI + Schema) und beendet sich.
-3. **app** — die Next.js-App; startet erst, wenn `db` gesund **und** `migrate`
-   erfolgreich durch ist.
-
-Stoppen: `docker compose down` · inkl. Daten löschen: `docker compose down -v`.
-
-### KI-Provider konfigurieren
-
-Ohne Konfiguration läuft die App im **Offline-Mock-Modus** (deterministische
-Heuristik, kein Netz nötig). Für die echte Claude-Extraktion eine `.env` neben
-`docker-compose.yml` anlegen — Compose liest sie automatisch:
+Für echte Claude-Extraktion eine `.env` neben `docker-compose.yml` anlegen:
 
 ```env
 LLM_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
 ANTHROPIC_MODEL=claude-sonnet-4-5
-
-# Optional: DB-Zugangsdaten überschreiben (Defaults: prozess/prozess/prozess)
-# POSTGRES_USER=prozess
-# POSTGRES_PASSWORD=change-me
-# POSTGRES_DB=prozess
+# optional DB-Defaults überschreiben: POSTGRES_USER / _PASSWORD / _DB
 ```
 
-## Lokale Entwicklung (ohne Docker für die App)
+---
+
+## Lokale Entwicklung (App ohne Docker)
 
 ```bash
 cd prozess-interview
 npm install
-# Nur die Datenbank via Docker hochziehen:
-docker compose up -d db
-# Schema anwenden + Client generieren:
+docker compose up -d db        # nur Postgres
 export DATABASE_URL="postgresql://prozess:prozess@localhost:5432/prozess?schema=public"
 npx prisma migrate deploy
-npm run dev            # → http://localhost:3000
+npm run dev                    # http://localhost:3000
 ```
 
-`cp .env.example .env` und Werte eintragen erspart das manuelle `export`.
+---
 
 ## Wie das Image gebaut ist
 
 - **Multi-Stage** (`Dockerfile`): `deps` → `build` → schlanke `runner`-Stage.
-- **Next.js Standalone-Output**: nur Server + tatsächlich genutzte
-  `node_modules` (inkl. `bpmn-auto-layout` und der **Prisma-Query-Engine** —
-  musl-Target ist im `schema.prisma` gesetzt).
-- Alpine + `openssl`/`libc6-compat` für die Prisma-Engine.
-- Läuft als **non-root** User, mit **Healthcheck** gegen `/`.
-- Start: `node server.js`.
+- **Next.js Standalone-Output**: Server + genutzte `node_modules` (inkl.
+  `bpmn-auto-layout` und der **Prisma-Query-Engine**; musl-Target im Schema gesetzt).
+- Zusätzlich im Runner: **Prisma-CLI + Schema/Migrationen** für `migrate deploy`.
+- **Entrypoint** wendet Migrationen an und startet dann `node server.js`.
+- Alpine + `openssl`/`libc6-compat`, läuft als **non-root**, mit **Healthcheck**.
+
+---
 
 ## On-Prem / air-gapped
 
-- **Kein API-Key nötig:** `LLM_PROVIDER=mock` liefert den vollständigen
-  Durchstich ohne externen Dienst.
-- **Persistenz** ist bereits enthalten (Postgres, versioniert).
+- **Kein API-Key nötig:** `LLM_PROVIDER=mock` liefert den vollständigen Durchstich
+  ohne externen Dienst.
 - Für ein **lokales LLM** (vLLM/Ollama, OpenAI-kompatibel) ist das LLM-Gateway
-  (`src/lib/llm/`) der Anbindungspunkt; MinIO (Datei-Upload) und Whisper
-  (Transkription) folgen als weitere Compose-Services.
+  (`src/lib/llm/`) der Anbindungspunkt.
 
-## Hinweis zur Verifikation
+---
 
-Verifiziert gegen eine echte PostgreSQL-16-Instanz über den Standalone-Server
-(`node server.js`, identisch zum Container-`CMD`): kompletter Zyklus
-**Speichern (v1) → Liste → neue Version (v2) → alte Version laden → Löschen**,
-dazu `next build` und `tsc --noEmit` grün, und beide Prisma-Query-Engines
-(debian + musl) korrekt ins Standalone-Bundle getraced. Der reine `docker build`
-ist in der Entwicklungs-Sandbox nicht ausführbar (das Ziehen der Base-Images ist
-dort blockiert); auf einer normalen Docker-Umgebung baut das Dockerfile nach dem
-kanonischen Next.js-Standalone-Muster.
+## Verifikation (Stand dieser Iteration)
+
+Gegen eine echte PostgreSQL 16 verifiziert — im exakten Standalone-Layout des
+Dockerfiles (`docker-entrypoint.sh node server.js`):
+
+- `prisma migrate deploy` läuft idempotent, danach startet der Server (Homepage
+  **200**, `GET /api/processes` **200** mit den gespeicherten Prozessen).
+- Voller Persistenz-Zyklus **Speichern → Liste → neue Version → laden → Löschen**.
+- `tsc --noEmit` und `next build` grün; beide Prisma-Engines (debian + musl)
+  ins Standalone-Bundle getraced.
+
+Der reine `docker build` / das Render-Deployment ließen sich in der
+Entwicklungs-Sandbox nicht ausführen (dort ist das Ziehen von Base-Images
+blockiert); Dockerfile und `render.yaml` folgen den kanonischen Mustern.

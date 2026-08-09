@@ -1,0 +1,40 @@
+# Render Blueprint für die ProzessLupe-App (prozess-interview/).
+# Erstellt Web-Service (Docker) + managed PostgreSQL in einem Schritt.
+#
+# Deploy:  Render Dashboard → "New" → "Blueprint" → dieses Repo wählen.
+# Danach unter dem Web-Service ggf. ANTHROPIC_API_KEY setzen und
+# LLM_PROVIDER auf "anthropic" ändern (Standard hier: "mock", läuft ohne Key).
+#
+# Hinweis: Die App wendet Migrationen beim Start selbst an
+# (prozess-interview/docker-entrypoint.sh → prisma migrate deploy).
+
+databases:
+  - name: prozess-db
+    databaseName: prozess
+    plan: free # 30-Tage-Testdatenbank; für Dauerbetrieb auf basic-256mb o.ä. hochstufen
+    region: frankfurt # EU-Datenhaltung (DSGVO)
+    postgresMajorVersion: "16"
+    ipAllowList: [] # nur interne Verbindungen (kein öffentlicher Zugriff)
+
+services:
+  - type: web
+    name: prozess-interview
+    runtime: docker
+    region: frankfurt
+    plan: free # spinnt bei Inaktivität herunter; für Dauerbetrieb: starter
+    rootDir: prozess-interview
+    dockerfilePath: prozess-interview/Dockerfile
+    dockerContext: prozess-interview
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prozess-db
+          property: connectionString
+      - key: LLM_PROVIDER
+        value: mock # auf "anthropic" ändern, sobald ein API-Key gesetzt ist
+      - key: ANTHROPIC_API_KEY
+        sync: false # Wert sicher im Dashboard eintragen (nicht im Repo)
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-4-5

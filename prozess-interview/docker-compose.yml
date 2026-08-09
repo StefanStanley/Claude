@@ -1,8 +1,8 @@
 # ProzessLupe — On-Prem-Start mit einem Befehl:  docker compose up --build
 #
-# Startet Postgres, führt die Prisma-Migrationen aus und startet die App.
-# Ohne ANTHROPIC_API_KEY läuft die App im Offline-Mock-Modus; für die echte
-# Claude-Extraktion eine .env neben dieser Datei anlegen (siehe .env.example).
+# Startet Postgres und die App. Die App wendet beim Start selbst die Prisma-
+# Migrationen an (docker-entrypoint.sh). Ohne ANTHROPIC_API_KEY läuft sie im
+# Offline-Mock-Modus; für die echte Claude-Extraktion eine .env anlegen.
 
 services:
   db:
@@ -21,18 +21,6 @@ services:
       retries: 12
     restart: unless-stopped
 
-  # Einmalige Migration: nutzt die Builder-Stage (enthält Prisma-CLI + Schema).
-  migrate:
-    build:
-      context: .
-      target: builder
-    command: npx prisma migrate deploy
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-prozess}:${POSTGRES_PASSWORD:-prozess}@db:5432/${POSTGRES_DB:-prozess}?schema=public
-    depends_on:
-      db:
-        condition: service_healthy
-
   app:
     build:
       context: .
@@ -41,6 +29,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # migrate deploy + Server laufen beim Start automatisch (Entrypoint).
       DATABASE_URL: postgresql://${POSTGRES_USER:-prozess}:${POSTGRES_PASSWORD:-prozess}@db:5432/${POSTGRES_DB:-prozess}?schema=public
       LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -48,8 +37,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
