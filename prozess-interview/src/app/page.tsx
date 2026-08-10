@@ -172,8 +172,8 @@ export default function Page() {
         <div className="inner">
           <div className="brand">
             <svg className="glyph" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-              <rect x="1" y="1" width="24" height="24" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth="1.2" />
-              <path d="M14.5 4 7 14h5l-1.5 8L19 12h-5z" fill="var(--accent-fill)" />
+              <rect x="1" y="1" width="24" height="24" rx="7" fill="var(--tint-soft)" stroke="var(--tint)" strokeWidth="1.2" />
+              <path d="M14.5 4 7 14h5l-1.5 8L19 12h-5z" fill="var(--tint-fill)" />
             </svg>
             <span>ProzessLupe</span>
           </div>
@@ -258,7 +258,7 @@ export default function Page() {
                   </button>
                   <MicButton onAppend={appendSpoken} disabled={loading} />
                   {analysis && dirty && (
-                    <button className="primary" onClick={save} disabled={saving} style={{ background: "var(--teal-fill, var(--teal))" }}>
+                    <button className="primary" onClick={save} disabled={saving}>
                       {saving ? "Speichere …" : current ? "Als neue Version speichern" : "Speichern"}
                     </button>
                   )}
