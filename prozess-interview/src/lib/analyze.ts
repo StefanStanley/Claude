@@ -2,6 +2,7 @@ import { AnalysisResultSchema, type AnalysisResult } from "@/lib/ir/schema";
 import { resolveProviderKind, type LlmProvider } from "@/lib/llm/provider";
 import { createAnthropicProvider } from "@/lib/llm/anthropic";
 import { createGeminiProvider } from "@/lib/llm/gemini";
+import { createGroqProvider, createOpenAiCompatProvider } from "@/lib/llm/openai-compat";
 import { createMockProvider } from "@/lib/llm/mock";
 import { generateLayoutedBpmn } from "@/lib/bpmn/generate";
 
@@ -16,6 +17,10 @@ function getProvider(): LlmProvider {
       return createAnthropicProvider();
     case "gemini":
       return createGeminiProvider();
+    case "groq":
+      return createGroqProvider();
+    case "openai":
+      return createOpenAiCompatProvider();
     default:
       return createMockProvider();
   }

@@ -34,14 +34,19 @@ services:
           name: prozess-db
           property: connectionString
       - key: LLM_PROVIDER
-        value: mock # "gemini" (kostenlos) oder "anthropic", sobald ein Key gesetzt ist
-      # Google Gemini — kostenloses Free-Tier; Key aus https://aistudio.google.com
-      - key: GEMINI_API_KEY
+        value: mock # "groq"/"gemini" (kostenlos) oder "anthropic", sobald ein Key gesetzt ist
+      # Groq — kostenloses Free-Tier (zuverlässig); Key aus https://console.groq.com
+      - key: GROQ_API_KEY
         sync: false # Wert sicher im Dashboard eintragen (nicht im Repo)
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      # Google Gemini — Free-Tier; Key aus https://aistudio.google.com
+      - key: GEMINI_API_KEY
+        sync: false
       - key: GEMINI_MODEL
         value: gemini-2.0-flash
       # Anthropic Claude — kostenpflichtig (optional)
       - key: ANTHROPIC_API_KEY
-        sync: false # Wert sicher im Dashboard eintragen (nicht im Repo)
+        sync: false
       - key: ANTHROPIC_MODEL
         value: claude-sonnet-5
