@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import IrSummary from "@/components/IrSummary";
 import AssessmentPanel from "@/components/AssessmentPanel";
+import MicButton from "@/components/MicButton";
 import type { ProcessListItem, ProcessDetail } from "@/lib/processes";
 import type { ProcessIr, Assessment } from "@/lib/ir/schema";
 
@@ -147,6 +148,11 @@ export default function Page() {
     }
   }
 
+  // Diktiertes Sprach-Ergebnis ans Transkript hängen (mit sauberem Trennzeichen).
+  const appendSpoken = useCallback((text: string) => {
+    setTranscript((prev) => (prev && !/\s$/.test(prev) ? prev + " " : prev) + text);
+  }, []);
+
   function downloadBpmn() {
     if (!analysis) return;
     const blob = new Blob([analysis.bpmnXml], { type: "application/xml" });
@@ -235,8 +241,8 @@ export default function Page() {
                 <p className="eyebrow">Interview / Transkript</p>
                 <h2>Prozess beschreiben</h2>
                 <p className="hint">
-                  Transkript einfügen — die KI extrahiert Struktur, zeichnet das BPMN-Modell und bewertet den Prozess.
-                  Speichern legt eine neue, versionierte Fassung an.
+                  Transkript einfügen oder <b>diktieren</b> 🎤 — die KI extrahiert Struktur, zeichnet das
+                  BPMN-Modell und bewertet den Prozess. Speichern legt eine neue, versionierte Fassung an.
                 </p>
                 <textarea
                   value={transcript}
@@ -250,6 +256,7 @@ export default function Page() {
                   <button className="ghost" onClick={() => { setTranscript(SAMPLE); setDirty(false); }} disabled={loading}>
                     Beispiel einfügen
                   </button>
+                  <MicButton onAppend={appendSpoken} disabled={loading} />
                   {analysis && dirty && (
                     <button className="primary" onClick={save} disabled={saving} style={{ background: "var(--teal-fill, var(--teal))" }}>
                       {saving ? "Speichere …" : current ? "Als neue Version speichern" : "Speichern"}
