@@ -55,7 +55,7 @@ function extractJsonObject(text: string): unknown {
 export function createAnthropicProvider(): LlmProvider {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY fehlt.");
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
   const client = new Anthropic({ apiKey });
 
   async function callModel(userContent: string): Promise<string> {

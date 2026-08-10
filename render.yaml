@@ -38,4 +38,4 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false # Wert sicher im Dashboard eintragen (nicht im Repo)
       - key: ANTHROPIC_MODEL
-        value: claude-sonnet-4-5
+        value: claude-sonnet-5
