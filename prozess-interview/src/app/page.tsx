@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import IrSummary from "@/components/IrSummary";
 import AssessmentPanel from "@/components/AssessmentPanel";
 import MicButton from "@/components/MicButton";
+import Uploader from "@/components/Uploader";
 import type { ProcessListItem, ProcessDetail } from "@/lib/processes";
 import type { ProcessIr, Assessment } from "@/lib/ir/schema";
 
@@ -153,6 +154,11 @@ export default function Page() {
     setTranscript((prev) => (prev && !/\s$/.test(prev) ? prev + " " : prev) + text);
   }, []);
 
+  // Extrahierten Beleg-Block als eigenen Absatz anhängen (Leerzeile davor).
+  const appendBlock = useCallback((block: string) => {
+    setTranscript((prev) => (prev.trim() ? prev.replace(/\s*$/, "") + "\n\n" : "") + block);
+  }, []);
+
   function downloadBpmn() {
     if (!analysis) return;
     const blob = new Blob([analysis.bpmnXml], { type: "application/xml" });
@@ -267,6 +273,7 @@ export default function Page() {
                   )}
                   {flash && <span className="saved-flash">{flash}</span>}
                 </div>
+                <Uploader onExtracted={appendBlock} disabled={loading} />
                 {error && <div className="error">{error}</div>}
               </section>
 

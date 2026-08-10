@@ -8,4 +8,15 @@ declare module "bpmn-auto-layout" {
   export function layoutProcess(xml: string): Promise<string>;
 }
 
+// pdf-parse liefert keine Typen; Import über den lib-Pfad umgeht die Debug-Harness.
+declare module "pdf-parse/lib/pdf-parse.js" {
+  interface PdfParseResult {
+    text: string;
+    numpages: number;
+    info: unknown;
+  }
+  function pdfParse(dataBuffer: Buffer): Promise<PdfParseResult>;
+  export default pdfParse;
+}
+
 declare module "*.css";

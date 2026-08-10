@@ -592,6 +592,96 @@ button.ghost:disabled {
   padding: 4px 2px 0;
 }
 
+/* ---------------- Beleg-Upload (multimodale Erfassung) ---------------- */
+.uploader {
+  margin-top: 12px;
+}
+.dropzone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px dashed var(--separator-strong);
+  border-radius: var(--r-field);
+  background: var(--bg-elev-2);
+  color: var(--label-2);
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.dropzone:hover,
+.dropzone.over {
+  border-color: var(--tint-border);
+  background: var(--tint-soft);
+  color: var(--label);
+}
+.dropzone svg {
+  flex: 0 0 auto;
+  color: var(--tint);
+}
+.dropzone b {
+  font-weight: 600;
+  color: var(--label);
+}
+.dropzone[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.ingest-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ingest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 0.8rem;
+  border-top: 1px solid var(--separator);
+}
+.ingest-row:first-child {
+  border-top: none;
+}
+.ingest-name {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--label);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40%;
+}
+.ingest-note {
+  color: var(--label-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ingest-row.error .ingest-note {
+  color: var(--risk);
+}
+.ingest-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--label-3);
+}
+.ingest-dot.pending {
+  background: var(--warn);
+  animation: micpulse 1.1s ease-in-out infinite;
+}
+.ingest-dot.done {
+  background: var(--good);
+}
+.ingest-dot.error {
+  background: var(--risk);
+}
+
 /* ---------------- Bewertung ---------------- */
 .score-big {
   display: flex;

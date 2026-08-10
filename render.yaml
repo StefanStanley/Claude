@@ -50,3 +50,10 @@ services:
         sync: false
       - key: ANTHROPIC_MODEL
         value: claude-sonnet-5
+      # Multimodale Erfassung: Audio-Transkription über Groq Whisper
+      # (nutzt GROQ_API_KEY oben, kostenlos). Foto-OCR über das vision-fähige
+      # LLM (ANTHROPIC/GEMINI). PDF-Text läuft rein lokal, ohne Key.
+      - key: TRANSCRIBE_PROVIDER
+        value: groq
+      - key: TRANSCRIBE_MODEL
+        value: whisper-large-v3-turbo
