@@ -36,10 +36,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prisma-CLI + Schema/Migrationen für "migrate deploy" beim Container-Start.
+# (Der Entrypoint ruft prisma über node_modules/prisma/build/index.js auf –
+#  daher wird KEIN .bin/prisma-Symlink benötigt; der würde beim COPY ohnehin
+#  dereferenziert und die .wasm-Assets nicht mehr finden.)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
