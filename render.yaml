@@ -34,7 +34,13 @@ services:
           name: prozess-db
           property: connectionString
       - key: LLM_PROVIDER
-        value: mock # auf "anthropic" ändern, sobald ein API-Key gesetzt ist
+        value: mock # "gemini" (kostenlos) oder "anthropic", sobald ein Key gesetzt ist
+      # Google Gemini — kostenloses Free-Tier; Key aus https://aistudio.google.com
+      - key: GEMINI_API_KEY
+        sync: false # Wert sicher im Dashboard eintragen (nicht im Repo)
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      # Anthropic Claude — kostenpflichtig (optional)
       - key: ANTHROPIC_API_KEY
         sync: false # Wert sicher im Dashboard eintragen (nicht im Repo)
       - key: ANTHROPIC_MODEL
