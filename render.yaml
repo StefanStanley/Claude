@@ -23,8 +23,9 @@ services:
     region: frankfurt
     plan: free # spinnt bei Inaktivität herunter; für Dauerbetrieb: starter
     rootDir: prozess-interview
-    dockerfilePath: prozess-interview/Dockerfile
-    dockerContext: prozess-interview
+    # dockerfilePath/dockerContext sind relativ zu rootDir (sonst Pfad-Doppelung).
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /
     autoDeploy: true
     envVars:
