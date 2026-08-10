@@ -93,7 +93,8 @@ export default function MicButton({ onAppend, disabled }: Props) {
         disabled
         title="Sprach-Diktat wird in diesem Browser nicht unterstützt (Chrome oder Edge nutzen)."
       >
-        🎤 Diktat n/a
+        <MicGlyph />
+        Diktat n/a
       </button>
     );
   }
@@ -108,9 +109,21 @@ export default function MicButton({ onAppend, disabled }: Props) {
         aria-pressed={listening}
         title={listening ? "Aufnahme stoppen" : "Diktat starten (Deutsch)"}
       >
-        {listening ? "● Aufnahme … (stopp)" : "🎤 Diktieren"}
+        {listening ? <span className="rec-dot" aria-hidden="true" /> : <MicGlyph />}
+        {listening ? "Aufnahme stoppen" : "Diktieren"}
       </button>
       {listening && interim && <span className="interim">{interim}</span>}
     </>
+  );
+}
+
+/** Schlichtes, monochromes Mikrofon-Icon (erbt die Textfarbe). */
+function MicGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="9" y="2.5" width="6" height="11.5" rx="3" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M12 17.5V21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
   );
 }
