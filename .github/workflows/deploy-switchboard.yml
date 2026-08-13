@@ -1,10 +1,16 @@
 name: Deploy SWITCHBOARD (GitHub Pages)
 
 # Deployt den statischen Prototyp aus lovion-switchboard/ auf GitHub Pages.
+#
+# Hinweis: GitHub Pages (Quelle "GitHub Actions") erlaubt Deployments per
+# Default nur vom Default-Branch. Dieser Workflow ist deshalb auf `main`
+# ausgelegt und läuft nach dem Merge automatisch. Soll bereits vom
+# Feature-Branch deployt werden, unter Settings → Environments →
+# github-pages diesen Branch zusätzlich freigeben.
 on:
   push:
     branches:
-      - claude/lovion-switchboard-overview-5jkp7i
+      - main
     paths:
       - "lovion-switchboard/**"
       - ".github/workflows/deploy-switchboard.yml"
