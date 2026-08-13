@@ -680,6 +680,50 @@ button.ghost:disabled {
   margin: 0 5px;
 }
 
+/* Soll-Ist-Abgleich */
+.soll-select {
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--label);
+  background: var(--fill);
+  border: 1px solid var(--separator);
+  border-radius: var(--r-ctrl);
+  padding: 0 12px;
+  min-height: var(--tap);
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  flex: 1 1 240px;
+  max-width: 380px;
+}
+.conf-kpis {
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 14px;
+}
+@media (min-width: 720px) {
+  .conf-kpis {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.conf-plain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.conf-plain li {
+  font-size: 0.82rem;
+  color: var(--label-2);
+  padding: 6px 0;
+  border-top: 1px solid var(--separator);
+}
+.conf-plain li:first-child {
+  border-top: none;
+}
+.chip.conf-extra {
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+  color: var(--warn);
+}
+
 /* Varianten */
 .variant-list {
   list-style: none;

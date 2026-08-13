@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { formatDuration } from "@/lib/mining/mine";
 import type { MiningResult } from "@/lib/mining/types";
+import { compareConformance, SAMPLE_SOLL_IR, type ConformanceResult } from "@/lib/conformance/compare";
+import type { ProcessIr } from "@/lib/ir/schema";
 
 const BpmnViewer = dynamic(() => import("@/components/BpmnViewer"), { ssr: false });
 
@@ -42,9 +44,30 @@ export default function MiningView() {
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Soll-Ist-Abgleich
+  const [conf, setConf] = useState<ConformanceResult | null>(null);
+  const [sollList, setSollList] = useState<{ id: string; name: string }[]>([]);
+  const [sollChoice, setSollChoice] = useState("sample");
+  const [confLoading, setConfLoading] = useState(false);
+  const [confErr, setConfErr] = useState<string | null>(null);
+
+  // Gespeicherte Prozesse als mögliche Soll-Modelle laden (falls DB vorhanden).
+  useEffect(() => {
+    fetch("/api/processes")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d?.processes)) {
+          setSollList(d.processes.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const runMine = useCallback(async (file: File | Blob, name: string) => {
     setLoading(true);
     setError(null);
+    setConf(null);
+    setConfErr(null);
     setFileName(name);
     try {
       const fd = new FormData();
@@ -64,6 +87,29 @@ export default function MiningView() {
   const loadSample = useCallback(() => {
     runMine(new Blob([SAMPLE_LOG], { type: "text/csv" }), "beispiel-log.csv");
   }, [runMine]);
+
+  const runConformance = useCallback(async () => {
+    if (!data) return;
+    setConfLoading(true);
+    setConfErr(null);
+    try {
+      let ir: ProcessIr;
+      if (sollChoice === "sample") {
+        ir = SAMPLE_SOLL_IR;
+      } else {
+        const res = await fetch(`/api/processes/${sollChoice}`);
+        const d = await res.json();
+        if (!res.ok) throw new Error(d?.error || "Sollmodell konnte nicht geladen werden.");
+        ir = d.current.ir as ProcessIr;
+      }
+      setConf(compareConformance(ir, data.result));
+    } catch (e) {
+      setConfErr(e instanceof Error ? e.message : "Abgleich fehlgeschlagen.");
+      setConf(null);
+    } finally {
+      setConfLoading(false);
+    }
+  }, [data, sollChoice]);
 
   function downloadMap() {
     if (!data) return;
@@ -189,6 +235,113 @@ export default function MiningView() {
               Kantenbeschriftung = Häufigkeit (Anzahl Übergänge). {data?.droppedEdges ? "Seltene Kanten ausgeblendet." : ""}
             </p>
             <BpmnViewer xml={data!.bpmnXml} />
+          </section>
+
+          <section className="panel">
+            <p className="eyebrow">Soll-Ist-Abgleich · Conformance</p>
+            <h2>Modell vs. Realität</h2>
+            <p className="hint">
+              Vergleicht ein dokumentiertes Prozessmodell (Soll, aus dem Interview) mit dem gemine
+              Ist-Prozess und deckt Abweichungen auf.
+            </p>
+            <div className="row">
+              <select
+                className="soll-select"
+                value={sollChoice}
+                onChange={(e) => setSollChoice(e.target.value)}
+              >
+                <option value="sample">Beispiel-Sollmodell (Netzanschluss)</option>
+                {sollList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <button className="primary" onClick={runConformance} disabled={confLoading}>
+                {confLoading ? "Gleiche ab …" : "Abgleichen"}
+              </button>
+            </div>
+            {confErr && <div className="error">{confErr}</div>}
+
+            {conf && (
+              <>
+                <div className="meta-grid conf-kpis">
+                  <div className="stat">
+                    <b style={{ color: conf.score >= 70 ? "var(--good)" : conf.score >= 45 ? "var(--warn)" : "var(--risk)" }}>
+                      {conf.score}
+                    </b>
+                    <span>Konformität</span>
+                  </div>
+                  <div className="stat">
+                    <b>{Math.round(conf.fitness * 100)}%</b>
+                    <span>Fitness (Übergänge)</span>
+                  </div>
+                  <div className="stat">
+                    <b>{Math.round(conf.activityCoverage * 100)}%</b>
+                    <span>Aktivitäts-Abdeckung</span>
+                  </div>
+                  <div className="stat">
+                    <b>{conf.undesired.length}</b>
+                    <span>Abweichungen</span>
+                  </div>
+                </div>
+
+                {conf.undesired.length > 0 && (
+                  <>
+                    <p className="subhead">Abweichung: beobachtet, aber nicht modelliert</p>
+                    <ul className="bottleneck-list">
+                      {conf.undesired.map((d, i) => (
+                        <li key={i} className="bottleneck">
+                          <span className="bn-edge">
+                            {d.from} <span className="varrow">›</span> {d.to}
+                          </span>
+                          <span className="bn-dur">{d.count}×</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {conf.unobserved.length > 0 && (
+                  <>
+                    <p className="subhead">Modelliert, aber nie gelebt</p>
+                    <ul className="conf-plain">
+                      {conf.unobserved.map((d, i) => (
+                        <li key={i}>
+                          {d.from} <span className="varrow">›</span> {d.to}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {conf.istOnly.length > 0 && (
+                  <>
+                    <p className="subhead">Undokumentierte Aktivitäten (nur im Ist)</p>
+                    <div className="chips">
+                      {conf.istOnly.map((a) => (
+                        <span className="chip conf-extra" key={a}>{a}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {conf.sollOnly.length > 0 && (
+                  <>
+                    <p className="subhead">Tote Schritte (modelliert, nie ausgeführt)</p>
+                    <div className="chips">
+                      {conf.sollOnly.map((a) => (
+                        <span className="chip" key={a}>{a}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <p className="mining-meta" style={{ marginTop: 12 }}>
+                  {conf.mapping.length} von {conf.istActivityCount} Ist-Aktivitäten dem Sollmodell zugeordnet.
+                </p>
+              </>
+            )}
           </section>
 
           <div className="mining-cols">
