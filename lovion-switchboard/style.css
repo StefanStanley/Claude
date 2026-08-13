@@ -236,6 +236,54 @@ body.stoerung .grid tbody tr:not(.row-stoerung) { opacity: .5; }
 
 .empty { padding: 48px; text-align: center; color: var(--text-mute); }
 
+/* ---------- Netzkarte ---------- */
+.map-wrap {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden;
+}
+.map-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2);
+}
+.map-legend { display: flex; gap: 16px; flex-wrap: wrap; }
+.lg { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-dim); }
+.lg::before { content: ""; width: 11px; height: 11px; border-radius: 3px; }
+.lg-stoerung::before { background: var(--danger); }
+.lg-durchfuehrung::before { background: var(--warn); }
+.lg-geplant::before { background: var(--accent); }
+.lg-idle::before { background: var(--text-mute); }
+.map-hint { color: var(--text-mute); font-size: 12px; }
+
+.map-canvas { width: 100%; }
+.map-canvas svg { width: 100%; height: auto; display: block; background:
+  radial-gradient(900px 380px at 50% 0%, rgba(61,139,255,.05), transparent 70%); }
+
+.netz-edge { stroke: var(--surface-3); stroke-width: 3; fill: none; }
+.netz-edge.edge-stoerung { stroke: var(--danger); stroke-width: 3.5; stroke-dasharray: 7 5; }
+.netz-edge-label { fill: var(--text-mute); font-size: 11px; }
+
+.mn { cursor: pointer; }
+.mn .mn-shape { fill: var(--surface-3); stroke: var(--text-mute); stroke-width: 2; transition: filter .15s; }
+.mn:hover .mn-shape { filter: brightness(1.25); }
+.mn .mn-label { fill: var(--text); font-size: 13px; font-weight: 600; text-anchor: middle; }
+.mn .mn-sub { fill: var(--text-mute); font-size: 10.5px; text-anchor: middle; }
+
+.mn-geplant .mn-shape { fill: var(--accent-soft); stroke: var(--accent); }
+.mn-durchfuehrung .mn-shape { fill: var(--warn-soft); stroke: var(--warn); }
+.mn-stoerung .mn-shape { fill: var(--danger-soft); stroke: var(--danger); }
+.mn-stoerung .mn-pulse { fill: none; stroke: var(--danger); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; animation: nodePulse 1.8s ease-out infinite; }
+@keyframes nodePulse { 0% { opacity: .55; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
+
+.mn-badge circle { fill: var(--danger); }
+.mn-badge.badge-geplant circle { fill: var(--accent); }
+.mn-badge.badge-durchfuehrung circle { fill: var(--warn); }
+.mn-badge text { fill: #fff; font-size: 11px; font-weight: 700; text-anchor: middle; }
+
+.mn-type { fill: var(--text-mute); font-size: 10px; font-weight: 700; text-anchor: middle; letter-spacing: .5px; }
+
+body.stoerung .mn:not(.mn-stoerung) { opacity: .4; }
+body.stoerung .netz-edge:not(.edge-stoerung) { opacity: .3; }
+
 /* ---------- Drawer ---------- */
 .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; }
 .drawer {

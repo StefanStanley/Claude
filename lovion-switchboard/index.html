@@ -40,6 +40,7 @@
     <!-- Tabs -->
     <nav class="tabs" role="tablist">
       <button class="tab is-active" data-view="aktiv" role="tab">Aktive Übersicht</button>
+      <button class="tab" data-view="karte" role="tab">Netzkarte</button>
       <button class="tab" data-view="archiv" role="tab">Archiv</button>
     </nav>
 
@@ -91,6 +92,20 @@
         <tbody id="gridBody"></tbody>
       </table>
       <div class="empty" id="emptyState" hidden>Keine Maßnahmen entsprechen den aktuellen Filtern.</div>
+    </section>
+
+    <!-- Netzkarte (schematisch) -->
+    <section class="map-wrap" id="mapWrap" hidden aria-label="Netzkarte">
+      <div class="map-toolbar">
+        <div class="map-legend">
+          <span class="lg lg-stoerung">Störung</span>
+          <span class="lg lg-durchfuehrung">In Durchführung</span>
+          <span class="lg lg-geplant">Geplant / freigegeben</span>
+          <span class="lg lg-idle">Ohne Maßnahme</span>
+        </div>
+        <span class="map-hint">Knoten anklicken für Details · UW = Umspannwerk, ▢ Station</span>
+      </div>
+      <div class="map-canvas" id="mapCanvas"></div>
     </section>
   </main>
 

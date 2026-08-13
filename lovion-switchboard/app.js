@@ -255,6 +255,107 @@ function populateStatusFilter() {
   });
 }
 
+// ---------- Netzkarte (schematisch) ----------
+const NETZ_NODES = [
+  { id: "uw-nord",  label: "UW Nord",  sub: "110/20 kV",     typ: "UW", x: 130, y: 120, keys: ["UW Nord"] },
+  { id: "ons-214",  label: "ONS 214",  sub: "NS-Verteilung", typ: "ST", x: 130, y: 300, keys: ["ONS 214"] },
+  { id: "uw-west",  label: "UW West",  sub: "110/20 kV",     typ: "UW", x: 130, y: 440, keys: ["UW West"] },
+  { id: "kvs-12",   label: "KVS 12",   sub: "Ring Ost",      typ: "ST", x: 360, y: 95,  keys: ["KVS 12", "Ringkabel Ost"] },
+  { id: "kvs-09",   label: "KVS 09",   sub: "Ring Ost",      typ: "ST", x: 520, y: 170, keys: ["KVS 09"] },
+  { id: "kvs-03",   label: "KVS 03",   sub: "Ring West",     typ: "ST", x: 380, y: 430, keys: ["KVS 03", "Ringkabel West"] },
+  { id: "uw-mitte", label: "UW Mitte", sub: "110/20 kV",     typ: "UW", x: 640, y: 290, keys: ["UW Mitte"] },
+  { id: "uw-sued",  label: "UW Süd",   sub: "110/20 kV",     typ: "UW", x: 850, y: 130, keys: ["UW Süd"] },
+  { id: "kvs-07",   label: "KVS 07",   sub: "NS-Baustelle",  typ: "ST", x: 850, y: 380, keys: ["KVS 07"] },
+];
+
+const NETZ_EDGES = [
+  ["uw-nord", "kvs-12", "Ring Ost"],
+  ["kvs-12", "kvs-09", ""],
+  ["kvs-09", "uw-mitte", ""],
+  ["uw-nord", "ons-214", "NS"],
+  ["uw-west", "kvs-03", "Ring West"],
+  ["kvs-03", "uw-mitte", ""],
+  ["uw-sued", "kvs-07", "NS"],
+  ["uw-sued", "uw-mitte", "HS-Kupplung"],
+];
+
+function measuresForNode(node) {
+  return MASSNAHMEN.filter(m =>
+    m.status !== "Archiviert" && node.keys.some(k => m.betriebsmittel.includes(k))
+  );
+}
+
+function nodeStatus(ms) {
+  if (ms.some(m => m.kategorie === "Störung")) return "stoerung";
+  if (ms.some(m => m.status === "Durchführung")) return "durchfuehrung";
+  if (ms.length) return "geplant";
+  return "idle";
+}
+
+function renderMap() {
+  const W = 980, H = 540;
+  const byId = Object.fromEntries(NETZ_NODES.map(n => [n.id, n]));
+  const nodeMs = {}, nodeSt = {};
+  NETZ_NODES.forEach(n => { nodeMs[n.id] = measuresForNode(n); nodeSt[n.id] = nodeStatus(nodeMs[n.id]); });
+
+  const edges = NETZ_EDGES.map(([a, b, lab]) => {
+    const na = byId[a], nb = byId[b];
+    const st = (nodeSt[a] === "stoerung" || nodeSt[b] === "stoerung") ? " edge-stoerung" : "";
+    const mx = (na.x + nb.x) / 2, my = (na.y + nb.y) / 2;
+    return `<line class="netz-edge${st}" x1="${na.x}" y1="${na.y}" x2="${nb.x}" y2="${nb.y}"/>` +
+      (lab ? `<text class="netz-edge-label" x="${mx}" y="${my - 6}">${lab}</text>` : "");
+  }).join("");
+
+  const nodes = NETZ_NODES.map(n => {
+    const st = nodeSt[n.id], ms = nodeMs[n.id], uw = n.typ === "UW";
+    const shape = uw
+      ? `<rect class="mn-shape" x="-58" y="-23" width="116" height="46" rx="9"/>`
+      : `<circle class="mn-shape" cx="0" cy="0" r="28"/>`;
+    const pulse = st === "stoerung" ? `<circle class="mn-pulse" cx="0" cy="0" r="${uw ? 44 : 33}"/>` : "";
+    const badge = ms.length
+      ? `<g class="mn-badge badge-${st}" transform="translate(${uw ? 58 : 24}, ${uw ? -23 : -23})"><circle r="10"/><text y="4">${ms.length}</text></g>`
+      : "";
+    const label = `<text class="mn-label" y="${uw ? 3 : 2}">${escapeHtml(n.label)}</text>`;
+    const sub = `<text class="mn-sub" y="${uw ? 40 : 46}">${escapeHtml(n.sub)}</text>`;
+    const info = ms.length ? `${ms.length} Maßnahme(n)` : "keine Maßnahme";
+    return `<g class="mn mn-${st}" data-node="${n.id}" tabindex="0" role="button">
+      <title>${escapeHtml(n.label)} — ${info}</title>
+      <g transform="translate(${n.x},${n.y})">${pulse}${shape}${label}${sub}${badge}</g></g>`;
+  }).join("");
+
+  $("#mapCanvas").innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Schematische Netzkarte">${edges}${nodes}</svg>`;
+
+  const open = id => {
+    const ms = nodeMs[id];
+    if (!ms.length) return;
+    const first = [...ms].sort((a, b) =>
+      (a.kategorie === "Störung" ? 0 : 1) - (b.kategorie === "Störung" ? 0 : 1))[0];
+    openDrawer(first.id);
+  };
+  $$("#mapCanvas g.mn").forEach(g => {
+    g.addEventListener("click", () => open(g.dataset.node));
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(g.dataset.node); } });
+  });
+}
+
+// ---------- View-Umschaltung ----------
+function switchView(view) {
+  state.view = view;
+  $$(".tab").forEach(x => x.classList.toggle("is-active", x.dataset.view === view));
+  const isKarte = view === "karte";
+  $(".filterbar").style.display = isKarte ? "none" : "";
+  $(".table-wrap").hidden = isKarte;
+  $("#mapWrap").hidden = !isKarte;
+  if (isKarte) {
+    renderMap();
+  } else {
+    // Statusfilter im Archiv nicht sinnvoll → zurücksetzen
+    if (view === "archiv") { state.status = "alle"; $("#fStatus").value = "alle"; }
+    renderTable();
+  }
+}
+
 // ---------- Detail-Drawer ----------
 function openDrawer(id) {
   const m = MASSNAHMEN.find(x => x.id === id);
@@ -380,14 +481,7 @@ function bind() {
     renderTable();
   });
 
-  $$(".tab").forEach(t => t.addEventListener("click", () => {
-    $$(".tab").forEach(x => x.classList.remove("is-active"));
-    t.classList.add("is-active");
-    state.view = t.dataset.view;
-    // Statusfilter im Archiv nicht sinnvoll → zurücksetzen
-    if (state.view === "archiv") { state.status = "alle"; $("#fStatus").value = "alle"; }
-    renderTable();
-  }));
+  $$(".tab").forEach(t => t.addEventListener("click", () => switchView(t.dataset.view)));
 
   $$(".grid th.sortable").forEach(th => th.addEventListener("click", () => {
     const key = th.dataset.key;
