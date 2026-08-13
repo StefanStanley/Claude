@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Switchboard — Übersicht Schalt- &amp; Stellmaßnahmen</title>
+  <!-- OpenStreetMap via Leaflet (nur online; App fällt sonst auf das Netzschema zurück) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -103,7 +106,7 @@
           <span class="lg lg-geplant">Geplant / freigegeben</span>
           <span class="lg lg-idle">Ohne Maßnahme</span>
         </div>
-        <span class="map-hint">Knoten anklicken für Details · UW = Umspannwerk, ▢ Station</span>
+        <span class="map-hint" id="mapModeHint">Knoten anklicken für Details · UW = Umspannwerk, ▢ Station</span>
       </div>
       <div class="map-canvas" id="mapCanvas"></div>
     </section>

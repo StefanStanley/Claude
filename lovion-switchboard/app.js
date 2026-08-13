@@ -256,16 +256,17 @@ function populateStatusFilter() {
 }
 
 // ---------- Netzkarte (schematisch) ----------
+// x/y = Position im Netzschema · lat/lng = reale Lage (Berlin) für OpenStreetMap
 const NETZ_NODES = [
-  { id: "uw-nord",  label: "UW Nord",  sub: "110/20 kV",     typ: "UW", x: 130, y: 120, keys: ["UW Nord"] },
-  { id: "ons-214",  label: "ONS 214",  sub: "NS-Verteilung", typ: "ST", x: 130, y: 300, keys: ["ONS 214"] },
-  { id: "uw-west",  label: "UW West",  sub: "110/20 kV",     typ: "UW", x: 130, y: 440, keys: ["UW West"] },
-  { id: "kvs-12",   label: "KVS 12",   sub: "Ring Ost",      typ: "ST", x: 360, y: 95,  keys: ["KVS 12", "Ringkabel Ost"] },
-  { id: "kvs-09",   label: "KVS 09",   sub: "Ring Ost",      typ: "ST", x: 520, y: 170, keys: ["KVS 09"] },
-  { id: "kvs-03",   label: "KVS 03",   sub: "Ring West",     typ: "ST", x: 380, y: 430, keys: ["KVS 03", "Ringkabel West"] },
-  { id: "uw-mitte", label: "UW Mitte", sub: "110/20 kV",     typ: "UW", x: 640, y: 290, keys: ["UW Mitte"] },
-  { id: "uw-sued",  label: "UW Süd",   sub: "110/20 kV",     typ: "UW", x: 850, y: 130, keys: ["UW Süd"] },
-  { id: "kvs-07",   label: "KVS 07",   sub: "NS-Baustelle",  typ: "ST", x: 850, y: 380, keys: ["KVS 07"] },
+  { id: "uw-nord",  label: "UW Nord",  sub: "110/20 kV",     typ: "UW", x: 130, y: 120, lat: 52.565, lng: 13.365, keys: ["UW Nord"] },
+  { id: "ons-214",  label: "ONS 214",  sub: "NS-Verteilung", typ: "ST", x: 130, y: 300, lat: 52.548, lng: 13.352, keys: ["ONS 214"] },
+  { id: "uw-west",  label: "UW West",  sub: "110/20 kV",     typ: "UW", x: 130, y: 440, lat: 52.520, lng: 13.255, keys: ["UW West"] },
+  { id: "kvs-12",   label: "KVS 12",   sub: "Ring Ost",      typ: "ST", x: 360, y: 95,  lat: 52.545, lng: 13.430, keys: ["KVS 12", "Ringkabel Ost"] },
+  { id: "kvs-09",   label: "KVS 09",   sub: "Ring Ost",      typ: "ST", x: 520, y: 170, lat: 52.520, lng: 13.470, keys: ["KVS 09"] },
+  { id: "kvs-03",   label: "KVS 03",   sub: "Ring West",     typ: "ST", x: 380, y: 430, lat: 52.470, lng: 13.330, keys: ["KVS 03", "Ringkabel West"] },
+  { id: "uw-mitte", label: "UW Mitte", sub: "110/20 kV",     typ: "UW", x: 640, y: 290, lat: 52.520, lng: 13.405, keys: ["UW Mitte"] },
+  { id: "uw-sued",  label: "UW Süd",   sub: "110/20 kV",     typ: "UW", x: 850, y: 130, lat: 52.455, lng: 13.420, keys: ["UW Süd"] },
+  { id: "kvs-07",   label: "KVS 07",   sub: "NS-Baustelle",  typ: "ST", x: 850, y: 380, lat: 52.478, lng: 13.475, keys: ["KVS 07"] },
 ];
 
 const NETZ_EDGES = [
@@ -292,7 +293,72 @@ function nodeStatus(ms) {
   return "idle";
 }
 
+function statusColor(st) {
+  return st === "stoerung" ? "#ff5d5d"
+    : st === "durchfuehrung" ? "#f5b942"
+    : st === "geplant" ? "#3d8bff" : "#6f7d99";
+}
+
+// Dispatcher: echte OpenStreetMap-Karte, sonst Netzschema als Fallback
 function renderMap() {
+  const hint = $("#mapModeHint");
+  if (typeof L !== "undefined") {
+    if (hint) hint.textContent = "Live-Karte: OpenStreetMap · Region Berlin — Knoten anklicken für Details";
+    renderMapOSM();
+  } else {
+    if (hint) hint.textContent = "Vorschau ohne Kartendienst → Netzschema. In der gehosteten App/Pages erscheint die OpenStreetMap-Karte (Berlin).";
+    renderMapSchema();
+  }
+}
+
+let leafletMap = null;
+function renderMapOSM() {
+  const canvas = $("#mapCanvas");
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  canvas.innerHTML = '<div id="leafletHost" class="leaflet-host"></div>';
+
+  const map = L.map("leafletHost", { scrollWheelZoom: true }).setView([52.520, 13.405], 11);
+  leafletMap = map;
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap-Mitwirkende",
+  }).addTo(map);
+
+  const byId = Object.fromEntries(NETZ_NODES.map(n => [n.id, n]));
+  const nodeMs = {}, nodeSt = {};
+  NETZ_NODES.forEach(n => { nodeMs[n.id] = measuresForNode(n); nodeSt[n.id] = nodeStatus(nodeMs[n.id]); });
+  const dim = document.body.classList.contains("stoerung");
+
+  NETZ_EDGES.forEach(([a, b]) => {
+    const na = byId[a], nb = byId[b];
+    const es = nodeSt[a] === "stoerung" || nodeSt[b] === "stoerung";
+    L.polyline([[na.lat, na.lng], [nb.lat, nb.lng]], {
+      color: es ? "#ff5d5d" : "#8aa0c8", weight: 3,
+      opacity: (dim && !es) ? 0.25 : 0.75, dashArray: es ? "8 6" : null,
+    }).addTo(map);
+  });
+
+  const bounds = [];
+  NETZ_NODES.forEach(n => {
+    const st = nodeSt[n.id], ms = nodeMs[n.id], col = statusColor(st);
+    const faded = dim && st !== "stoerung";
+    bounds.push([n.lat, n.lng]);
+    const mk = L.circleMarker([n.lat, n.lng], {
+      radius: n.typ === "UW" ? 11 : 8, color: col, weight: 2,
+      fillColor: col, fillOpacity: faded ? 0.2 : 0.85, opacity: faded ? 0.3 : 1,
+    }).addTo(map);
+    mk.bindTooltip(`${n.label}${ms.length ? " · " + ms.length : ""}`, { direction: "top", offset: [0, -6] });
+    if (ms.length) mk.on("click", () => {
+      const first = [...ms].sort((x, y) =>
+        (x.kategorie === "Störung" ? 0 : 1) - (y.kategorie === "Störung" ? 0 : 1))[0];
+      openDrawer(first.id);
+    });
+  });
+  if (bounds.length) map.fitBounds(bounds, { padding: [45, 45] });
+  setTimeout(() => map.invalidateSize(), 60);
+}
+
+function renderMapSchema() {
   const W = 980, H = 540;
   const byId = Object.fromEntries(NETZ_NODES.map(n => [n.id, n]));
   const nodeMs = {}, nodeSt = {};
@@ -500,6 +566,7 @@ function bind() {
       state.kategorie = "alle";
       $$("#fKategorie .seg-btn").forEach(x => x.classList.toggle("is-active", x.dataset.val === "alle"));
     }
+    if (state.view === "karte") renderMap();
     renderTable();
   });
 
