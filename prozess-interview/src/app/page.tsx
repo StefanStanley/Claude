@@ -6,6 +6,7 @@ import IrSummary from "@/components/IrSummary";
 import AssessmentPanel from "@/components/AssessmentPanel";
 import MicButton from "@/components/MicButton";
 import Uploader from "@/components/Uploader";
+import MiningView from "@/components/MiningView";
 import type { ProcessListItem, ProcessDetail } from "@/lib/processes";
 import type { ProcessIr, Assessment } from "@/lib/ir/schema";
 
@@ -27,7 +28,10 @@ Anschließend prüft die Netzplanung im GIS die technische Machbarkeit am Anschl
 Danach erstellen wir ein Angebot und schicken es per E-Mail an den Kunden.
 Nach Auftragsbestätigung wird der Anschluss terminiert und der Bauauftrag ausgelöst.`;
 
+type Mode = "interview" | "mining";
+
 export default function Page() {
+  const [mode, setMode] = useState<Mode>("interview");
   const [processes, setProcesses] = useState<ProcessListItem[]>([]);
   const [current, setCurrent] = useState<ProcessDetail | null>(null);
 
@@ -170,7 +174,7 @@ export default function Page() {
     URL.revokeObjectURL(url);
   }
 
-  const providerTag = analysis ? analysis.provider : "Phase-2 · Persistenz";
+  const providerTag = mode === "mining" ? "Process Mining" : analysis ? analysis.provider : "Interview";
 
   return (
     <>
@@ -186,11 +190,31 @@ export default function Page() {
             </svg>
             <span>ProzessLupe</span>
           </div>
+          <div className="segmented" role="tablist" aria-label="Modus">
+            <button
+              role="tab"
+              aria-selected={mode === "interview"}
+              className={mode === "interview" ? "active" : ""}
+              onClick={() => setMode("interview")}
+            >
+              Interview
+            </button>
+            <button
+              role="tab"
+              aria-selected={mode === "mining"}
+              className={mode === "mining" ? "active" : ""}
+              onClick={() => setMode("mining")}
+            >
+              Process Mining
+            </button>
+          </div>
           <span className="provider-tag">{providerTag}</span>
         </div>
       </header>
 
       <main className="wrap">
+        {mode === "mining" && <MiningView />}
+        {mode === "interview" && (
         <div className="layout">
           {/* Sidebar: gespeicherte Prozesse */}
           <aside className="sidebar">
@@ -306,6 +330,7 @@ export default function Page() {
             </div>
           </section>
         </div>
+        )}
       </main>
     </>
   );

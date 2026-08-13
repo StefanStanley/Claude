@@ -182,6 +182,7 @@ Output: **Management-Summary + Detailbefunde + priorisierter Handlungsplan** (Qu
 | **0 – Konzept** *(jetzt)* | Dieses Dokument, Scope, Architektur | Entscheidungsgrundlage |
 | **1 – MVP-Durchstich** | Text/Transkript rein → IR → BPMN → Bewertung anzeigen | Klickbarer Ende-zu-Ende-Pfad |
 | **2 – Erfassung & Multimodal** | Audioaufnahme + Upload (Foto/PDF/Video) + Whisper | Echte Interview-Erfassung |
+| **2.5 – Process Mining** | Event-Log (CSV/XES) → Directly-Follows-Graph, Varianten, Durchlaufzeiten, Engpässe, Rework, Ist-Prozesslandkarte | Objektiver Ist-Prozess aus Systemdaten – Basis für Soll-Ist-Abgleich |
 | **3 – Review & Export** | BPMN-Editor, KI-Rückfragen, PDF-Bericht, Exporte | Produktiv nutzbar |
 | **4 – On-Prem-Paket** | Docker/Helm, lokale Modelle, SSO, Audit | Beim Kunden deploybar |
 | **5 – Skalierung** | Mandantenfähigkeit, Rubrik-Presets, Benchmarks, Analytics | Marktreife SaaS |

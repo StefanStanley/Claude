@@ -592,6 +592,189 @@ button.ghost:disabled {
   padding: 4px 2px 0;
 }
 
+/* ---------------- Segmented Control (Modus-Umschalter) ---------------- */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--fill);
+  border: 1px solid var(--separator);
+  border-radius: var(--r-ctrl);
+}
+.segmented button {
+  border: none;
+  background: transparent;
+  color: var(--label-2);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  min-height: 30px;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.segmented button:hover {
+  color: var(--label);
+}
+.segmented button.active {
+  background: var(--bg-elev);
+  color: var(--label);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+@media (max-width: 560px) {
+  .masthead .provider-tag {
+    display: none;
+  }
+}
+
+/* ---------------- Process Mining ---------------- */
+.mining {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mining-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 960px) {
+  .mining-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.mining-kpis {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 720px) {
+  .mining-kpis {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+.mining-meta {
+  font-size: 0.76rem;
+  color: var(--label-3);
+  margin: 4px 0 0;
+}
+.mining-meta code {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  background: var(--fill);
+  border: 1px solid var(--separator);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--label-2);
+}
+.mining-warn {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent);
+  border-radius: var(--r-ctrl);
+  padding: 7px 10px;
+}
+.varrow {
+  color: var(--label-3);
+  margin: 0 5px;
+}
+
+/* Varianten */
+.variant-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.variant {
+  border-top: 1px solid var(--separator);
+  padding: 10px 0;
+}
+.variant:first-child {
+  border-top: none;
+}
+.variant-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.variant-rank {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--tint);
+}
+.variant-count {
+  font-size: 0.76rem;
+  color: var(--label-3);
+}
+.variant-seq {
+  font-size: 0.82rem;
+  color: var(--label);
+  line-height: 1.6;
+}
+
+/* Engpässe */
+.bottleneck-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bottleneck {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--separator);
+}
+.bottleneck:first-child {
+  border-top: none;
+}
+.bn-edge {
+  font-size: 0.82rem;
+  color: var(--label);
+}
+.bn-dur {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--risk);
+  white-space: nowrap;
+}
+
+/* Aktivitäts-Frequenzen */
+.freq {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.freq-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.freq-name {
+  font-size: 0.82rem;
+  color: var(--label);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.freq-num {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--label-2);
+  font-variant-numeric: tabular-nums;
+}
+.freq .bar {
+  margin: 0;
+}
+
 /* ---------------- Beleg-Upload (multimodale Erfassung) ---------------- */
 .uploader {
   margin-top: 12px;
