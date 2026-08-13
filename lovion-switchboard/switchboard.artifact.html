@@ -25,6 +25,9 @@
 
 * { box-sizing: border-box; }
 
+/* hidden muss gegen eigene display-Regeln (flex/grid) gewinnen */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   font-family: var(--font);
