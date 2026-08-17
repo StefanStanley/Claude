@@ -23,8 +23,9 @@ services:
     region: frankfurt
     plan: free # spinnt bei Inaktivität herunter; für Dauerbetrieb: starter
     rootDir: prozess-interview
-    dockerfilePath: prozess-interview/Dockerfile
-    dockerContext: prozess-interview
+    # dockerfilePath/dockerContext sind relativ zu rootDir (sonst Pfad-Doppelung).
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /
     autoDeploy: true
     envVars:
@@ -33,8 +34,26 @@ services:
           name: prozess-db
           property: connectionString
       - key: LLM_PROVIDER
-        value: mock # auf "anthropic" ändern, sobald ein API-Key gesetzt ist
-      - key: ANTHROPIC_API_KEY
+        value: anthropic # ohne gesetzten ANTHROPIC_API_KEY faellt die App automatisch auf mock zurueck
+      # Groq — kostenloses Free-Tier (zuverlässig); Key aus https://console.groq.com
+      - key: GROQ_API_KEY
         sync: false # Wert sicher im Dashboard eintragen (nicht im Repo)
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      # Google Gemini — Free-Tier; Key aus https://aistudio.google.com
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+      # Anthropic Claude — kostenpflichtig (optional)
+      - key: ANTHROPIC_API_KEY
+        sync: false
       - key: ANTHROPIC_MODEL
-        value: claude-sonnet-4-5
+        value: claude-sonnet-5
+      # Multimodale Erfassung: Audio-Transkription über Groq Whisper
+      # (nutzt GROQ_API_KEY oben, kostenlos). Foto-OCR über das vision-fähige
+      # LLM (ANTHROPIC/GEMINI). PDF-Text läuft rein lokal, ohne Key.
+      - key: TRANSCRIBE_PROVIDER
+        value: groq
+      - key: TRANSCRIBE_MODEL
+        value: whisper-large-v3-turbo

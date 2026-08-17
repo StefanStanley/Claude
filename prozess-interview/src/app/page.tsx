@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import IrSummary from "@/components/IrSummary";
 import AssessmentPanel from "@/components/AssessmentPanel";
+import MicButton from "@/components/MicButton";
+import Uploader from "@/components/Uploader";
+import MiningView from "@/components/MiningView";
 import type { ProcessListItem, ProcessDetail } from "@/lib/processes";
 import type { ProcessIr, Assessment } from "@/lib/ir/schema";
 
@@ -25,7 +28,10 @@ Anschließend prüft die Netzplanung im GIS die technische Machbarkeit am Anschl
 Danach erstellen wir ein Angebot und schicken es per E-Mail an den Kunden.
 Nach Auftragsbestätigung wird der Anschluss terminiert und der Bauauftrag ausgelöst.`;
 
+type Mode = "interview" | "mining";
+
 export default function Page() {
+  const [mode, setMode] = useState<Mode>("interview");
   const [processes, setProcesses] = useState<ProcessListItem[]>([]);
   const [current, setCurrent] = useState<ProcessDetail | null>(null);
 
@@ -147,6 +153,16 @@ export default function Page() {
     }
   }
 
+  // Diktiertes Sprach-Ergebnis ans Transkript hängen (mit sauberem Trennzeichen).
+  const appendSpoken = useCallback((text: string) => {
+    setTranscript((prev) => (prev && !/\s$/.test(prev) ? prev + " " : prev) + text);
+  }, []);
+
+  // Extrahierten Beleg-Block als eigenen Absatz anhängen (Leerzeile davor).
+  const appendBlock = useCallback((block: string) => {
+    setTranscript((prev) => (prev.trim() ? prev.replace(/\s*$/, "") + "\n\n" : "") + block);
+  }, []);
+
   function downloadBpmn() {
     if (!analysis) return;
     const blob = new Blob([analysis.bpmnXml], { type: "application/xml" });
@@ -158,24 +174,47 @@ export default function Page() {
     URL.revokeObjectURL(url);
   }
 
-  const providerTag = analysis ? analysis.provider : "Phase-2 · Persistenz";
+  const providerTag = mode === "mining" ? "Process Mining" : analysis ? analysis.provider : "Interview";
 
   return (
     <>
       <header className="masthead">
         <div className="inner">
           <div className="brand">
-            <svg className="glyph" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-              <rect x="1" y="1" width="24" height="24" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth="1.2" />
-              <path d="M14.5 4 7 14h5l-1.5 8L19 12h-5z" fill="var(--accent-fill)" />
+            <svg className="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="10.25" cy="10.25" r="6.5" stroke="var(--tint)" strokeWidth="1.6" />
+              <path d="M15.4 15.4 20.5 20.5" stroke="var(--tint)" strokeWidth="1.7" strokeLinecap="round" />
+              <circle cx="7.9" cy="10.25" r="1.15" fill="var(--tint)" />
+              <circle cx="12.6" cy="10.25" r="1.15" fill="var(--tint)" />
+              <path d="M9.05 10.25h2.4" stroke="var(--tint)" strokeWidth="1.2" strokeLinecap="round" />
             </svg>
             <span>ProzessLupe</span>
+          </div>
+          <div className="segmented" role="tablist" aria-label="Modus">
+            <button
+              role="tab"
+              aria-selected={mode === "interview"}
+              className={mode === "interview" ? "active" : ""}
+              onClick={() => setMode("interview")}
+            >
+              Interview
+            </button>
+            <button
+              role="tab"
+              aria-selected={mode === "mining"}
+              className={mode === "mining" ? "active" : ""}
+              onClick={() => setMode("mining")}
+            >
+              Process Mining
+            </button>
           </div>
           <span className="provider-tag">{providerTag}</span>
         </div>
       </header>
 
       <main className="wrap">
+        {mode === "mining" && <MiningView />}
+        {mode === "interview" && (
         <div className="layout">
           {/* Sidebar: gespeicherte Prozesse */}
           <aside className="sidebar">
@@ -235,8 +274,8 @@ export default function Page() {
                 <p className="eyebrow">Interview / Transkript</p>
                 <h2>Prozess beschreiben</h2>
                 <p className="hint">
-                  Transkript einfügen — die KI extrahiert Struktur, zeichnet das BPMN-Modell und bewertet den Prozess.
-                  Speichern legt eine neue, versionierte Fassung an.
+                  Transkript einfügen oder diktieren — die KI extrahiert die Struktur, zeichnet das
+                  BPMN-Modell und bewertet den Prozess. Speichern legt eine neue, versionierte Fassung an.
                 </p>
                 <textarea
                   value={transcript}
@@ -250,13 +289,15 @@ export default function Page() {
                   <button className="ghost" onClick={() => { setTranscript(SAMPLE); setDirty(false); }} disabled={loading}>
                     Beispiel einfügen
                   </button>
+                  <MicButton onAppend={appendSpoken} disabled={loading} />
                   {analysis && dirty && (
-                    <button className="primary" onClick={save} disabled={saving} style={{ background: "var(--teal-fill, var(--teal))" }}>
+                    <button className="primary" onClick={save} disabled={saving}>
                       {saving ? "Speichere …" : current ? "Als neue Version speichern" : "Speichern"}
                     </button>
                   )}
-                  {flash && <span className="saved-flash">✓ {flash}</span>}
+                  {flash && <span className="saved-flash">{flash}</span>}
                 </div>
+                <Uploader onExtracted={appendBlock} disabled={loading} />
                 {error && <div className="error">{error}</div>}
               </section>
 
@@ -289,6 +330,7 @@ export default function Page() {
             </div>
           </section>
         </div>
+        )}
       </main>
     </>
   );

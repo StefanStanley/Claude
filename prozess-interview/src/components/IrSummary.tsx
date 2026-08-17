@@ -43,8 +43,8 @@ export default function IrSummary({ ir }: { ir: ProcessIr }) {
           <p className="subhead">Systeme</p>
           <div className="chips">
             {ir.systems.map((s) => (
-              <span className="chip" key={s.id}>
-                <b>▪</b> {s.name}
+              <span className="chip sys" key={s.id}>
+                {s.name}
               </span>
             ))}
           </div>

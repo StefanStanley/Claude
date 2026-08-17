@@ -5,7 +5,9 @@ set -e
 
 if [ -n "$DATABASE_URL" ]; then
   echo "→ Wende Datenbank-Migrationen an (prisma migrate deploy) …"
-  node_modules/.bin/prisma migrate deploy
+  # Direkt über den Paketpfad aufrufen (nicht .bin/prisma): so liegen die
+  # .wasm-Assets neben dem CLI (node_modules/prisma/build/), sonst ENOENT.
+  node node_modules/prisma/build/index.js migrate deploy
 else
   echo "→ DATABASE_URL nicht gesetzt — Migration übersprungen (Persistenz deaktiviert, Mock-Modus)."
 fi

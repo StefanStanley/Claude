@@ -31,16 +31,51 @@ const SYSTEM_KEYWORDS: Record<string, string> = {
 const DECISION_HINTS = ["?", "ob ", "falls ", "wenn ", "prüf", "entscheid", "genehmig", "vollständig"];
 const SERVICE_HINTS = ["automatisch", "system", "generiert", "sap", "schnittstelle", "importiert"];
 
+// Typische Prozess-/Zeitkonnektoren, die einen neuen Schritt einleiten.
+const CONNECTIVES = [
+  "danach",
+  "dann",
+  "anschließend",
+  "anschliessend",
+  "daraufhin",
+  "woraufhin",
+  "nachdem",
+  "sobald",
+  "zunächst",
+  "zuerst",
+  "abschließend",
+  "abschliessend",
+  "als nächstes",
+  "als naechstes",
+  "im anschluss",
+  "danach dann",
+];
+const CONNECTIVE_RE = new RegExp(`\\s+(?=(?:${CONNECTIVES.join("|")})\\b)`, "gi");
+const LEADING_CONNECTIVE_RE = new RegExp(`^(?:${CONNECTIVES.join("|")})\\b[\\s,]*`, "i");
+
+/** Entfernt einen führenden Konnektor ("dann übertrage …" -> "übertrage …"). */
+function stripLeadingConnective(s: string): string {
+  return s.replace(LEADING_CONNECTIVE_RE, "").trim();
+}
+
 function splitSteps(text: string): string[] {
+  // 1) Zeilen bevorzugen, sonst in Sätze zerlegen.
   const byLine = text
     .split(/\r?\n/)
     .map((l) => l.replace(/^\s*[-*\d.)]+\s*/, "").trim())
     .filter((l) => l.length > 0);
-  const source = byLine.length >= 2 ? byLine : text.split(/(?<=[.!?])\s+/);
-  return source
-    .map((s) => s.trim())
-    .filter((s) => s.length > 2)
-    .slice(0, 12);
+  const base = byLine.length >= 2 ? byLine : text.split(/(?<=[.!?])\s+/);
+
+  // 2) Lange (diktierte) Segmente zusätzlich an Prozess-Konnektoren aufteilen —
+  //    so wird aus Fließtext ohne Satzzeichen eine mehrstufige Kette.
+  const parts: string[] = [];
+  for (const seg of base) {
+    for (const piece of seg.split(CONNECTIVE_RE)) {
+      const cleaned = stripLeadingConnective(piece).trim();
+      if (cleaned.length > 2) parts.push(cleaned);
+    }
+  }
+  return parts.slice(0, 14);
 }
 
 function truncate(s: string, n = 60): string {
