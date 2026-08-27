@@ -4,16 +4,20 @@ from __future__ import annotations
 
 import logging
 import uuid
-from dataclasses import dataclass
+from contextlib import nullcontext
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 
 from . import bericht as bericht_modul
 from . import bestand as bestand_modul
 from . import mail as mail_modul
-from .abgleich import ermittle_massnahmen, wende_massnahmen_an
-from .konfiguration import LaufKonfig
-from .modelle import AbgleichErgebnis
+from .abgleich import ermittle_massnahmen
+from .konfiguration import LaufKonfig, PortalKonfig
+from .modelle import AbgleichErgebnis, IstZugang
+from .portal import Notbremse, PortalAdapter, erzeuge_adapter, fuehre_aus
+from .portal.ausfuehrung import Ausfuehrungsbericht
+from .portal.selektoren import PortalZugang, Selektoren
 from .sharepoint import lade_soll_zustand
 
 LOG = logging.getLogger(__name__)
@@ -23,73 +27,116 @@ LOG = logging.getLogger(__name__)
 class LaufErgebnis:
     lauf_id: str
     abgleich: AbgleichErgebnis
+    ausfuehrung: Ausfuehrungsbericht
     markdown: str
     html: str
     csv: str
     mail_status: str
     bestand_status: str
+    portal_modus: str = "aufgabenliste"
+    warnungen: list[str] = field(default_factory=list)
+
+
+def baue_adapter(konfig: PortalKonfig, rueckfall_bestand: list[IstZugang]) -> PortalAdapter:
+    """Erzeugt die Portal-Anbindung passend zum konfigurierten Modus."""
+    if not konfig.fuehrt_aus:
+        return erzeuge_adapter("aufgabenliste", bestand=rueckfall_bestand)
+
+    selektoren = (
+        Selektoren.aus_json(konfig.selektoren_pfad) if konfig.selektoren_pfad else Selektoren()
+    )
+    zugang = PortalZugang(
+        basis_url=konfig.basis_url,
+        benutzer=konfig.benutzer,
+        passwort=konfig.passwort,
+        sitzung_pfad=konfig.sitzung_pfad,
+        chromium_pfad=konfig.chromium_pfad,
+        langsam_ms=konfig.langsam_ms,
+        screenshot_verzeichnis=konfig.screenshot_verzeichnis,
+    )
+    return erzeuge_adapter("browser", zugang=zugang, selektoren=selektoren)
 
 
 def fuehre_abgleich_aus(spark: Any, konfig: LaufKonfig, stichtag: date | None = None) -> LaufErgebnis:
-    """Kompletter Lauf: SharePoint lesen, abgleichen, protokollieren, melden."""
+    """Kompletter Lauf: Soll lesen, Ist lesen, abgleichen, ausfuehren, melden."""
     if konfig.sharepoint is None:
         raise ValueError("SharePoint-Konfiguration fehlt.")
 
     stichtag = stichtag or date.today()
     lauf_id = str(uuid.uuid4())
-    LOG.info("Starte Abgleich %s (Stichtag %s, dry_run=%s)", lauf_id, stichtag, konfig.dry_run)
+    warnungen: list[str] = []
+    LOG.info(
+        "Starte Abgleich %s (Stichtag %s, Portal-Modus %s, dry_run=%s)",
+        lauf_id, stichtag, konfig.portal.modus, konfig.dry_run,
+    )
 
     bestand_modul.erstelle_tabellen(
         spark, konfig.katalog, konfig.schema, konfig.bestand_tabelle, konfig.massnahmen_tabelle
     )
 
     mitarbeiter, soll, sp_warnungen = lade_soll_zustand(konfig.sharepoint)
+    warnungen += sp_warnungen
 
-    if konfig.portal_export_pfad:
-        ist = bestand_modul.lese_portal_export(spark, konfig.portal_export_pfad)
-        LOG.info("Ist-Zustand aus Portal-Export uebernommen (%s Zugaenge)", len(ist))
+    # Rueckfall-Bestand: nur relevant, wenn das Portal nicht direkt gelesen wird.
+    if not konfig.portal.fuehrt_aus and konfig.portal_export_pfad:
+        letzter_bestand = bestand_modul.lese_portal_export(spark, konfig.portal_export_pfad)
     else:
-        ist = bestand_modul.lade_bestand(spark, konfig.bestand_tabelle)
+        letzter_bestand = bestand_modul.lade_bestand(spark, konfig.bestand_tabelle)
+    adapter = baue_adapter(konfig.portal, letzter_bestand)
 
-    ergebnis = ermittle_massnahmen(
-        mitarbeiter=mitarbeiter,
-        soll=soll,
-        ist=ist,
-        stichtag=stichtag,
-        vorlauf_tage=konfig.vorlauf_tage,
-    )
-    ergebnis.warnungen = sp_warnungen + ergebnis.warnungen
-
-    markdown = bericht_modul.als_markdown(ergebnis)
-    html = bericht_modul.als_html(ergebnis, dry_run=konfig.dry_run)
-    csv_text = bericht_modul.als_csv(ergebnis.massnahmen)
-    betreff = bericht_modul.betreff(ergebnis, konfig.mail.betreff_praefix)
-
-    # --- Persistenz ---
-    if konfig.dry_run:
-        bestand_status = "TESTLAUF: Bestand und Protokoll unveraendert."
-    else:
-        bestand_modul.protokolliere_massnahmen(
-            spark, konfig.massnahmen_tabelle, ergebnis.massnahmen, stichtag, lauf_id, konfig.dry_run
-        )
-        if konfig.portal_export_pfad:
-            bestand_modul.schreibe_bestand(spark, konfig.bestand_tabelle, ist)
-            bestand_status = (
-                f"Bestand aus Portal-Export neu aufgesetzt ({len(ist)} Zugaenge). "
-                "Massnahmen protokolliert."
-            )
-        elif konfig.auto_bestaetigen:
-            neuer_bestand = wende_massnahmen_an(ist, ergebnis.massnahmen, stichtag)
-            bestand_modul.schreibe_bestand(spark, konfig.bestand_tabelle, neuer_bestand)
-            bestand_status = (
-                f"Massnahmen als erledigt angenommen, Bestand fortgeschrieben "
-                f"({len(neuer_bestand)} Zugaenge)."
-            )
+    with adapter if konfig.portal.fuehrt_aus else nullcontext(adapter):
+        ist = adapter.lese_bestand()
+        if konfig.portal.fuehrt_aus:
+            LOG.info("Ist-Zustand direkt aus dem Portal gelesen (%s Zugaenge)", len(ist))
         else:
-            bestand_status = (
-                "Massnahmen protokolliert. Bestand bleibt unveraendert, bis die Aufgaben "
-                "im VDE-Portal erledigt und bestaetigt sind."
+            warnungen.append(
+                "Portal-Modus 'aufgabenliste': Der Ist-Zustand stammt aus der Delta-Tabelle, "
+                "nicht aus dem Portal. Aenderungen werden nur gemeldet, nicht ausgefuehrt."
             )
+
+        ergebnis = ermittle_massnahmen(
+            mitarbeiter=mitarbeiter, soll=soll, ist=ist,
+            stichtag=stichtag, vorlauf_tage=konfig.vorlauf_tage,
+        )
+        ergebnis.warnungen = warnungen + ergebnis.warnungen
+
+        ausfuehrung = fuehre_aus(
+            adapter=adapter,
+            massnahmen=ergebnis.massnahmen,
+            bestandsgroesse=len(ist),
+            dry_run=konfig.dry_run,
+            notbremse=Notbremse(
+                max_entzuege=konfig.portal.max_entzuege,
+                max_aenderungen=konfig.portal.max_aenderungen,
+                anteil_entzug_grenze=konfig.portal.anteil_entzug_grenze,
+            ),
+            versuche=konfig.portal.versuche,
+        )
+
+        # Nach dem Schreiben den Bestand frisch aus dem Portal ziehen: das ist der
+        # einzige belastbare Nachweis, was jetzt wirklich eingerichtet ist.
+        if konfig.portal.fuehrt_aus and not konfig.dry_run and ausfuehrung.erfolgreich:
+            try:
+                ist = adapter.lese_bestand()
+            except Exception as fehler:
+                LOG.warning("Nachlese des Portals fehlgeschlagen: %s", fehler)
+                ergebnis.warnungen.append(f"Nachlese des Portalbestands fehlgeschlagen: {fehler}")
+
+    markdown = bericht_modul.als_markdown(ergebnis, ausfuehrung)
+    html = bericht_modul.als_html(ergebnis, ausfuehrung, dry_run=konfig.dry_run)
+    csv_text = bericht_modul.als_csv(ergebnis.massnahmen, ausfuehrung)
+    betreff = bericht_modul.betreff(ergebnis, konfig.mail.betreff_praefix, ausfuehrung)
+
+    if konfig.dry_run:
+        bestand_status = "Testlauf: weder Portal noch Tabellen wurden veraendert."
+    else:
+        bestand_modul.protokolliere_lauf(
+            spark, konfig.massnahmen_tabelle, ausfuehrung, stichtag, lauf_id, konfig.dry_run
+        )
+        bestand_modul.schreibe_bestand(spark, konfig.bestand_tabelle, ist)
+        bestand_status = (
+            f"{len(ist)} Zugaenge als Bestand gesichert. {ausfuehrung.zusammenfassung()}"
+        )
 
     mail_status = mail_modul.versende(
         mail_konfig=konfig.mail,
@@ -101,51 +148,16 @@ def fuehre_abgleich_aus(spark: Any, konfig: LaufKonfig, stichtag: date | None = 
         hat_aufgaben=ergebnis.hat_aufgaben,
     )
 
-    LOG.info("Abgleich %s beendet: %s Massnahmen", lauf_id, len(ergebnis.massnahmen))
+    LOG.info("Abgleich %s beendet: %s", lauf_id, ausfuehrung.zusammenfassung())
     return LaufErgebnis(
         lauf_id=lauf_id,
         abgleich=ergebnis,
+        ausfuehrung=ausfuehrung,
         markdown=markdown,
         html=html,
         csv=csv_text,
         mail_status=mail_status,
         bestand_status=bestand_status,
+        portal_modus=konfig.portal.modus,
+        warnungen=ergebnis.warnungen,
     )
-
-
-def bestaetige_erledigte_massnahmen(
-    spark: Any, konfig: LaufKonfig, lauf_id: str, stichtag: date | None = None
-) -> int:
-    """Uebernimmt die Massnahmen eines Laufs in den Bestand.
-
-    Aufzurufen, nachdem die Aufgaben im VDE-Portal tatsaechlich umgesetzt
-    wurden. PRUEFEN-Massnahmen bleiben unberuecksichtigt.
-    """
-    from .modelle import Aktion, Massnahme, Prioritaet
-
-    stichtag = stichtag or date.today()
-    from pyspark.sql import functions as F
-
-    zeilen = (
-        spark.table(konfig.massnahmen_tabelle)
-        .where((F.col("lauf_id") == lauf_id) & (~F.col("dry_run")))
-        .collect()
-    )
-    massnahmen = [
-        Massnahme(
-            aktion=Aktion(z["aktion"]),
-            personalnummer=z["personalnummer"],
-            name=z["name"],
-            email=z["email"] or "",
-            regelwerk=z["regelwerk"],
-            prioritaet=Prioritaet(z["prioritaet"]),
-            faellig_am=z["faellig_am"],
-            begruendung=z["begruendung"] or "",
-            vde_benutzer=z["vde_benutzer"] or "",
-        )
-        for z in zeilen
-    ]
-    ist = bestand_modul.lade_bestand(spark, konfig.bestand_tabelle)
-    neuer_bestand = wende_massnahmen_an(ist, massnahmen, stichtag)
-    bestand_modul.schreibe_bestand(spark, konfig.bestand_tabelle, neuer_bestand)
-    return len(massnahmen)

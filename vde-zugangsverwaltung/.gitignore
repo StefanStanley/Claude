@@ -1,3 +1,8 @@
 __pycache__/
 *.pyc
 vorschau.html
+node_modules/
+package-lock.json
+selektoren*.json
+*.png
+*_rohdaten.json

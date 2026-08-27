@@ -48,7 +48,7 @@ class TestBericht(unittest.TestCase):
 
     def test_betreff_ohne_aufgaben(self):
         leer = ermittle_massnahmen([], [], [], HEUTE)
-        self.assertIn("keine offenen Aufgaben", betreff(leer))
+        self.assertIn("alles im Soll", betreff(leer))
 
     def test_markdown_enthaelt_namen_und_regelwerk(self):
         md = als_markdown(self.ergebnis)
@@ -70,7 +70,43 @@ class TestBericht(unittest.TestCase):
     def test_csv_hat_kopfzeile_und_alle_zeilen(self):
         zeilen = als_csv(self.ergebnis.massnahmen).strip().split("\n")
         self.assertEqual(len(zeilen), len(self.ergebnis.massnahmen) + 1)
-        self.assertTrue(zeilen[0].startswith("aktion;prioritaet"))
+        self.assertTrue(zeilen[0].startswith("status;aktion;prioritaet"))
+
+
+class TestBerichtMitAusfuehrung(unittest.TestCase):
+    """Der Bericht muss zeigen, was passiert ist - nicht nur, was anstand."""
+
+    def setUp(self):
+        from vde_zugang.portal.ausfuehrung import fuehre_aus
+
+        self.ergebnis = beispiel_ergebnis()
+        self.fuehre_aus = fuehre_aus
+
+    def test_testlauf_meldet_alles_als_uebersprungen(self):
+        bericht = self.fuehre_aus(None, self.ergebnis.massnahmen, bestandsgroesse=50, dry_run=True)
+        md = als_markdown(self.ergebnis, bericht)
+        self.assertIn("UEBERSPRUNGEN", md)
+        self.assertNotIn("ERFOLG", md)
+
+    def test_betreff_nennt_das_ergebnis(self):
+        bericht = self.fuehre_aus(None, self.ergebnis.massnahmen, bestandsgroesse=50, dry_run=True)
+        self.assertIn("offen", betreff(self.ergebnis, ausfuehrung=bericht))
+
+    def test_notbremse_steht_im_betreff_und_im_html(self):
+        from vde_zugang.portal.ausfuehrung import Notbremse
+
+        bericht = self.fuehre_aus(
+            None, self.ergebnis.massnahmen, bestandsgroesse=50, dry_run=False,
+            notbremse=Notbremse(max_aenderungen=0),
+        )
+        self.assertIn("GESTOPPT", betreff(self.ergebnis, ausfuehrung=bericht))
+        self.assertIn("Notbremse", als_html(self.ergebnis, bericht))
+
+    def test_csv_enthaelt_status_und_meldung(self):
+        bericht = self.fuehre_aus(None, self.ergebnis.massnahmen, bestandsgroesse=50, dry_run=True)
+        text = als_csv(self.ergebnis.massnahmen, bericht)
+        self.assertIn("UEBERSPRUNGEN", text)
+        self.assertIn("Testlauf", text)
 
 
 if __name__ == "__main__":

@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import logging
 from datetime import date
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
-from .modelle import IstZugang, Massnahme
+from .modelle import IstZugang
+
+if TYPE_CHECKING:  # nur fuer die Typannotation
+    from .portal.ausfuehrung import Ausfuehrungsbericht
 
 LOG = logging.getLogger(__name__)
 
@@ -38,6 +41,10 @@ MASSNAHMEN_DDL = """
 CREATE TABLE IF NOT EXISTS {tabelle} (
     lauf_id        STRING,
     stichtag       DATE,
+    status         STRING,
+    meldung        STRING,
+    dauer_s        DOUBLE,
+    screenshot     STRING,
     aktion         STRING,
     prioritaet     STRING,
     personalnummer STRING,
@@ -51,7 +58,7 @@ CREATE TABLE IF NOT EXISTS {tabelle} (
     dry_run        BOOLEAN,
     erstellt_am    TIMESTAMP
 )
-COMMENT 'Protokoll der vorgeschlagenen Massnahmen je Abgleichlauf'
+COMMENT 'Protokoll je Lauf: welche Massnahme wurde ausgefuehrt, mit welchem Ergebnis'
 """
 
 # Spaltennamen, unter denen der Portal-Export die Werte liefern darf.
@@ -110,43 +117,44 @@ def schreibe_bestand(spark: Any, tabelle: str, bestand: Sequence[IstZugang]) -> 
     LOG.info("Bestand geschrieben: %s Zeilen in %s", len(daten), tabelle)
 
 
-def protokolliere_massnahmen(
+def protokolliere_lauf(
     spark: Any,
     tabelle: str,
-    massnahmen: Sequence[Massnahme],
+    ausfuehrung: "Ausfuehrungsbericht",
     stichtag: date,
     lauf_id: str,
     dry_run: bool,
 ) -> None:
-    if not massnahmen:
+    """Schreibt fuer jede Massnahme fest, was tatsaechlich passiert ist.
+
+    Das ist der Nachweis gegenueber Lizenzgeber und Revision: wer hat wann
+    welchen Zugang bekommen oder verloren, und ob die Aktion geglueckt ist.
+    """
+    if not ausfuehrung.ergebnisse:
         return
     from pyspark.sql import functions as F
 
-    daten = [
-        (
-            lauf_id,
-            stichtag,
-            m.aktion.value,
-            m.prioritaet.value,
-            m.personalnummer,
-            m.name,
-            m.email or None,
-            m.abteilung or None,
-            m.regelwerk,
-            m.vde_benutzer or None,
-            m.faellig_am,
-            m.begruendung,
-            dry_run,
+    daten = []
+    for e in ausfuehrung.ergebnisse:
+        m = e.massnahme
+        daten.append(
+            (
+                lauf_id, stichtag, e.status, e.meldung[:2000] or None,
+                float(e.dauer_s), e.screenshot or None,
+                m.aktion.value, m.prioritaet.value, m.personalnummer, m.name,
+                m.email or None, m.abteilung or None, m.regelwerk,
+                m.vde_benutzer or None, m.faellig_am, m.begruendung, dry_run,
+            )
         )
-        for m in massnahmen
-    ]
     schema = (
-        "lauf_id STRING, stichtag DATE, aktion STRING, prioritaet STRING, "
-        "personalnummer STRING, name STRING, email STRING, abteilung STRING, "
-        "regelwerk STRING, vde_benutzer STRING, faellig_am DATE, begruendung STRING, "
-        "dry_run BOOLEAN"
+        "lauf_id STRING, stichtag DATE, status STRING, meldung STRING, dauer_s DOUBLE, "
+        "screenshot STRING, aktion STRING, prioritaet STRING, personalnummer STRING, "
+        "name STRING, email STRING, abteilung STRING, regelwerk STRING, vde_benutzer STRING, "
+        "faellig_am DATE, begruendung STRING, dry_run BOOLEAN"
     )
-    df = spark.createDataFrame(daten, schema=schema).withColumn("erstellt_am", F.current_timestamp())
+    df = spark.createDataFrame(daten, schema=schema).withColumn(
+        "erstellt_am", F.current_timestamp()
+    )
     df.write.mode("append").saveAsTable(tabelle)
     LOG.info("%s Massnahmen protokolliert (Lauf %s)", len(daten), lauf_id)
 

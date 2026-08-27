@@ -27,13 +27,13 @@ const GAP = 0.44;
 const spalte = (i) => L + i * (BOX_W + GAP);
 
 // ---------------------------------------------------------------- Titel
-s.addText("VDE-Regelwerkszugänge automatisiert verwalten", {
+s.addText("VDE-Regelwerkszugänge vollautomatisch verwalten", {
   x: L, y: 0.34, w: 10.9, h: 0.58, isTextBox: true, margin: 0,
-  fontFace: "Cambria", fontSize: 26, bold: true, color: NAVY, valign: "middle",
+  fontFace: "Cambria", fontSize: 24, bold: true, color: NAVY, valign: "middle",
 });
 
 s.addText(
-  "Databricks-Job: gleicht die SharePoint-Liste (Soll) mit dem geführten Ist-Bestand ab und liefert dem Zugangsverantwortlichen eine priorisierte Aufgabenliste.",
+  "Der Databricks-Job liest den Soll-Zustand aus SharePoint, den Ist-Zustand aus der Normenbibliothek – und legt Zugänge dort selbst an, entzieht und verlängert sie.",
   { x: L, y: 0.98, w: 10.6, h: 0.52, isTextBox: true, margin: 0,
     fontFace: "Calibri", fontSize: 13, color: MUTED, valign: "top" }
 );
@@ -53,10 +53,10 @@ const SCHRITT_Y = 1.66;
 const SCHRITT_H = 1.16;
 
 const schritte = [
-  ["SharePoint-Liste", "Soll-Zustand: welcher Mitarbeiter braucht welches Regelwerk, Austrittsdatum, Gültigkeit."],
-  ["Databricks-Job", "Liest über Microsoft Graph (nur lesend), vergleicht mit dem Ist-Bestand, prüft Fristen."],
-  ["Aufgabenliste", "Mail mit priorisierten Maßnahmen, CSV im Anhang, Protokoll in Delta."],
-  ["VDE-Portal", "Zugänge manuell anlegen oder entziehen – der Job hat die Arbeit vorsortiert."],
+  ["SharePoint-Liste", "Soll: welcher Mitarbeiter braucht welches Regelwerk, Austritt, Gültigkeit."],
+  ["Databricks-Job", "Vergleicht Soll und Ist, prüft Fristen, bestimmt die nötigen Änderungen."],
+  ["Normenbibliothek", "Der Job bedient die Oberfläche selbst: anlegen, entziehen, verlängern."],
+  ["Nachweis", "Jede Aktion wird nachgelesen, protokolliert und per Mail berichtet."],
 ];
 
 schritte.forEach(([titel, text], i) => {
@@ -96,15 +96,15 @@ for (let i = 0; i < 3; i++) {
 const RUECK_Y = 2.92;
 s.addShape(pres.ShapeType.roundRect, {
   x: spalte(1), y: RUECK_Y, w: spalte(3) + BOX_W - spalte(1), h: 0.44, rectRadius: 0.05,
-  fill: { color: "FFFFFF" }, line: { color: TEAL, width: 1, dashType: "dash" },
+  fill: { color: "FDF3F3" }, line: { color: ROT, width: 1 },
 });
-s.addShape(pres.ShapeType.leftArrow, {
-  x: spalte(1) + 0.14, y: RUECK_Y + 0.14, w: 0.26, h: 0.16,
-  fill: { color: TEAL }, line: { color: TEAL, width: 0 },
+s.addShape(pres.ShapeType.ellipse, {
+  x: spalte(1) + 0.16, y: RUECK_Y + 0.13, w: 0.18, h: 0.18,
+  fill: { color: ROT }, line: { color: ROT, width: 0 },
 });
 s.addText([
-  { text: "Ist-Bestand als Delta-Tabelle:  ", options: { bold: true, color: TEAL } },
-  { text: "Das VDE-Portal kennt keine Abfrage – erledigte Maßnahmen werden zurückgemeldet, damit der nächste Lauf sie nicht erneut vorschlägt.", options: { color: BODY } },
+  { text: "Notbremse:  ", options: { bold: true, color: ROT } },
+  { text: "Bei mehr als 10 Entzügen, 40 Änderungen oder 30 % des Bestands stoppt der Lauf, bevor er irgendetwas ändert – eine kaputte Liste darf niemandem den Zugang nehmen.", options: { color: BODY } },
 ], { x: spalte(1) + 0.48, y: RUECK_Y, w: spalte(3) + BOX_W - spalte(1) - 0.62, h: 0.44,
      isTextBox: true, margin: 0, fontFace: "Calibri", fontSize: 9.5, valign: "middle" });
 
@@ -151,10 +151,10 @@ s.addText("Konstruktionsprinzipien", {
 });
 
 const prinzipien = [
-  ["Testlauf ist der Standard.", "Der erste Lauf schreibt nichts und versendet nichts."],
-  ["Nie still entziehen.", "Was nicht eindeutig zuordenbar ist, wird zum Prüffall."],
-  ["Keine Zugangsdaten im Code.", "Graph-App im Secret Scope, Leserecht auf genau eine Site."],
-  ["Fachlogik ohne Cluster testbar.", "38 Tests laufen lokal, Regeln stehen an einer Stelle."],
+  ["Jede Aktion wird nachgelesen.", "Erst der frische Blick ins Portal gilt als Nachweis."],
+  ["Nie still entziehen.", "Unklare Datenlage wird zum Prüffall, nie zur Aktion."],
+  ["Inbetriebnahme in drei Stufen.", "Erst melden, dann lesen, dann schreiben."],
+  ["Portal-Änderung trifft eine Datei.", "Alle Ortsangaben liegen in selektoren.json."],
 ];
 
 prinzipien.forEach(([fett, rest], i) => {
@@ -175,23 +175,23 @@ s.addShape(pres.ShapeType.roundRect, {
   x: 8.32, y: 5.36, w: 4.46, h: 1.68, rectRadius: 0.07,
   fill: { color: NAVY }, line: { color: NAVY, width: 0 },
 });
-s.addText("Bewusst kein Auto-Provisioning", {
+s.addText("Was Handarbeit bleibt", {
   x: 8.58, y: 5.54, w: 3.94, h: 0.30, isTextBox: true, margin: 0,
   fontFace: "Cambria", fontSize: 13, bold: true, color: "FFFFFF", valign: "middle",
 });
 s.addText(
-  "Der VDE bietet keine Schnittstelle. Der Job ersetzt die Recherche, nicht den Klick im Portal – und protokolliert jeden Lauf nachvollziehbar. Kommt später eine API, sind nur zwei Module betroffen.",
+  "Prüffälle mit unklarer Datenlage. Und nach einem Portal-Update die Selektoren nachziehen – ein Skript schlägt sie vor, realistisch ein- bis zweimal im Jahr.",
   { x: 8.58, y: 5.90, w: 3.94, h: 1.06, isTextBox: true, margin: 0,
     fontFace: "Calibri", fontSize: 10.5, color: "C6D0E4", valign: "top", lineSpacingMultiple: 1.02 }
 );
 
-s.addText("Repository: vde-zugangsverwaltung  ·  Notebook + Job-Definition (Asset Bundle)  ·  Unity Catalog: governance.vde_zugang", {
+s.addText("Repository: vde-zugangsverwaltung  ·  Playwright auf dem Job-Cluster  ·  58 Tests, davon 16 gegen ein Portal-Double  ·  Unity Catalog: governance.vde_zugang", {
   x: L, y: 7.10, w: 12.23, h: 0.24, isTextBox: true, margin: 0,
   fontFace: "Calibri", fontSize: 9, color: "94A3B0", valign: "middle",
 });
 
 s.addNotes(
-  "Onepager zum Konzept der VDE-Zugangsverwaltung. Kernaussage: Der Databricks-Job automatisiert die Entscheidung, wer welchen Regelwerkszugang braucht, nicht die Ausfuehrung im VDE-Portal. Soll aus SharePoint, Ist als Delta-Tabelle, Ergebnis ist eine priorisierte Aufgabenliste per Mail."
+  "Onepager zum Konzept der VDE-Zugangsverwaltung. Kernaussage: Der Databricks-Job uebernimmt Entscheidung UND Ausfuehrung - er bedient die Normenbibliothek per Browser-Automatisierung. Soll aus SharePoint, Ist direkt aus dem Portal. Sicherheitsnetz ist die Notbremse."
 );
 
 pres.writeFile({ fileName: "VDE-Zugangsverwaltung-Onepager.pptx" }).then(() => console.log("geschrieben"));
