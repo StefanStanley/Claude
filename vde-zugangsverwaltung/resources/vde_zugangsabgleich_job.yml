@@ -1,0 +1,92 @@
+# Databricks Asset Bundle - Job-Definition
+#
+#   databricks bundle validate
+#   databricks bundle deploy -t prod
+#
+# Der Zeitplan ist bewusst PAUSED. Erst nach ein paar erfolgreichen Testlaeufen
+# (dry_run = true) auf UNPAUSED stellen.
+
+bundle:
+  name: vde-zugangsverwaltung
+
+resources:
+  jobs:
+    vde_zugangsabgleich:
+      name: VDE-Regelwerkszugaenge Abgleich
+      description: >-
+        Gleicht die SharePoint-Liste der VDE-Regelwerkszugaenge mit dem
+        gefuehrten Ist-Bestand ab und meldet offene Aufgaben per Mail.
+
+      schedule:
+        # Montags 07:00 Ortszeit
+        quartz_cron_expression: "0 0 7 ? * MON *"
+        timezone_id: Europe/Berlin
+        pause_status: PAUSED
+
+      max_concurrent_runs: 1
+
+      email_notifications:
+        on_failure:
+          - ${var.verantwortlicher}
+        no_alert_for_skipped_runs: true
+
+      tasks:
+        - task_key: abgleich
+          notebook_task:
+            notebook_path: ../notebooks/vde_zugangsabgleich.py
+            base_parameters:
+              katalog: ${var.katalog}
+              schema: ${var.schema}
+              secret_scope: ${var.secret_scope}
+              sp_site_hostname: ${var.sp_site_hostname}
+              sp_site_pfad: ${var.sp_site_pfad}
+              sp_liste: ${var.sp_liste}
+              vorlauf_tage: "30"
+              empfaenger: ${var.verantwortlicher}
+              absender: ${var.absender}
+              portal_export_pfad: ""
+              dry_run: "true"
+              mail_versand: "aus"
+              auto_bestaetigen: "false"
+
+          # Serverless: kein Cluster-Management noetig. Alternativ eigenen
+          # job_cluster-Block ergaenzen, falls Serverless nicht freigeschaltet ist.
+          libraries:
+            - pypi:
+                package: requests>=2.31
+
+      queue:
+        enabled: true
+
+variables:
+  katalog:
+    description: Unity Catalog
+    default: governance
+  schema:
+    description: Schema fuer Bestand und Massnahmen
+    default: vde_zugang
+  secret_scope:
+    description: Databricks Secret Scope mit den Graph-/SMTP-Zugangsdaten
+    default: vde-zugang
+  sp_site_hostname:
+    description: SharePoint-Hostname, z.B. contoso.sharepoint.com
+    default: ""
+  sp_site_pfad:
+    description: Pfad der SharePoint-Site
+    default: /sites/Netzbetrieb
+  sp_liste:
+    description: Name der SharePoint-Liste
+    default: VDE-Zugaenge
+  verantwortlicher:
+    description: Mailadresse des Zugangsverantwortlichen
+    default: ""
+  absender:
+    description: Absender-Postfach beim Graph-Versand
+    default: ""
+
+targets:
+  dev:
+    mode: development
+    default: true
+  prod:
+    mode: production
