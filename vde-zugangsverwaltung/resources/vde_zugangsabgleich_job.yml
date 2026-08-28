@@ -41,24 +41,69 @@ resources:
               sp_site_hostname: ${var.sp_site_hostname}
               sp_site_pfad: ${var.sp_site_pfad}
               sp_liste: ${var.sp_liste}
+              portal_modus: ${var.portal_modus}
+              portal_url: ${var.portal_url}
+              selektoren_pfad: ${var.selektoren_pfad}
+              screenshot_pfad: ${var.screenshot_pfad}
               vorlauf_tage: "30"
+              max_entzuege: "10"
+              max_aenderungen: "40"
               empfaenger: ${var.verantwortlicher}
               absender: ${var.absender}
-              portal_export_pfad: ""
               dry_run: "true"
               mail_versand: "aus"
-              auto_bestaetigen: "false"
 
-          # Serverless: kein Cluster-Management noetig. Alternativ eigenen
-          # job_cluster-Block ergaenzen, falls Serverless nicht freigeschaltet ist.
-          libraries:
-            - pypi:
-                package: requests>=2.31
+          job_cluster_key: browser_cluster
+
+      # Serverless scheidet aus: der Job braucht Chromium samt System-
+      # bibliotheken, und Serverless-Compute laesst weder Init-Scripts noch
+      # apt-Installationen zu. Deshalb ein klassischer Job-Cluster.
+      job_clusters:
+        - job_cluster_key: browser_cluster
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"     # LTS
+            num_workers: 0                        # Single Node reicht vollstaendig
+            data_security_mode: SINGLE_USER
+            single_user_name: ${var.dienstkonto}
+            node_type_id: ${var.node_type}
+            custom_tags:
+              ResourceClass: SingleNode
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: "local[*]"
+            init_scripts:
+              - volumes:
+                  destination: ${var.init_script_pfad}
+            spark_env_vars:
+              PLAYWRIGHT_BROWSERS_PATH: /opt/playwright
 
       queue:
         enabled: true
 
 variables:
+  portal_modus:
+    description: "aufgabenliste (nur melden) oder browser (ausfuehren)"
+    default: aufgabenliste
+  portal_url:
+    description: Basis-URL der VDE Normenbibliothek
+    default: ""
+  selektoren_pfad:
+    description: JSON mit den Portal-Selektoren im Volume
+    default: /Volumes/governance/vde_zugang/konfig/selektoren.json
+  screenshot_pfad:
+    description: Ablage fuer Fehler-Screenshots
+    default: /Volumes/governance/vde_zugang/screenshots
+  init_script_pfad:
+    description: Init-Script im Volume (stellt Chromium bereit)
+    default: /Volumes/governance/vde_zugang/konfig/init_playwright.sh
+  node_type:
+    description: >-
+      Knotentyp. Azure: Standard_DS3_v2 - AWS: m5d.large - GCP: n2-standard-4.
+      Der Browser braucht Arbeitsspeicher, unter 14 GB wird es eng.
+    default: Standard_DS3_v2
+  dienstkonto:
+    description: Konto, unter dem der Job laeuft (Single-User-Cluster)
+    default: ""
   katalog:
     description: Unity Catalog
     default: governance

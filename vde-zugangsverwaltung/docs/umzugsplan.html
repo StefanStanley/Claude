@@ -1,0 +1,872 @@
+<title>Umzugsplan VDE-Zugangsverwaltung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#EEF1F4;
+  --surface:#FFFFFF;
+  --surface-2:#F5F7F9;
+  --sunken:#E7EBEF;
+  --ink:#131A21;
+  --ink-2:#3D4A57;
+  --ink-muted:#66727F;
+  --line:#D6DDE4;
+  --line-strong:#BCC7D1;
+  --accent:#0E6B7C;
+  --accent-ink:#0A5361;
+  --accent-wash:#E1EEF1;
+  --warn:#9E5520;
+  --warn-wash:#F7EDE3;
+  --stop:#A03A30;
+  --stop-wash:#F8EAE8;
+  --ok:#1B6E48;
+  --ok-wash:#E4F0EA;
+  --shadow:0 1px 2px rgba(19,26,33,.05), 0 8px 24px -18px rgba(19,26,33,.35);
+  --radius:10px;
+  --sans:"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", Arial, sans-serif;
+  --display:"Archivo", "IBM Plex Sans", ui-sans-serif, system-ui, Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1319;
+    --surface:#171E26;
+    --surface-2:#1D262F;
+    --sunken:#111820;
+    --ink:#E6EBF1;
+    --ink-2:#B9C4D0;
+    --ink-muted:#8A97A5;
+    --line:#2A3641;
+    --line-strong:#3A4956;
+    --accent:#4FB4C6;
+    --accent-ink:#7FCEDC;
+    --accent-wash:#153039;
+    --warn:#D89355;
+    --warn-wash:#2E2418;
+    --stop:#E08479;
+    --stop-wash:#31201D;
+    --ok:#5FBE8F;
+    --ok-wash:#16291F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -20px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1319;
+  --surface:#171E26;
+  --surface-2:#1D262F;
+  --sunken:#111820;
+  --ink:#E6EBF1;
+  --ink-2:#B9C4D0;
+  --ink-muted:#8A97A5;
+  --line:#2A3641;
+  --line-strong:#3A4956;
+  --accent:#4FB4C6;
+  --accent-ink:#7FCEDC;
+  --accent-wash:#153039;
+  --warn:#D89355;
+  --warn-wash:#2E2418;
+  --stop:#E08479;
+  --stop-wash:#31201D;
+  --ok:#5FBE8F;
+  --ok-wash:#16291F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -20px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------------------------------------------------------- Kopfbereich */
+header.top{padding:56px 0 32px}
+.eyebrow{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 14px;
+}
+h1{
+  font-family:var(--display);font-weight:700;font-size:clamp(2rem,4.4vw,3.05rem);
+  line-height:1.06;letter-spacing:-.022em;margin:0 0 16px;text-wrap:balance;max-width:19ch;
+}
+.lede{font-size:1.075rem;color:var(--ink-2);max-width:62ch;margin:0 0 28px}
+
+.fakten{
+  display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--surface);overflow:hidden;
+}
+.faktum{flex:1 1 150px;padding:14px 18px;border-right:1px solid var(--line)}
+.faktum:last-child{border-right:0}
+.faktum dt{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-muted);margin:0 0 4px;
+}
+.faktum dd{
+  margin:0;font-family:var(--display);font-weight:600;font-size:1.18rem;
+  letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+}
+
+/* ------------------------------------------------------- Kritischer Pfad */
+.pfad{
+  background:var(--warn-wash);border:1px solid var(--line);border-radius:var(--radius);
+  padding:24px 26px;margin:28px 0 8px;
+}
+.pfad h2{
+  font-family:var(--display);font-weight:600;font-size:1.06rem;margin:0 0 6px;
+  letter-spacing:-.008em;color:var(--warn);
+}
+.pfad p{margin:0 0 18px;color:var(--ink-2);font-size:.95rem;max-width:70ch}
+.blocker{display:grid;gap:12px}
+.blocker li{
+  list-style:none;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:baseline;
+  padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:8px;
+}
+.bnum{
+  font-family:var(--mono);font-size:.78rem;color:var(--warn);font-weight:500;
+}
+.btext strong{font-weight:600}
+.btext span{display:block;color:var(--ink-muted);font-size:.885rem;margin-top:2px}
+.bwait{
+  font-family:var(--mono);font-size:.75rem;color:var(--warn);white-space:nowrap;
+  letter-spacing:.02em;
+}
+
+/* ----------------------------------------------------------- Grundraster */
+.buehne{display:grid;grid-template-columns:196px 1fr;gap:52px;margin-top:44px;align-items:start}
+.buehne > *{min-width:0}   /* Grid-Kinder duerfen nicht am Inhalt wachsen */
+nav.schiene{position:sticky;top:24px;min-width:0}
+nav.schiene h2{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-muted);margin:0 0 14px;font-weight:500;
+}
+nav.schiene ol{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+nav.schiene a{
+  display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;
+  padding:7px 8px;border-radius:6px;text-decoration:none;color:var(--ink-2);
+  font-size:.875rem;line-height:1.3;transition:background .12s ease,color .12s ease;
+}
+nav.schiene a:hover{background:var(--surface);color:var(--ink)}
+nav.schiene a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+nav.schiene a[aria-current="true"]{background:var(--surface);color:var(--ink);font-weight:500}
+.snum{
+  font-family:var(--mono);font-size:.76rem;color:var(--ink-muted);
+  font-variant-numeric:tabular-nums;
+}
+nav.schiene a[aria-current="true"] .snum{color:var(--accent)}
+nav.schiene a.fertig .snum::after{content:"✓";color:var(--ok);margin-left:2px}
+nav.schiene a.fertig{color:var(--ink-muted)}
+
+/* -------------------------------------------------------------- Phasen */
+main{display:grid;gap:28px;min-width:0}
+section.phase{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:28px 30px 26px;box-shadow:var(--shadow);scroll-margin-top:24px;
+  min-width:0;   /* sonst dehnt ein langer Codeblock die Karte ueber den Rand */
+}
+section.phase.erledigt{opacity:.62}
+.kopf{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin-bottom:6px}
+.kopf-text{flex:1 1 320px;min-width:0}
+.marke{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 6px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+}
+.marke .zeit{color:var(--ink-muted)}
+h3{
+  font-family:var(--display);font-weight:600;font-size:1.42rem;letter-spacing:-.015em;
+  margin:0 0 8px;line-height:1.2;text-wrap:balance;
+}
+.phase > p{color:var(--ink-2);max-width:70ch}
+.phase p{margin:0 0 14px}
+.phase p:last-child{margin-bottom:0}
+
+.haken{
+  display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;
+  font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-muted);cursor:pointer;user-select:none;padding:5px 10px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface-2);
+  transition:border-color .12s ease,color .12s ease;
+}
+.haken:hover{border-color:var(--line-strong);color:var(--ink-2)}
+.haken input{accent-color:var(--accent);margin:0;width:14px;height:14px;cursor:pointer}
+.haken:has(input:checked){color:var(--ok);border-color:var(--ok)}
+.haken:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+
+h4{
+  font-family:var(--display);font-weight:600;font-size:.94rem;letter-spacing:.005em;
+  margin:24px 0 10px;color:var(--ink);
+}
+ul.liste{margin:0 0 14px;padding:0 0 0 18px;color:var(--ink-2)}
+ul.liste li{margin-bottom:7px}
+ul.liste li::marker{color:var(--accent)}
+ol.schritte{margin:0 0 14px;padding:0 0 0 20px;color:var(--ink-2)}
+ol.schritte li{margin-bottom:7px}
+ol.schritte li::marker{font-family:var(--mono);font-size:.85em;color:var(--ink-muted)}
+strong{font-weight:600;color:var(--ink)}
+code{
+  font-family:var(--mono);font-size:.855em;background:var(--sunken);
+  padding:1px 5px;border-radius:4px;color:var(--ink);
+  overflow-wrap:anywhere;   /* lange Bezeichner duerfen umbrechen */
+}
+p,li,dd{overflow-wrap:break-word}
+pre{
+  font-family:var(--mono);font-size:.815rem;line-height:1.62;background:var(--sunken);
+  border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;
+  margin:0 0 16px;color:var(--ink-2);
+}
+pre code{background:none;padding:0;font-size:1em}
+.komm{color:var(--ink-muted)}
+
+.tabelle{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.895rem;min-width:420px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{
+  background:var(--surface-2);font-family:var(--mono);font-size:.71rem;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-muted);font-weight:500;white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+
+.abnahme,.merke,.halt{
+  border:1px solid var(--line);border-radius:8px;padding:13px 16px;margin:18px 0 0;
+  font-size:.925rem;
+}
+.abnahme{background:var(--ok-wash)}
+.merke{background:var(--accent-wash)}
+.halt{background:var(--stop-wash)}
+.abnahme p,.merke p,.halt p{margin:0;color:var(--ink-2)}
+.abnahme p + p,.merke p + p,.halt p + p{margin-top:8px}
+.etikett{
+  font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  display:block;margin-bottom:5px;font-weight:500;
+}
+.abnahme .etikett{color:var(--ok)}
+.merke .etikett{color:var(--accent-ink)}
+.halt .etikett{color:var(--stop)}
+
+footer{
+  margin-top:44px;padding-top:22px;border-top:1px solid var(--line);
+  color:var(--ink-muted);font-size:.855rem;
+}
+footer p{margin:0 0 6px;max-width:75ch}
+
+@media (max-width:900px){
+  .buehne{grid-template-columns:1fr;gap:28px}
+  nav.schiene{position:static}
+  nav.schiene ol{
+    display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;
+    scrollbar-width:thin;
+  }
+  nav.schiene a{
+    grid-template-columns:auto;white-space:nowrap;background:var(--surface);
+    border:1px solid var(--line);padding:6px 11px;
+  }
+  nav.schiene a span:last-child{display:none}
+  nav.schiene a .snum{color:var(--ink-2)}
+  section.phase{padding:22px 20px}
+  .faktum{flex:1 1 50%;border-bottom:1px solid var(--line)}
+}
+@media (max-width:560px){
+  .blocker li{grid-template-columns:auto 1fr;row-gap:6px}
+  .bwait{grid-column:2;justify-self:start}
+  .pfad{padding:20px 18px}
+  .kopf{gap:10px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Runbook · Inbetriebnahme</p>
+  <h1>Umzug nach Databricks</h1>
+  <p class="lede">
+    Von der leeren Arbeitsumgebung bis zum laufenden Wochenjob, der die
+    VDE-Regelwerkszugänge selbst verwaltet. Zehn Phasen, jede mit einem
+    Abnahmekriterium — was nicht abgenommen ist, wird nicht weitergereicht.
+  </p>
+
+  <dl class="fakten">
+    <div class="faktum"><dt>Gesamtaufwand</dt><dd>2–3 Tage</dd></div>
+    <div class="faktum"><dt>Laufzeit</dt><dd>2–3 Wochen</dd></div>
+    <div class="faktum"><dt>Phasen</dt><dd>10</dd></div>
+    <div class="faktum"><dt>Blockierend</dt><dd>3</dd></div>
+  </dl>
+</header>
+
+<div class="pfad">
+  <h2>Der kritische Pfad</h2>
+  <p>
+    Die Technik ist an einem Tag erledigt. Der Zeitplan hängt an drei Dingen,
+    die nicht von dir abhängen — deshalb gehören sie in die erste Stunde,
+    nicht in die erste Woche.
+  </p>
+  <ul class="blocker">
+    <li>
+      <span class="bnum">01</span>
+      <span class="btext"><strong>Netzwerkfreigabe zum Portal</strong>
+        <span>Ausgehend HTTPS vom Cluster zur Normenbibliothek. Blockiert Phase 3.</span></span>
+      <span class="bwait">1–2 Wochen</span>
+    </li>
+    <li>
+      <span class="bnum">02</span>
+      <span class="btext"><strong>Qualität der SharePoint-Liste</strong>
+        <span>Jede Unsauberkeit wird später zu einer Aktion im Portal. Blockiert alles ab Phase 5.</span></span>
+      <span class="bwait">offen</span>
+    </li>
+    <li>
+      <span class="bnum">03</span>
+      <span class="btext"><strong>Lizenzvertrag prüfen</strong>
+        <span>Deckt der VDE-Vertrag automatisierten Zugriff mit technischem Konto? Blockiert Phase 7.</span></span>
+      <span class="bwait">Einkauf</span>
+    </li>
+  </ul>
+</div>
+
+<div class="buehne">
+
+  <nav class="schiene" aria-label="Phasen">
+    <h2>Phasen</h2>
+    <ol id="schiene"></ol>
+  </nav>
+
+  <main>
+
+    <!-- ------------------------------------------------------- Phase 0 -->
+    <section class="phase" id="p0" data-titel="Vorlauf anstoßen">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 0</span><span class="zeit">Tag 1 · 1 Stunde</span></p>
+          <h3>Anstoßen, was Vorlauf braucht</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p0"> erledigt</label>
+      </div>
+
+      <p>Drei Anträge, die parallel zu allem anderen laufen.</p>
+
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Was</th><th>An wen</th><th>Konkret</th></tr></thead>
+          <tbody>
+            <tr><td>Ausgehender Netzzugang zum Portal</td><td>Netzwerk-Admin</td>
+                <td>HTTPS/443 zur Portal-Domäne. Bei Azure: Regel für das Workspace-Subnetz</td></tr>
+            <tr><td>App-Registrierung mit <code>Sites.Selected</code></td><td>Entra-ID-Admin</td>
+                <td>Anwendungsberechtigung plus Admin-Zustimmung. Ablaufdatum des Secrets notieren</td></tr>
+            <tr><td>Freigabe der App auf die Site</td><td>SharePoint-Admin</td>
+                <td>Leserecht auf genau diese eine Site — <code>Sites.Selected</code> wirkt erst dadurch</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Parallel selbst entscheiden</h4>
+      <ul class="liste">
+        <li><strong>Katalog und Schema.</strong> Vorschlag <code>governance.vde_zugang</code>.</li>
+        <li><strong>Dienstkonto für den Job.</strong> Ein Service Principal, nicht dein Benutzer —
+            sonst steht der Job still, sobald dein Passwort rotiert.</li>
+        <li><strong>Technisches Konto im Portal.</strong> Dann ist im Portal-Protokoll erkennbar,
+            was automatisiert passiert ist.</li>
+      </ul>
+
+      <div class="merke">
+        <span class="etikett">Vertragsfrage</span>
+        <p>Ob automatisierter Zugriff mit technischem Konto vom VDE-Lizenzvertrag gedeckt ist,
+        entscheidet der Einkauf, nicht die IT. Antwort abwarten, bevor Phase 7 scharf geschaltet wird.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 1 -->
+    <section class="phase" id="p1" data-titel="Grundgerüst">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 1</span><span class="zeit">Tag 1 · 45 Minuten</span></p>
+          <h3>Grundgerüst im Workspace</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p1"> erledigt</label>
+      </div>
+
+      <h4>Repository als Git-Ordner einbinden</h4>
+      <pre><code>databricks repos create \
+  --url https://github.com/&lt;owner&gt;/&lt;repo&gt; \
+  --provider gitHub \
+  --path /Workspace/Repos/vde-zugangsverwaltung</code></pre>
+
+      <h4>Katalog, Schema und Volumes anlegen</h4>
+      <pre><code>CREATE CATALOG IF NOT EXISTS governance;
+CREATE SCHEMA  IF NOT EXISTS governance.vde_zugang;
+
+CREATE VOLUME IF NOT EXISTS governance.vde_zugang.konfig;
+CREATE VOLUME IF NOT EXISTS governance.vde_zugang.screenshots;</code></pre>
+
+      <h4>Berechtigungen setzen</h4>
+      <p>Das Schema enthält Name, Personalnummer und E-Mail von Mitarbeitern. Der eng
+      gefasste Zugriff ist keine Formalie — er ist der Grund, warum der Datenschutz
+      später zustimmen kann.</p>
+      <pre><code>GRANT USE CATALOG ON CATALOG governance TO `&lt;dienstkonto&gt;`;
+GRANT USE SCHEMA, CREATE TABLE, MODIFY, SELECT
+  ON SCHEMA governance.vde_zugang TO `&lt;dienstkonto&gt;`;
+GRANT READ VOLUME, WRITE VOLUME
+  ON VOLUME governance.vde_zugang.konfig TO `&lt;dienstkonto&gt;`;</code></pre>
+
+      <div class="abnahme">
+        <span class="etikett">Abnahme</span>
+        <p><code>SELECT * FROM governance.vde_zugang.INFORMATION_SCHEMA.TABLES</code>
+        läuft ohne Fehler durch.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 2 -->
+    <section class="phase" id="p2" data-titel="Zugangsdaten">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 2</span><span class="zeit">Tag 1 · 20 Minuten</span></p>
+          <h3>Zugangsdaten hinterlegen</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p2"> erledigt</label>
+      </div>
+
+      <p>Nichts davon gehört in den Code oder in ein Notebook.</p>
+
+      <pre><code>databricks secrets create-scope vde-zugang
+
+<span class="komm"># SharePoint / Microsoft Graph</span>
+databricks secrets put-secret vde-zugang graph-tenant-id
+databricks secrets put-secret vde-zugang graph-client-id
+databricks secrets put-secret vde-zugang graph-client-secret
+
+<span class="komm"># VDE Normenbibliothek</span>
+databricks secrets put-secret vde-zugang portal-benutzer
+databricks secrets put-secret vde-zugang portal-passwort
+
+<span class="komm"># Lesezugriff für den Job</span>
+databricks secrets put-acl vde-zugang &lt;dienstkonto&gt; READ</code></pre>
+
+      <div class="merke">
+        <span class="etikett">Kalendereintrag jetzt</span>
+        <p>Client Secrets in Entra ID laufen ab, meist nach 12 oder 24 Monaten. Ein
+        abgelaufenes Secret ist die häufigste Ursache, wenn ein solcher Job nach einem
+        Jahr plötzlich stillsteht.</p>
+      </div>
+
+      <div class="abnahme">
+        <span class="etikett">Abnahme</span>
+        <p><code>dbutils.secrets.get("vde-zugang", "graph-tenant-id")</code> liefert einen Wert.
+        Angezeigt wird <code>[REDACTED]</code> — das ist richtig so.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 3 -->
+    <section class="phase" id="p3" data-titel="Cluster mit Browser">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 3</span><span class="zeit">Tag 1 · 45 Minuten</span></p>
+          <h3>Cluster mit Browser</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p3"> erledigt</label>
+      </div>
+
+      <div class="halt">
+        <span class="etikett">Serverless scheidet aus</span>
+        <p>Der Job braucht Chromium samt Systembibliotheken. Serverless-Compute lässt weder
+        Init-Scripts noch <code>apt</code>-Installationen zu. Es wird ein klassischer
+        Single-Node-Job-Cluster.</p>
+      </div>
+
+      <h4>Init-Script ins Volume legen</h4>
+      <pre><code>databricks fs cp resources/init_playwright.sh \
+  dbfs:/Volumes/governance/vde_zugang/konfig/init_playwright.sh</code></pre>
+
+      <h4>Cluster anlegen</h4>
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Einstellung</th><th>Wert</th></tr></thead>
+          <tbody>
+            <tr><td>Cluster-Modus</td><td>Single Node</td></tr>
+            <tr><td>Runtime</td><td>15.4 LTS</td></tr>
+            <tr><td>Zugriffsmodus</td><td>Single User → das Dienstkonto</td></tr>
+            <tr><td>Knotentyp</td><td>Azure <code>Standard_DS3_v2</code> · AWS <code>m5d.large</code> · GCP <code>n2-standard-4</code></td></tr>
+            <tr><td>Init-Script</td><td>Volume → <code>…/konfig/init_playwright.sh</code></td></tr>
+            <tr><td>Umgebungsvariable</td><td><code>PLAYWRIGHT_BROWSERS_PATH=/opt/playwright</code></td></tr>
+            <tr><td>Auto-Terminierung</td><td>20 Minuten</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Der Browser braucht Arbeitsspeicher. Unter 14 GB wird es eng, sobald die
+      Benutzerliste mehrere hundert Zeilen hat.</p>
+
+      <h4>Rauchtest</h4>
+      <pre><code>from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    b = p.chromium.launch(args=["--no-sandbox"])
+    seite = b.new_page()
+    seite.goto("https://&lt;portal-domaene&gt;")
+    print("Titel:", seite.title())
+    b.close()</code></pre>
+
+      <div class="abnahme">
+        <span class="etikett">Abnahme</span>
+        <p>Der Seitentitel der Normenbibliothek erscheint.</p>
+        <p>Timeout statt Titel → die Netzwerkfreigabe aus Phase 0 ist noch nicht durch, nicht
+        der Cluster ist schuld. Startet Chromium gar nicht, hat das Init-Script nicht gegriffen:
+        Cluster-Ereignisprotokoll → <em>Init script logs</em>.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 4 -->
+    <section class="phase" id="p4" data-titel="SharePoint & Daten">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 4</span><span class="zeit">Tag 2–8 · offen</span></p>
+          <h3>SharePoint-Anbindung und Datenqualität</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p4"> erledigt</label>
+      </div>
+
+      <p>Die Phase, die in der Praxis am längsten dauert. Nicht wegen der Technik, sondern
+      weil die gewachsene Liste selten so sauber ist, wie man denkt.</p>
+
+      <h4>Ersten Lauf als reinen Lesetest fahren</h4>
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Widget</th><th>Wert</th></tr></thead>
+          <tbody>
+            <tr><td><code>portal_modus</code></td><td><code>aufgabenliste</code></td></tr>
+            <tr><td><code>dry_run</code></td><td><code>true</code></td></tr>
+            <tr><td><code>mail_versand</code></td><td><code>aus</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Es wird nichts geschrieben, nichts versendet, das Portal nicht angefasst.</p>
+
+      <h4>Abschnitt 6 des Notebooks abarbeiten</h4>
+      <p>Dort stehen die Datenqualitäts-Hinweise: fehlende Personalnummern, fehlende
+      E-Mail-Adressen, doppelte Zeilen, Mitarbeiter ohne Regelwerk, abgelaufene
+      Soll-Einträge. Die Personalnummer ist der Schlüssel zwischen Liste und Portal —
+      ist sie im Portal nicht gepflegt, muss die E-Mail-Adresse auf beiden Seiten
+      identisch sein.</p>
+
+      <div class="abnahme">
+        <span class="etikett">Abnahme</span>
+        <p>Die Warnliste ist leer, oder jeder verbleibende Eintrag ist bewusst so gewollt und
+        dokumentiert. Diesen Schritt nicht abkürzen: Jede Unsauberkeit hier wird später zu
+        einer Aktion im Portal.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 5 -->
+    <section class="phase" id="p5" data-titel="Selektoren">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 5</span><span class="zeit">Tag 8 · 1–2 Stunden</span></p>
+          <h3>Portal-Selektoren ermitteln</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p5"> erledigt</label>
+      </div>
+
+      <p>Der einzige Schritt mit echter Handarbeit — und der einzige, der nach einem
+      Portal-Update wiederholt werden muss. <strong>Auf dem eigenen Rechner ausführen,
+      nicht auf dem Cluster:</strong> mit <code>--sichtbar</code> verfolgst du im
+      Browserfenster mit, was passiert.</p>
+
+      <pre><code>pip install playwright &amp;&amp; playwright install chromium
+
+python3 scripts/selektoren_erkunden.py \
+    --url https://&lt;portal-domaene&gt; \
+    --benutzer &lt;technisches-konto&gt; \
+    --passwort '...' \
+    --sichtbar \
+    --ausgabe selektoren.json</code></pre>
+
+      <p>Das Skript läuft Anmeldung, Benutzerübersicht und Anlegen-Formular ab und schlägt
+      Kandidaten vor. Am Ende listet es auf, was es nicht gefunden hat — typischerweise die
+      Zellenselektoren und die beiden Vorlagen:</p>
+
+      <pre><code>{
+  "zelle_personalnummer": "td.personalnummer",
+  "zelle_regelwerke": "td.lizenzen",
+  "auswahl_regelwerk": "input[data-regelwerk=\"{regelwerk}\"]",
+  "knopf_regelwerk_entziehen":
+      "tr[data-pnr=\"{personalnummer}\"] button.entfernen"
+}</code></pre>
+
+      <h4>Zwei Regeln beim Ergänzen</h4>
+      <ol class="schritte">
+        <li><strong>Stabile Merkmale bevorzugen.</strong> <code>id</code>, <code>name</code> und
+        <code>data-*</code> überleben ein Portal-Update meist, CSS-Klassen oft nicht.</li>
+        <li><strong>Der Entzugsknopf muss auf die Zeile eingegrenzt sein.</strong> Ohne
+        <code>tr[data-pnr="{personalnummer}"]</code> davor trifft er die falsche Person.
+        Dafür gibt es einen Test: <code>test_entziehen_trifft_nur_die_richtige_person</code>.</li>
+      </ol>
+
+      <pre><code>python3 -m unittest discover -s tests -v   <span class="komm"># 58 Tests</span>
+
+databricks fs cp selektoren.json \
+  dbfs:/Volumes/governance/vde_zugang/konfig/selektoren.json</code></pre>
+
+      <div class="abnahme">
+        <span class="etikett">Abnahme</span>
+        <p>Der Job startet ohne Selektor-Fehler. Fehlt ein Pflichtfeld, verweigert er den
+        Start und nennt die offenen Felder — statt stillschweigend nichts zu tun.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 6 -->
+    <section class="phase" id="p6" data-titel="Lesen ohne Schreiben">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 6</span><span class="zeit">Tag 9 · 1 Stunde</span></p>
+          <h3>Lesen ohne Schreiben</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p6"> erledigt</label>
+      </div>
+
+      <p>Die wichtigste Stufe. Hier zeigt sich, ob die Selektoren stimmen.</p>
+
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Widget</th><th>Wert</th></tr></thead>
+          <tbody>
+            <tr><td><code>portal_modus</code></td><td><code>browser</code></td></tr>
+            <tr><td><code>dry_run</code></td><td><code>true</code></td></tr>
+            <tr><td><code>selektoren_pfad</code></td><td><code>/Volumes/governance/vde_zugang/konfig/selektoren.json</code></td></tr>
+            <tr><td><code>screenshot_pfad</code></td><td><code>/Volumes/governance/vde_zugang/screenshots</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Der Job meldet sich am Portal an, liest den Bestand, rechnet die Maßnahmen aus —
+      und ändert nichts.</p>
+
+      <h4>Wenn die Zahlen nicht stimmen</h4>
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Symptom</th><th>Ursache</th></tr></thead>
+          <tbody>
+            <tr><td>Benutzerzahl weicht ab</td><td>Zeilenselektor oder Blätterfunktion falsch</td></tr>
+            <tr><td>Regelwerke fehlen oder sind zerhackt</td><td><code>zelle_regelwerke</code> oder Trennzeichen falsch</td></tr>
+            <tr><td>Personalnummern leer</td><td>falsche Zellenspalte</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="halt">
+        <span class="etikett">Nicht weitergehen</span>
+        <p>Öffne das Portal parallel im Browser und vergleiche Benutzerzahl und Stichproben
+        mit dem, was der Job anzeigt. Solange der gelesene Ist-Bestand nicht exakt zum Portal
+        passt, nicht weiter — ein falsch gelesener Bestand erzeugt in Phase 7 falsche Aktionen.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 7 -->
+    <section class="phase" id="p7" data-titel="Erster Echtlauf">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 7</span><span class="zeit">Tag 10 · 2 Stunden</span></p>
+          <h3>Erster Echtlauf, klein gehalten</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p7"> erledigt</label>
+      </div>
+
+      <h4>Notbremse enger stellen</h4>
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Widget</th><th>Erster Lauf</th><th>Später</th></tr></thead>
+          <tbody>
+            <tr><td><code>max_entzuege</code></td><td>2</td><td>10</td></tr>
+            <tr><td><code>max_aenderungen</code></td><td>5</td><td>40</td></tr>
+            <tr><td><code>dry_run</code></td><td><code>false</code></td><td><code>false</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Löst die Notbremse aus, ist das kein Fehler, sondern die richtige Reaktion — sieh
+      dir an, warum so viele Änderungen anstehen.</p>
+
+      <h4>Protokoll ansehen</h4>
+      <pre><code>SELECT stichtag, status, aktion, name, regelwerk, meldung, dauer_s
+FROM governance.vde_zugang.massnahmen
+ORDER BY erstellt_am DESC;</code></pre>
+
+      <div class="abnahme">
+        <span class="etikett">Abnahme</span>
+        <p>Alle Aktionen stehen auf <code>ERFOLG</code>, sind im Portal sichtbar, das Protokoll
+        ist vollständig. Der Job liest zwar selbst nach — beim ersten Mal willst du es trotzdem
+        mit eigenen Augen gesehen haben.</p>
+        <p>Bei <code>FEHLER</code>: Meldung und Screenshot im Volume ansehen. Fast immer ist es
+        ein Selektor, der auf einer Unterseite anders heißt als auf der Übersicht.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 8 -->
+    <section class="phase" id="p8" data-titel="Produktion">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 8</span><span class="zeit">Tag 11 · 1 Stunde</span></p>
+          <h3>In Produktion nehmen</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p8"> erledigt</label>
+      </div>
+
+      <pre><code>databricks bundle validate
+databricks bundle deploy -t prod</code></pre>
+
+      <p>Variablen in <code>resources/vde_zugangsabgleich_job.yml</code> vorher füllen:
+      <code>portal_url</code>, <code>sp_site_hostname</code>, <code>verantwortlicher</code>,
+      <code>dienstkonto</code>, <code>node_type</code>.</p>
+
+      <h4>Zeitplan aktivieren</h4>
+      <p><code>pause_status</code> von <code>PAUSED</code> auf <code>UNPAUSED</code> setzen
+      und erneut ausrollen. Montags 07:00 Europe/Berlin.</p>
+
+      <h4>Alarmierung</h4>
+      <p>Die Job-Benachrichtigung deckt nur den Absturz ab — nicht den Fall, dass der Job
+      sauber durchläuft und die Notbremse gezogen hat. Dafür ist die Ergebnismail da: Der
+      Betreff beginnt dann mit <code>LAUF GESTOPPT</code>. Eine Postfachregel darauf lohnt sich.</p>
+
+      <div class="abnahme">
+        <span class="etikett">Abnahme</span>
+        <p>Ein manuell ausgelöster Lauf über die Job-Oberfläche läuft grün durch und die
+        Mail kommt an.</p>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------- Phase 9 -->
+    <section class="phase" id="p9" data-titel="Betrieb">
+      <div class="kopf">
+        <div class="kopf-text">
+          <p class="marke"><span>Phase 9</span><span class="zeit">dauerhaft</span></p>
+          <h3>Betrieb und Rückfall</h3>
+        </div>
+        <label class="haken"><input type="checkbox" data-phase="p9"> erledigt</label>
+      </div>
+
+      <h4>Wöchentlich, 5 Minuten</h4>
+      <p>Ergebnismail lesen. Interessant sind zwei Zeilen: <code>fehlgeschlagen</code> und
+      <code>offen</code>. Prüffälle abarbeiten — der Teil, der bewusst bei dir bleibt.</p>
+
+      <h4>Monatlich, 15 Minuten</h4>
+      <pre><code>SELECT aktion, status, count(*) AS anzahl
+FROM governance.vde_zugang.massnahmen
+WHERE stichtag &gt;= current_date() - INTERVAL 30 DAYS
+GROUP BY ALL ORDER BY anzahl DESC;</code></pre>
+      <p>Häufen sich <code>FEHLER</code> bei einer bestimmten Aktion, hat sich das Portal
+      geändert.</p>
+
+      <h4>Wenn sich das Portal ändert</h4>
+      <p>Erkennbar an Klartext-Meldungen wie <em>„Benutzerübersicht nicht gefunden"</em>.
+      Der Job ändert dann nichts, er bricht ab.</p>
+      <ol class="schritte">
+        <li><code>selektoren_erkunden.py</code> erneut laufen lassen</li>
+        <li>Geänderte Felder ersetzen</li>
+        <li><code>python3 -m unittest discover -s tests</code></li>
+        <li>Neue <code>selektoren.json</code> ins Volume</li>
+        <li>Einmal mit <code>dry_run = true</code> gegenprüfen</li>
+      </ol>
+      <p>Realistisch ein- bis zweimal im Jahr, Aufwand je unter einer Stunde.</p>
+
+      <h4>Rückfall</h4>
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Situation</th><th>Maßnahme</th></tr></thead>
+          <tbody>
+            <tr><td>Portal geändert, keine Zeit für Selektoren</td>
+                <td><code>portal_modus = aufgabenliste</code> — du bekommst wieder die
+                Aufgabenliste per Mail und klickst selbst</td></tr>
+            <tr><td>Etwas ist grundsätzlich falsch</td>
+                <td>Zeitplan auf <code>PAUSED</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Ein Rückbau der Datenlage ist nie nötig: Die Wahrheit steht im Portal, die
+      Delta-Tabellen sind Protokoll und Momentaufnahme.</p>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <p>Runbook zur Inbetriebnahme der VDE-Zugangsverwaltung. Der Haken an jeder Phase wird
+  nur in diesem Browser gespeichert und mit niemandem geteilt.</p>
+  <p>Ausführliche Fassung im Repository: <code>vde-zugangsverwaltung/docs/UMZUG.md</code></p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const SCHLUESSEL = "vde-umzug-fortschritt";
+  const phasen = Array.from(document.querySelectorAll("section.phase"));
+  const schiene = document.getElementById("schiene");
+
+  function lade() {
+    try {
+      return JSON.parse(localStorage.getItem(SCHLUESSEL) || "{}") || {};
+    } catch (e) {
+      return {};
+    }
+  }
+  function sichere(stand) {
+    try {
+      localStorage.setItem(SCHLUESSEL, JSON.stringify(stand));
+    } catch (e) {
+      /* privates Fenster oder blockierter Speicher - der Plan bleibt lesbar */
+    }
+  }
+
+  // Schienen-Navigation aus den Abschnitten selbst aufbauen
+  phasen.forEach(function (abschnitt, i) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = "#" + abschnitt.id;
+    a.dataset.ziel = abschnitt.id;
+    a.innerHTML =
+      '<span class="snum">' + String(i).padStart(2, "0") + "</span><span>" +
+      abschnitt.dataset.titel + "</span>";
+    li.appendChild(a);
+    schiene.appendChild(li);
+  });
+
+  const links = Array.from(schiene.querySelectorAll("a"));
+
+  function spiegle(id, fertig) {
+    const abschnitt = document.getElementById(id);
+    if (abschnitt) abschnitt.classList.toggle("erledigt", fertig);
+    const link = links.find(function (l) { return l.dataset.ziel === id; });
+    if (link) link.classList.toggle("fertig", fertig);
+  }
+
+  const stand = lade();
+  document.querySelectorAll(".haken input").forEach(function (kasten) {
+    const id = kasten.dataset.phase;
+    kasten.checked = Boolean(stand[id]);
+    spiegle(id, kasten.checked);
+    kasten.addEventListener("change", function () {
+      const aktuell = lade();
+      aktuell[id] = kasten.checked;
+      sichere(aktuell);
+      spiegle(id, kasten.checked);
+    });
+  });
+
+  // Aktive Phase in der Schiene markieren
+  if ("IntersectionObserver" in window) {
+    const beobachter = new IntersectionObserver(function (eintraege) {
+      eintraege.forEach(function (eintrag) {
+        if (!eintrag.isIntersecting) return;
+        links.forEach(function (l) {
+          l.setAttribute("aria-current", String(l.dataset.ziel === eintrag.target.id));
+        });
+      });
+    }, { rootMargin: "-15% 0px -70% 0px" });
+    phasen.forEach(function (p) { beobachter.observe(p); });
+  }
+})();
+</script>
