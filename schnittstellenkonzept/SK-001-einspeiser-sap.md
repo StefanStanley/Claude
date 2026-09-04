@@ -1,6 +1,6 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.4.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> **Entwurf 0.5.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
 > Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
 > deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
 > und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
@@ -9,8 +9,8 @@
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.4 — 04.09.2026 |
-| **Status** | Entwurf |
+| **Version / Stand** | 0.5 — 04.09.2026 |
+| **Status** | Entwurf — Entscheidungsvorlage Middleware |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
 | **Beteiligte Systeme** | epilot → Netzlaufwerk (CSV) → SAP (IS-U / FI-CA) |
@@ -252,6 +252,69 @@ Zugangstoken. Mehr nicht — keine eingehende Freigabe, keine neue Komponente in
 liefert die Entity-Felder in epilot-Struktur, nicht im SAP-Format — als Abkürzung taugt er
 deshalb nicht. Für einen manuellen Notweg ist er trotzdem gut zu kennen.*
 
+### Werkzeugwahl: Power Automate oder Databricks
+
+Beide stehen zur Verfügung, und beide haben genau eine Schwachstelle für diesen
+Anwendungsfall — die jeweils andere.
+
+| | Power Automate | Databricks on Azure |
+| --- | --- | --- |
+| **Erreicht das Netzlaufwerk** | **ja**, über den On-Premises Data Gateway — genau dafür gebaut | **nein**, schreibt nach Blob/ADLS; SMB braucht zusätzliche Anbindung oder einen zweiten Schritt |
+| **Byte-genaue CSV** | **schwach** — schreibt UTF-8; Kodierung, BOM und Zeilenenden sind nur über fragile Umwege steuerbar | **volle Kontrolle** — Kodierung, Trennzeichen, Maskierung, Zeilenende exakt wie gefordert |
+| Prüfregeln aus dem Interview | in einer GUI zusammengeklickt, ab mittlerer Komplexität schlecht wartbar | normaler Code, testbar |
+| Versionierung, Review | schwach | Git, wie jeder andere Code |
+| Aufwand für einen kleinen Lauf | gering | Overhead — es ist ein Big-Data-Werkzeug für eine Datei mit dreistelliger Zeilenzahl |
+| Betriebskosten | Lizenz (HTTP-Konnektor ist Premium) | Cluster-Laufzeit je Lauf |
+
+**Die Entscheidung hängt an einem Byte.** Konkret an der Kodierung der heutigen Datei:
+
+- **Zieldatei ist UTF-8 ohne BOM** → Power Automate allein genügt. Der einfachste Weg,
+  eine Komponente, kein Bruch.
+- **Zieldatei ist Windows-1252 / ISO-8859-1 oder UTF-8 mit BOM** → Power Automate scheidet
+  für die Erzeugung aus. Was dabei herauskommt, sieht in der Vorschau richtig aus und
+  zerlegt in SAP jeden Umlaut.
+
+*Deutsche SAP-Umfelder mit gewachsenen Dateiimporten liegen erfahrungsgemäß häufiger beim
+zweiten Fall. Sicher weiß man es erst, wenn jemand die Originaldatei im Hexeditor
+aufmacht — das ist eine Aufgabe von zehn Minuten und sollte vor der Werkzeugentscheidung
+erledigt sein.*
+
+### Empfehlung: Arbeitsteilung
+
+Unabhängig vom Ausgang der Kodierungsfrage trägt diese Aufteilung — und sie lässt sich
+später auf eine Komponente zusammenziehen, wenn sich die einfache Variante bestätigt:
+
+```
+epilot  ◄─[ HTTPS ]─  Databricks Job  ──►  Blob/ADLS  ──►  Power Automate  ──►  Netzlaufwerk  ──►  SAP
+                      Abruf, Prüfung,      abgelegte      + Data Gateway
+                      CSV-Erzeugung        Datei          (Kopie + Umbenennung)
+```
+
+**Databricks erzeugt, Power Automate stellt zu.** Jedes Werkzeug macht das, worin es stark
+ist: Databricks die byte-genaue Datei und die Prüflogik, Power Automate den letzten Meter
+ins interne Netz, wofür der Gateway ohnehin existiert.
+
+Drei Gründe für Databricks bei der Erzeugung:
+
+1. **Das Dateiformat ist die harte Anforderung.** SAP nimmt die Datei oder nicht.
+   Volle Kontrolle darüber ist nicht verhandelbar.
+2. **Die Prüfregeln werden echter Code.** Was im Gespräch mit der Sachbearbeitung
+   herauskommt, ist Logik mit Sonderfällen — in einem Flow zusammengeklickt wird sie
+   unwartbar, in Python bleibt sie lesbar und testbar.
+3. **Diese Schnittstelle liefert Vergütungsgrundlagen.** Versionierung, Review und
+   automatisierte Tests sind hier keine Kür.
+
+*Der ehrliche Einwand: Databricks ist für diese Datenmenge überdimensioniert. Das ist
+vertretbar, wenn ihr die Plattform ohnehin betreibt — dann ist der Grenzaufwand ein Job
+mehr. Falls nicht, ist eine Azure Function das passendere Werkzeug für dieselbe Rolle;
+die Architektur bleibt identisch.*
+
+### Ablage des Zugangstokens
+
+Der epilot-Access-Token (`token_type: api`, `read_only: true`) gehört in den Azure Key
+Vault, nicht in ein Notebook und nicht in eine Flow-Variable. Erneuerung vor Ablauf
+einplanen — ein Token, der nachts ausläuft, ist ein vermeidbarer Störfall.
+
 ### Selektion: über Status, nicht über Zeitraum
 
 Welche Vorgänge kommen in den nächsten Lauf? Die naheliegende Antwort „alle seit dem
@@ -401,6 +464,27 @@ SAP schreiben, brauchen eine klare Trennung, wer welchen Vorgang überträgt.
 
 ---
 
+## 8a. Umsetzung in Phasen
+
+*Größenordnungen für die Planung, keine belastbare Schätzung — sie setzen voraus, dass
+das epilot-Entity-Schema für Netzanschlussanfragen steht.*
+
+| Phase | Inhalt | Größenordnung |
+| --- | --- | --- |
+| **1 — Erhebung** | Gespräch mit der Sachbearbeitung, Originaldatei aufnehmen, Format byteweise dokumentieren, Kodierungsfrage klären | 2–3 PT |
+| **2 — Entscheidung** | Werkzeug festlegen (folgt aus Phase 1), Zielpfad und Rechte klären | 1 PT |
+| **3 — epilot** | Übertragungsstatus am Vorgang, fehlende Felder in der Journey ergänzen | 2–4 PT |
+| **4 — Erzeugung** | Abruf, Transformation, CSV-Erzeugung, Ablage | 5–8 PT |
+| **5 — Prüfregeln** | Was in Phase 1 als implizite Prüfung aufgetaucht ist, als Regeln mit Klärliste | 2–3 PT |
+| **6 — Zustellung** | Flow mit Gateway, atomare Übergabe per Umbenennung | 1–2 PT |
+| **7 — Vergleichstest** | Reale Altvorgänge durchspielen, Dateien byteweise vergleichen | 3–5 PT |
+| **8 — Stufe 1 im Betrieb** | Job schreibt in den Prüfordner, Freigabe von Hand | 4–6 Wochen Laufzeit |
+| **9 — Umstellung** | Direktschreiben, Abgleichskennzahl aktiv | 1 PT |
+
+**Kritischer Pfad ist Phase 1.** Ohne die Originaldatei ist die Werkzeugentscheidung nicht
+zu treffen, und ohne das Gespräch fehlen die Prüfregeln. Beides ist in einer Woche
+machbar, wenn die Termine stehen.
+
 ## 9. Offene Punkte und Entscheidungen
 
 | # | Punkt | Wer entscheidet | Ergebnis |
@@ -412,7 +496,8 @@ SAP schreiben, brauchen eine klare Trennung, wer welchen Vorgang überträgt.
 | 5 | Genauer Pfad auf dem Netzlaufwerk, Schreibrechte für den Job | IT-Betrieb | offen |
 | 6 | Wann läuft der SAP-Import — fester Job oder manuell angestoßen? | SAP-Betrieb | offen |
 | 7 | Wie wird heute bemerkt, dass ein Import fehlgeschlagen ist? | SAP-Betrieb + Fachbereich | offen |
-| 8 | Wo läuft der Export-Job, wer betreibt ihn, wo liegt das Token? | IT-Betrieb | offen |
+| 8 | Werkzeug: Power Automate allein oder Databricks + Power Automate — **entscheidet sich an der Kodierung der Originaldatei** | IT-Architektur | offen |
+| 8b | Betreibt ihr Databricks bereits produktiv? Falls nein, Azure Function als Alternative prüfen | IT-Architektur | offen |
 | 9 | Selektionsregel: Übertragungsstatus in epilot einführen | Cluster + Fachbereich | offen |
 | 10 | Stufe 1 (Prüfordner): Dauer und Kriterium für den Übergang auf Stufe 2 | Fachbereich | offen |
 | 11 | Vertretungsregel — heute personenabhängig, künftig? | Fachbereich | offen |
