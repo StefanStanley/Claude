@@ -53,7 +53,7 @@ entsteht daraus ein eigenes Dokument.
 
 | ID | Kurzname | Von → Nach | Fachlicher Zweck | Menge/Monat | Aufwand heute | Prio | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| SK-001 | | | | | | | offen |
+| [SK-001](./SK-001-einspeiser-sap.md) | Einspeiser → SAP | epilot → SAP IS-U | Stammdaten für die EEG-Abrechnung nach Inbetriebsetzung | *zu erheben* | *zu erheben* | hoch | in Konzeption |
 | SK-002 | | | | | | | offen |
 | SK-003 | | | | | | | offen |
 
