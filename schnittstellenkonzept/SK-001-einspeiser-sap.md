@@ -1,6 +1,6 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.2.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> **Entwurf 0.3.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
 > Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
 > deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
 > und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.2 — 04.09.2026 |
+| **Version / Stand** | 0.3 — 04.09.2026 |
 | **Status** | Entwurf |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
@@ -32,16 +32,16 @@ Wertelisten und die Sonderfälle existieren bereits. Sie müssen nicht erfunden,
 **erhoben** werden. Das ist deutlich schneller — und deutlich zuverlässiger, weil die
 bestehende Lösung alle Ausnahmen kennt, die über die Jahre aufgelaufen sind.
 
-### Die entscheidende Architekturfrage
+### Entschieden: Quellsystemtausch über CSV
 
-**Bleibt die SAP-Seite unverändert?**
+**SAP konsumiert heute eine CSV, und das bleibt so.** SAP-seitig wird nichts angefasst.
 
-| Fall | Konsequenz |
-| --- | --- |
-| **Quellsystemtausch** — SAP empfängt weiterhin dasselbe Format, nur der Absender wechselt | Das kleinere Projekt. epilot muss die bestehende Nachricht erzeugen, SAP-seitig ist nichts anzufassen. Die Abnahme ist ein Vergleich: gleiche Eingangsdaten, gleiche Nachricht. |
-| **Beide Seiten neu** | Das größere Projekt mit eigenem SAP-Aufwand, eigener Abnahme und eigener Freigabekette. Nur sinnvoll, wenn die bestehende Schnittstelle fachlich nicht mehr trägt. |
+Damit ist der Zuschnitt klar: Es ist zu erzeugen, was das Altportal erzeugt — dieselbe
+Datei, am selben Ort, zur selben Zeit. Aus SAPs Sicht darf die Umstellung unsichtbar sein.
+Das ist die risikoärmste Variante und macht die Abnahme zu einem Dateivergleich.
 
-*Diese Frage vor allem anderen klären — sie bestimmt Aufwand, Zeitplan und Beteiligte.*
+*Die Vorgabe gilt. Ob die CSV mittelfristig durch etwas anderes ersetzt wird, ist eine
+eigene Diskussion zu einem anderen Zeitpunkt — sie gehört nicht in dieses Vorhaben.*
 
 ### Was aus dem Altportal zu erheben ist
 
@@ -181,28 +181,84 @@ Diese Tabelle ist die eigentliche Arbeit des Konzepts.*
 
 ## 4. Technische Umsetzung
 
-*Der bestehende Weg ist die Vorgabe, solange nichts dagegen spricht. Zu erheben statt
-zu entwerfen:*
+### Die Grundfrage: Wie kommt die Datei ins interne Netz?
 
-| Frage | Aus dem Bestand zu klären |
+epilot läuft als SaaS in der Cloud und kann nicht auf ein internes Netzlaufwerk oder ein
+SAP-Verzeichnis schreiben. Zwischen epilot und dem Ablageort braucht es eine Komponente.
+Zwei Wege sind möglich:
+
+| | Push | **Pull (empfohlen)** |
+| --- | --- | --- |
+| Ablauf | epilot meldet jeden Vorgang per Webhook an eine intern erreichbare Komponente, die sammelt und die Datei schreibt | Ein Job im internen Netz fragt epilot zeitgesteuert ab (`POST /v1/entity:search`) und schreibt die Datei |
+| Netzzugang | erfordert einen von außen erreichbaren Endpunkt im internen Netz | nur ausgehendes HTTPS |
+| Wiederholbarkeit | Zustellungen müssen gepuffert werden; verpasste Ereignisse brauchen Replay | Job kann jederzeit erneut laufen und holt den aktuellen Stand |
+| Betriebshoheit | verteilt | vollständig bei euch |
+
+**Empfehlung Pull.** Der Ausschlag gibt der Netzzugang: Ein eingehender Endpunkt aus dem
+Internet ins interne Netz ist ein Sicherheitsvorgang mit eigener Freigabekette und
+entsprechender Laufzeit. Ausgehendes HTTPS habt ihr ohnehin. Dazu kommt, dass ein Pull-Job
+von sich aus wiederholbar ist — bei einer Dateischnittstelle ohne Rückkanal ist das die
+wichtigere Eigenschaft.
+
+```
+epilot (Cloud)  ◄──[ HTTPS, ausgehend ]──  Export-Job (intern)  ──►  Ablage  ──►  SAP
+```
+
+*Hinweis: epilot bringt mit `POST /v1/entity:export` einen eigenen CSV-Export mit. Der
+liefert die Entity-Felder in epilot-Struktur, nicht im SAP-Format — als Abkürzung taugt er
+deshalb nicht. Für einen manuellen Notweg ist er trotzdem gut zu kennen.*
+
+### Selektion: über Status, nicht über Zeitraum
+
+Welche Vorgänge kommen in den nächsten Lauf? Die naheliegende Antwort „alle seit dem
+letzten Lauf" ist die falsche:
+
+- **Nachzügler gehen verloren.** Ein Vorgang, der rückwirkend vervollständigt wird, fällt
+  aus dem Zeitfenster und wird nie übertragen — ohne dass es auffällt.
+- **Wiederholung erzeugt Dubletten.** Läuft der Job zweimal, ist derselbe Vorgang zweimal
+  in der Datei.
+
+Stattdessen: ein **Übertragungsstatus am Vorgang in epilot**. Der Job selektiert alles mit
+Status „bereit, noch nicht übertragen", schreibt die Datei und setzt die Vorgänge danach
+auf „übertragen". Das ist wiederholbar, lückenlos und jederzeit nachvollziehbar.
+
+*Zu klären: Wie ist die Selektion im Altportal gelöst? Wenn dort über einen Zeitraum
+selektiert wird, ist das eine der Schwachstellen, die man bei der Ablösung nicht mitnimmt.*
+
+### Die Datei: was exakt zu erheben ist
+
+**Nicht aus der Schnittstellendokumentation, sondern aus einer echten produktiven Datei.**
+Eine Originaldatei im Hexeditor beantwortet die Hälfte dieser Fragen in zwei Minuten —
+und zwar richtig, während die Doku oft einen früheren Stand beschreibt.
+
+| Merkmal | Wert | Warum es zählt |
+| --- | --- | --- |
+| Zeichenkodierung | | **Der häufigste Fehler.** epilot liefert UTF-8; erwartet die Gegenseite Windows-1252 oder UTF-8 mit BOM, werden aus Umlauten in Namen und Straßen unbrauchbare Zeichen |
+| Trennzeichen | | Semikolon oder Komma |
+| Maskierung | | Was passiert, wenn das Trennzeichen im Feldinhalt vorkommt? Anführungszeichen, Verdopplung, oder gar keine Regel? |
+| Zeilenende | | CRLF oder LF — SAP-Importe sind hier oft empfindlich |
+| Dezimaltrennzeichen | | Komma oder Punkt bei der Leistung. Bei Komma **und** Semikolon als Trenner ist Maskierung zwingend |
+| Datumsformat | | Beim Inbetriebnahmedatum kein Feld für Interpretation |
+| Kopfzeile | | vorhanden oder nicht, und ist die Spaltenreihenfolge fix? |
+| Leere Felder | | Leerstring, Platzhalter oder Feld entfällt |
+| Feldlängen | | Wird gekürzt, abgelehnt, oder läuft es einfach durch? |
+
+### Ablage und Übergabe
+
+| | |
 | --- | --- |
-| Welchen Weg nimmt das Altportal? | Middleware (Integration Suite / CPI, PI/PO, anderer Bus) oder direkt? |
-| Welches Verfahren? | OData, IDoc, BAPI/RFC, Datei |
-| Wer betreibt die SAP-Seite? | Die Zuständigkeit ist meist der Engpass, nicht die Technik |
-| Synchron, ereignisgesteuert oder Batch? | Was heute läuft, ist der Ausgangspunkt |
+| Ablageort | *SFTP, Netzlaufwerk, SAP-Verzeichnis — zu erheben* |
+| Dateinamensmuster | *Oft mit Zeitstempel oder laufender Nummer, und SAP erwartet es exakt* |
+| Zeitpunkt / Takt | *Wann läuft der SAP-Import, und wie lange vorher muss die Datei liegen?* |
+| Verhalten ohne Vorgänge | *Leere Datei mit Kopfzeile oder gar keine Datei? Import-Jobs reagieren darauf unterschiedlich — und ein Job, der auf eine Datei wartet, die nie kommt, meldet sich meist nicht* |
+| Nachbehandlung | *Wer löscht oder archiviert die Datei nach dem Import?* |
 
-**Wenn eine Middleware im Spiel ist, ist das die gute Nachricht:** Dann endet eure
-Schnittstelle dort, die SAP-Seite bleibt unberührt, und das Vorhaben schrumpft auf
-epilot → Middleware im bestehenden Format.
-
-**epilot-Seite** (steht bereits fest, siehe [`../epilot-api/`](../epilot-api/)):
-Auslöser über Webhook auf ein Workflow-Ereignis; ausgehende Aufrufe werden von epilot
-mit Ed25519 signiert (öffentlicher Schlüssel über `GET /v1/webhooks/.well-known/public-key`).
-Lesende Nachfragen laufen über die Entity API mit einem Access Token vom Typ `api`,
-`read_only: true`. Fehlgeschlagene Zustellungen lassen sich über die Replay-Endpunkte
-der Webhooks-API nachträglich einspielen.
-
----
+**Atomare Übergabe — nicht verhandelbar.** Die Datei wird unter temporärem Namen
+geschrieben und erst nach vollständigem Schreiben in den Zielnamen umbenannt. Andernfalls
+holt der SAP-Job irgendwann eine halb geschriebene Datei ab und importiert einen
+abgeschnittenen Bestand. Das passiert selten, fällt spät auf und ist mühsam zu
+korrigieren. *Zu prüfen, ob das Altportal es so macht — falls nicht, ist es eine der
+Verbesserungen, die man bei der Ablösung mitnimmt, weil sie nichts kostet.*
 
 ## 5. Fehlerbehandlung
 
@@ -213,9 +269,26 @@ der Webhooks-API nachträglich einspielen.
 | Technisch vorübergehend | SAP oder Middleware nicht erreichbar | Wiederholung, dann Alarm |
 | Technisch dauerhaft | Pflichtfeld in SAP abgelehnt | Alarm, keine stille Wiederholung |
 
-*Auch hier gilt: Die bestehende Fehlerbehandlung des Altportals ist die Vorlage. Was dort
-heute in Klärlisten landet und wie oft, ist gleichzeitig die Anforderung an die neue
-Strecke — und zeigt, wo sie besser sein sollte.*
+### Der wunde Punkt jeder Dateischnittstelle: keine Quittung
+
+Eine CSV hat keinen Rückkanal. Wenn SAP die Datei nicht verarbeiten kann, erfährt die
+liefernde Seite es nicht — es sei denn, jemand hat dafür etwas gebaut. Drei Fragen an den
+Bestand, und zwar wörtlich so:
+
+1. **Wie erfahrt ihr heute, dass ein Import fehlgeschlagen ist?** Gibt es ein
+   Rückprotokoll, eine Mail, einen Blick in ein Protokoll — oder merkt es erst die
+   Abrechnung?
+2. **Was passiert bei einem Teilfehler?** Bricht der Import bei Zeile 47 ab, und sind die
+   Zeilen davor dann verbucht oder nicht?
+3. **Was passiert, wenn die Datei gar nicht erst abgeholt wird?** Das ist der stille Fall:
+   Kein Fehler, keine Meldung, die Vorgänge stehen einfach nicht in SAP.
+
+Solange es keine Quittung gibt, braucht es einen **Abgleich statt einer Fehlerquote**:
+gelieferte Zeilen gegen angelegte Datensätze in SAP, regelmäßig und automatisch. Das ist
+die einzige Kontrolle, die den stillen Fall aufdeckt.
+
+*Die bestehende Fehlerbehandlung des Altportals ist im Übrigen die Vorlage: Was dort heute
+in Klärlisten landet und wie oft, ist gleichzeitig die Anforderung an die neue Strecke.*
 
 **Zwei Punkte, die bei einer Ablösung neu hinzukommen:**
 
@@ -257,8 +330,9 @@ ein Vorgang, der gar nicht erst losläuft, erzeugt keinen Fehler.*
 **Die Ablösung hat ein Abnahmekriterium, das ein Neubau nicht hat: den Vergleich.**
 
 Nehmt einen Satz realer, bereits übertragener Vorgänge aus dem Altportal, spielt dieselben
-Eingangsdaten durch die neue Strecke und vergleicht die erzeugten Nachrichten Feld für
-Feld. Jede Abweichung ist entweder ein Fehler oder eine bewusste Entscheidung — beides
+Eingangsdaten durch die neue Strecke und vergleicht die erzeugten Dateien **byteweise**
+gegen das Original — nicht nur die Werte, sondern auch Kodierung, Trennzeichen,
+Maskierung und Zeilenenden. Jede Abweichung ist entweder ein Fehler oder eine bewusste Entscheidung — beides
 muss benannt sein. Das ist belastbarer als jede Testfallliste, weil es genau die
 Sonderfälle trifft, die niemand aufgeschrieben hat.
 
@@ -276,10 +350,13 @@ SAP schreiben, brauchen eine klare Trennung, wer welchen Vorgang überträgt.
 
 | # | Punkt | Wer entscheidet | Ergebnis |
 | --- | --- | --- | --- |
-| 1 | **Bleibt die SAP-Seite unverändert (Quellsystemtausch) oder wird beidseitig neu gebaut?** | IT-Architektur + SAP-Betrieb | offen |
-| 2 | Wer betreut die bestehende Schnittstelle im Altportal — und wann sprechen wir mit dieser Person? | Cluster | offen |
-| 3 | Export produktiver Nachrichten aus dem Altportal für die Mapping-Erhebung | Betrieb Altportal | offen |
-| 4 | Umstellung: harter Stichtag oder Parallelbetrieb mit Trennregel? | Fachbereich + IT | offen |
-| 5 | Vorgänge, die im Altportal angemeldet und nach der Umstellung in Betrieb gesetzt werden | Fachbereich | offen |
-| 6 | Bekannte Schwachstellen des Altportals — welche werden mit abgelöst, welche später? | Fachbereich + Cluster | offen |
-| 7 | Änderungen nach Übergabe an SAP — wie heute gelöst, bleibt es dabei? | Abrechnung | offen |
+| 1 | ~~Bleibt die SAP-Seite unverändert?~~ | — | **entschieden: ja, CSV bleibt** |
+| 2 | Produktive Originaldatei besorgen und Format exakt aufnehmen | Betrieb Altportal | offen |
+| 3 | Ablageort, Dateinamensmuster und Abholzeitpunkt des SAP-Jobs | SAP-Betrieb | offen |
+| 4 | Gibt es ein Rückprotokoll des Imports — und wie wird heute ein Fehlschlag bemerkt? | SAP-Betrieb | offen |
+| 5 | Wer betreut die bestehende Strecke im Altportal — Termin vereinbaren | Cluster | offen |
+| 6 | Wie selektiert das Altportal die zu übertragenden Vorgänge (Status oder Zeitraum)? | Betrieb Altportal | offen |
+| 7 | Wo läuft der Export-Job künftig, und wer betreibt ihn? | IT-Betrieb | offen |
+| 8 | Umstellung: harter Stichtag oder Parallelbetrieb mit Trennregel? | Fachbereich + IT | offen |
+| 9 | Vorgänge, die im Altportal angemeldet und nach der Umstellung in Betrieb gesetzt werden | Fachbereich | offen |
+| 10 | Bekannte Schwachstellen des Altportals — welche werden mit abgelöst, welche später? | Fachbereich + Cluster | offen |
