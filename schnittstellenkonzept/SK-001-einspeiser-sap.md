@@ -1,6 +1,6 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.3.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> **Entwurf 0.4.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
 > Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
 > deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
 > und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
@@ -9,62 +9,98 @@
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.3 — 04.09.2026 |
+| **Version / Stand** | 0.4 — 04.09.2026 |
 | **Status** | Entwurf |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
-| **Beteiligte Systeme** | epilot → SAP (IS-U / FI-CA) — ablösend für Altportal → SAP |
+| **Beteiligte Systeme** | epilot → Netzlaufwerk (CSV) → SAP (IS-U / FI-CA) |
 
 ---
 
-## 0. Ausgangslage: Ablösung, nicht Neubau
+## 0. Ausgangslage: Automatisierung eines Handprozesses
 
-Die Strecke ist im Altportal produktiv umgesetzt. Übergabepunkt ist die bestätigte
-Inbetriebsetzung — fachlich geklärt, hier nicht erneut zu diskutieren.
+Heute wird die CSV **manuell** erzeugt und auf einem **Netzlaufwerk** abgelegt, von dort
+holt SAP sie ab. Es gibt also keine bestehende Schnittstelle, die abgelöst wird — es gibt
+einen Menschen, der die Schnittstelle ist.
 
 ```
-Anmeldung ──► Prüfung ──► Anschluss- ──► Errichtung ──► Inbetriebsetzung ──► SAP
-                           zusage                        + Zählersetzung
+Anmeldung ──► Prüfung ──► Anschlusszusage ──► Errichtung ──► Inbetriebsetzung
+                                                                    │
+                                                        ┌───────────┘
+                                                        ▼
+                                              [ Handarbeit: CSV erzeugen ]
+                                                        │
+                                                        ▼
+                                              Netzlaufwerk ──► SAP
 ```
 
-**Was das für dieses Konzept bedeutet:** Das Feldmapping, die Transformationsregeln, die
-Wertelisten und die Sonderfälle existieren bereits. Sie müssen nicht erfunden, sondern
-**erhoben** werden. Das ist deutlich schneller — und deutlich zuverlässiger, weil die
-bestehende Lösung alle Ausnahmen kennt, die über die Jahre aufgelaufen sind.
+**Was das für dieses Vorhaben bedeutet:**
 
-### Entschieden: Quellsystemtausch über CSV
+**Die gute Nachricht — der technische Weg ist der einfachste denkbare.** Netzlaufwerk statt
+SFTP oder Middleware heißt: ein Job im internen Netz, der die Datei genau dorthin schreibt,
+wo sie heute von Hand landet. Nach außen braucht es nur ausgehendes HTTPS zu epilot. Keine
+eingehende Freigabe, keine Middleware, keine Änderung auf der SAP-Seite.
 
-**SAP konsumiert heute eine CSV, und das bleibt so.** SAP-seitig wird nichts angefasst.
+**Die eigentliche Arbeit liegt woanders.** Wer heute die Datei erzeugt, tut mehr als
+kopieren: Er entscheidet, welche Vorgänge reif sind. Er sieht, wenn eine Angabe unplausibel
+ist. Er weiß, was bei Sonderfällen zu tun ist, und ruft im Zweifel jemanden an. **Diese
+Prüfung ist nirgends aufgeschrieben, und sie fällt weg, sobald ein Job die Datei schreibt.**
 
-Damit ist der Zuschnitt klar: Es ist zu erzeugen, was das Altportal erzeugt — dieselbe
-Datei, am selben Ort, zur selben Zeit. Aus SAPs Sicht darf die Umstellung unsichtbar sein.
-Das ist die risikoärmste Variante und macht die Abnahme zu einem Dateivergleich.
+Das ist der übliche Grund, warum die Automatisierung eines Handprozesses schiefgeht: Nicht
+die Technik, sondern das stillschweigende Urteilsvermögen, das mit wegautomatisiert wird.
 
-*Die Vorgabe gilt. Ob die CSV mittelfristig durch etwas anderes ersetzt wird, ist eine
-eigene Diskussion zu einem anderen Zeitpunkt — sie gehört nicht in dieses Vorhaben.*
+### Die zwei Quellen
 
-### Was aus dem Altportal zu erheben ist
+| Quelle | Liefert |
+| --- | --- |
+| **Eine produktive CSV** | Das exakte Zielformat. SAP frisst sie — damit ist sie die verbindliche Spezifikation, unabhängig davon, was irgendwo dokumentiert ist. |
+| **Die Person, die sie erzeugt** | Alles andere: Selektion, Prüfungen, Sonderfälle, Takt, was bei Fehlern passiert. Die mit Abstand wichtigere Quelle. |
 
-*Die eigentliche Konzeptarbeit. Reihenfolge nach Nutzen:*
+### Fragen an die Person, die es heute macht
 
-**1. Produktive Nachrichten, nicht die Dokumentation.** Ein Jahr echter Übertragungen aus
-dem Log exportieren und auswerten: Welche Felder sind tatsächlich immer befüllt, welche
-nie, welche Werte kommen in den Schlüsselfeldern wirklich vor. Die Doku gewachsener
-Schnittstellen weicht fast immer vom implementierten Stand ab — die Nachrichten lügen nicht.
+*Ein Termin, eine Stunde. Das ist die Konzeptarbeit — nicht das Ausfüllen von Vorlagen.*
 
-**2. Die Sonderfälle.** In jeder produktiven Schnittstelle stecken Ausnahmen, die irgendwann
-jemand eingebaut hat und die nirgends stehen. Sie sind der häufigste Grund, warum ein
-Nachbau im Testbetrieb sauber aussieht und in Produktion auseinanderfällt. Sie finden sich
-im Code — oder bei der Person, die die Strecke betreut. Diese Person zu sprechen ist der
-mit Abstand wirksamste halbe Tag in diesem Vorhaben.
+**Auswahl**
+- Woran erkennst du, welche Vorgänge in die nächste Datei gehören?
+- Kommt es vor, dass ein Vorgang eigentlich reif wäre, du ihn aber bewusst zurückhältst? Warum?
+- Wie stellst du sicher, dass keiner doppelt geht — und keiner vergessen wird?
 
-**3. Die Fehlerfälle aus dem Betrieb.** Was landet heute in Klärlisten, wie oft, und woran
-liegt es? Das ist gleichzeitig euer Mengengerüst und die Vorlage für die Fehlerbehandlung
-der neuen Strecke.
+**Prüfung**
+- Worauf schaust du, bevor du die Datei ablegst?
+- Wann hast du zuletzt einen Vorgang wegen einer Auffälligkeit herausgenommen? Was war es?
+- Bei welchen Angaben rufst du im Zweifel jemanden an?
 
-**4. Die bewussten Verbesserungen.** Was am Altportal ärgert, gehört benannt — aber
-getrennt. Eine Ablösung, die gleichzeitig alles besser macht, wird nicht fertig.
-Empfehlung: erst gleichwertig ablösen, Verbesserungen als eigene Vorhaben danach.
+**Sonderfälle**
+- Welche Fälle behandelst du anders als den Normalfall?
+- Gibt es Vorgänge, die du gar nicht über die Datei schickst, sondern anders?
+
+**Ablauf**
+- Wie oft machst du das, und wann?
+- Was passiert, wenn du im Urlaub bist?
+- Woher weißt du, dass SAP die Datei verarbeitet hat? Was war das letzte Mal, dass etwas
+  schiefging, und wie hast du es gemerkt?
+
+**Zeitaufwand**
+- Wie lange dauert ein Durchgang, und was davon ist die eigentliche Prüfung?
+
+*Die Antwort auf die letzte Frage ist euer Nutzenargument. Die Antworten auf „Prüfung" und
+„Sonderfälle" sind die Anforderungen, ohne die die Automatisierung Schaden anrichtet.*
+
+### Einführung in zwei Stufen
+
+Weil der Prozess heute manuell ist, gibt es einen risikoarmen Weg — nutzt ihn:
+
+**Stufe 1 — Job erzeugt, Mensch gibt frei.** Der Job schreibt die Datei in einen
+Prüfordner. Die Person, die es heute macht, sieht sie durch und verschiebt sie auf das
+Netzlaufwerk. Der Zeitaufwand sinkt sofort, das Risiko bleibt bei null, und jede Abweichung
+fällt genau der Person auf, die sie erkennen kann.
+
+**Stufe 2 — Job schreibt direkt.** Nach einer vereinbarten Zahl beanstandungsfreier Läufe
+entfällt der Handgriff. Die Prüfungen, die in Stufe 1 aufgefallen sind, sind bis dahin als
+Regeln im Job abgebildet.
+
+*Stufe 1 ist keine Zwischenlösung, sondern die Testphase mit Produktivdaten — und sie
+kostet fast nichts.*
 
 ## 1. Fachlicher Zweck
 
@@ -75,8 +111,12 @@ sie aus dem Portal abtippt.
 **Auslösendes Ereignis:** Abschluss des Prozessschritts „Inbetriebsetzung bestätigt" im
 epilot-Workflow, mit vorliegendem Inbetriebsetzungsprotokoll und gesetztem Zähler.
 
-**Ergebnis / Nutzen:** Die erste Vergütungsabrechnung kann fristgerecht erfolgen. Der
-Betreiber bekommt sein Geld, ohne dass die Abrechnung auf eine Handanlage wartet.
+**Ergebnis / Nutzen:** Die Übertragung läuft ohne Handgriff und ohne Abhängigkeit von einer
+einzelnen Person. Die erste Vergütungsabrechnung kann fristgerecht erfolgen, auch in
+Urlaubszeiten und bei steigenden Anlagenzahlen.
+
+*Der bezifferbare Teil: Zeitaufwand je Durchgang × Anzahl Durchgänge. Zu erheben im
+Gespräch, siehe Abschnitt 0.*
 
 **Mengengerüst:** *Aus dem Altportal-Log auszulesen — dort liegen die echten Zahlen, es
 muss nichts geschätzt werden.*
@@ -201,8 +241,12 @@ von sich aus wiederholbar ist — bei einer Dateischnittstelle ohne Rückkanal i
 wichtigere Eigenschaft.
 
 ```
-epilot (Cloud)  ◄──[ HTTPS, ausgehend ]──  Export-Job (intern)  ──►  Ablage  ──►  SAP
+epilot (Cloud)  ◄──[ HTTPS, ausgehend ]──  Export-Job (intern)  ──►  Netzlaufwerk  ──►  SAP
 ```
+
+**Der Job braucht:** ausgehendes HTTPS zu epilot, Schreibrecht auf dem Netzlaufwerk, einen
+Ort zum Laufen (Server oder Scheduler im internen Netz) und eine Ablage für das
+Zugangstoken. Mehr nicht — keine eingehende Freigabe, keine neue Komponente in der DMZ.
 
 *Hinweis: epilot bringt mit `POST /v1/entity:export` einen eigenen CSV-Export mit. Der
 liefert die Entity-Felder in epilot-Struktur, nicht im SAP-Format — als Abkürzung taugt er
@@ -247,7 +291,7 @@ und zwar richtig, während die Doku oft einen früheren Stand beschreibt.
 
 | | |
 | --- | --- |
-| Ablageort | *SFTP, Netzlaufwerk, SAP-Verzeichnis — zu erheben* |
+| Ablageort | Netzlaufwerk — **genauer Pfad und Schreibrechte für den Job zu klären** |
 | Dateinamensmuster | *Oft mit Zeitstempel oder laufender Nummer, und SAP erwartet es exakt* |
 | Zeitpunkt / Takt | *Wann läuft der SAP-Import, und wie lange vorher muss die Datei liegen?* |
 | Verhalten ohne Vorgänge | *Leere Datei mit Kopfzeile oder gar keine Datei? Import-Jobs reagieren darauf unterschiedlich — und ein Job, der auf eine Datei wartet, die nie kommt, meldet sich meist nicht* |
@@ -268,6 +312,17 @@ Verbesserungen, die man bei der Ablösung mitnimmt, weil sie nichts kostet.*
 | Fachlich unplausibel | Leistung weicht stark vom Antrag ab, IBN-Datum in der Zukunft | Prüfung durch Sachbearbeitung vor Übergabe |
 | Technisch vorübergehend | SAP oder Middleware nicht erreichbar | Wiederholung, dann Alarm |
 | Technisch dauerhaft | Pflichtfeld in SAP abgelehnt | Alarm, keine stille Wiederholung |
+
+### Heute ist die Kontrolle ein Mensch
+
+Solange die Datei von Hand erzeugt wird, ist die Fehlerkontrolle implizit: Wer die Datei
+baut, sieht dabei, ob etwas nicht stimmt. Diese Kontrolle fällt mit der Automatisierung
+weg und muss ersetzt werden — durch Regeln im Job für das, was prüfbar ist, und durch eine
+Klärliste für alles, was ein Mensch entscheiden muss.
+
+**Was im Zweifel gilt: nicht liefern.** Ein Vorgang, der in der Klärliste hängt, ist ein
+sichtbares Problem. Ein Vorgang, der mit falschen Werten in SAP landet, ist ein unsichtbares
+— und die falschen Werte sind hier Vergütungsgrundlagen.
 
 ### Der wunde Punkt jeder Dateischnittstelle: keine Quittung
 
@@ -351,12 +406,13 @@ SAP schreiben, brauchen eine klare Trennung, wer welchen Vorgang überträgt.
 | # | Punkt | Wer entscheidet | Ergebnis |
 | --- | --- | --- | --- |
 | 1 | ~~Bleibt die SAP-Seite unverändert?~~ | — | **entschieden: ja, CSV bleibt** |
-| 2 | Produktive Originaldatei besorgen und Format exakt aufnehmen | Betrieb Altportal | offen |
-| 3 | Ablageort, Dateinamensmuster und Abholzeitpunkt des SAP-Jobs | SAP-Betrieb | offen |
-| 4 | Gibt es ein Rückprotokoll des Imports — und wie wird heute ein Fehlschlag bemerkt? | SAP-Betrieb | offen |
-| 5 | Wer betreut die bestehende Strecke im Altportal — Termin vereinbaren | Cluster | offen |
-| 6 | Wie selektiert das Altportal die zu übertragenden Vorgänge (Status oder Zeitraum)? | Betrieb Altportal | offen |
-| 7 | Wo läuft der Export-Job künftig, und wer betreibt ihn? | IT-Betrieb | offen |
-| 8 | Umstellung: harter Stichtag oder Parallelbetrieb mit Trennregel? | Fachbereich + IT | offen |
-| 9 | Vorgänge, die im Altportal angemeldet und nach der Umstellung in Betrieb gesetzt werden | Fachbereich | offen |
-| 10 | Bekannte Schwachstellen des Altportals — welche werden mit abgelöst, welche später? | Fachbereich + Cluster | offen |
+| 2 | ~~Ablageort?~~ | — | **entschieden: Netzlaufwerk** |
+| 3 | **Gespräch mit der Person, die die Datei heute erzeugt** (Fragen in Abschnitt 0) | Cluster | offen |
+| 4 | Produktive Originaldatei besorgen, Format byteweise aufnehmen | Fachbereich | offen |
+| 5 | Genauer Pfad auf dem Netzlaufwerk, Schreibrechte für den Job | IT-Betrieb | offen |
+| 6 | Wann läuft der SAP-Import — fester Job oder manuell angestoßen? | SAP-Betrieb | offen |
+| 7 | Wie wird heute bemerkt, dass ein Import fehlgeschlagen ist? | SAP-Betrieb + Fachbereich | offen |
+| 8 | Wo läuft der Export-Job, wer betreibt ihn, wo liegt das Token? | IT-Betrieb | offen |
+| 9 | Selektionsregel: Übertragungsstatus in epilot einführen | Cluster + Fachbereich | offen |
+| 10 | Stufe 1 (Prüfordner): Dauer und Kriterium für den Übergang auf Stufe 2 | Fachbereich | offen |
+| 11 | Vertretungsregel — heute personenabhängig, künftig? | Fachbereich | offen |
