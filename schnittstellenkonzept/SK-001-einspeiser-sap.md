@@ -1,49 +1,70 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.1.** Der fachliche Teil (Abschnitte 1–3) ist aus der Prozesslogik für
-> EEG-Einspeiseanlagen abgeleitet und sollte weitgehend tragen. Die technische Seite
-> (Abschnitt 4) ist bewusst leer — sie hängt an Entscheidungen, die noch offen sind.
-> Feldnamen auf der epilot-Seite sind Platzhalter, solange das Entity-Schema nicht steht.
+> **Entwurf 0.2.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
+> deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
+> und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
+> solange das Entity-Schema nicht steht.
 
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.1 — 04.09.2026 |
+| **Version / Stand** | 0.2 — 04.09.2026 |
 | **Status** | Entwurf |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
-| **Beteiligte Systeme** | epilot → SAP (IS-U / FI-CA) |
+| **Beteiligte Systeme** | epilot → SAP (IS-U / FI-CA) — ablösend für Altportal → SAP |
 
 ---
 
-## 0. Die zentrale Weichenstellung
+## 0. Ausgangslage: Ablösung, nicht Neubau
 
-Zwischen der Anmeldung im Portal und der Abrechnung in SAP liegt die
-**Inbetriebsetzung**. Das ist kein Detail, sondern bestimmt den gesamten Zuschnitt
-dieser Schnittstelle.
+Die Strecke ist im Altportal produktiv umgesetzt. Übergabepunkt ist die bestätigte
+Inbetriebsetzung — fachlich geklärt, hier nicht erneut zu diskutieren.
 
 ```
-Anmeldung ──► Netzverträglichkeits- ──► Anschluss- ──► Errichtung ──► Inbetrieb- ──► SAP
- (epilot)      prüfung                   zusage         durch EFB      setzung       Stammdaten
-                                                                       + Zählersetzung
-                        │                                                    │
-                        └──── hier ist noch nichts abrechnungsrelevant ──────┘
+Anmeldung ──► Prüfung ──► Anschluss- ──► Errichtung ──► Inbetriebsetzung ──► SAP
+                           zusage                        + Zählersetzung
 ```
 
-**Konsequenz:** Der Auslöser für die Übergabe an SAP ist **nicht** „Antrag eingereicht",
-sondern „Inbetriebsetzung bestätigt und Zähler gesetzt".
+**Was das für dieses Konzept bedeutet:** Das Feldmapping, die Transformationsregeln, die
+Wertelisten und die Sonderfälle existieren bereits. Sie müssen nicht erfunden, sondern
+**erhoben** werden. Das ist deutlich schneller — und deutlich zuverlässiger, weil die
+bestehende Lösung alle Ausnahmen kennt, die über die Jahre aufgelaufen sind.
 
-Wer die Anmeldedaten direkt nach SAP schiebt, legt Stammdaten für Anlagen an, die noch
-nicht existieren — und teils nie existieren werden. Erfahrungsgemäß wird ein erheblicher
-Teil der Anmeldungen nie realisiert, und bei den realisierten weicht die tatsächlich
-installierte Leistung häufig vom Antrag ab. Beides erzeugt in SAP Karteileichen und
-falsche Vergütungsgrundlagen, die später niemand mehr sauber auseinanderdividiert.
+### Die entscheidende Architekturfrage
 
-*Zu prüfen: Wie hoch ist bei euch die Abbruchquote zwischen Anmeldung und IBS, und wie
-oft weicht die installierte Leistung ab? Zwei Zahlen aus dem Bestand genügen, um diese
-Entscheidung zu untermauern.*
+**Bleibt die SAP-Seite unverändert?**
 
----
+| Fall | Konsequenz |
+| --- | --- |
+| **Quellsystemtausch** — SAP empfängt weiterhin dasselbe Format, nur der Absender wechselt | Das kleinere Projekt. epilot muss die bestehende Nachricht erzeugen, SAP-seitig ist nichts anzufassen. Die Abnahme ist ein Vergleich: gleiche Eingangsdaten, gleiche Nachricht. |
+| **Beide Seiten neu** | Das größere Projekt mit eigenem SAP-Aufwand, eigener Abnahme und eigener Freigabekette. Nur sinnvoll, wenn die bestehende Schnittstelle fachlich nicht mehr trägt. |
+
+*Diese Frage vor allem anderen klären — sie bestimmt Aufwand, Zeitplan und Beteiligte.*
+
+### Was aus dem Altportal zu erheben ist
+
+*Die eigentliche Konzeptarbeit. Reihenfolge nach Nutzen:*
+
+**1. Produktive Nachrichten, nicht die Dokumentation.** Ein Jahr echter Übertragungen aus
+dem Log exportieren und auswerten: Welche Felder sind tatsächlich immer befüllt, welche
+nie, welche Werte kommen in den Schlüsselfeldern wirklich vor. Die Doku gewachsener
+Schnittstellen weicht fast immer vom implementierten Stand ab — die Nachrichten lügen nicht.
+
+**2. Die Sonderfälle.** In jeder produktiven Schnittstelle stecken Ausnahmen, die irgendwann
+jemand eingebaut hat und die nirgends stehen. Sie sind der häufigste Grund, warum ein
+Nachbau im Testbetrieb sauber aussieht und in Produktion auseinanderfällt. Sie finden sich
+im Code — oder bei der Person, die die Strecke betreut. Diese Person zu sprechen ist der
+mit Abstand wirksamste halbe Tag in diesem Vorhaben.
+
+**3. Die Fehlerfälle aus dem Betrieb.** Was landet heute in Klärlisten, wie oft, und woran
+liegt es? Das ist gleichzeitig euer Mengengerüst und die Vorlage für die Fehlerbehandlung
+der neuen Strecke.
+
+**4. Die bewussten Verbesserungen.** Was am Altportal ärgert, gehört benannt — aber
+getrennt. Eine Ablösung, die gleichzeitig alles besser macht, wird nicht fertig.
+Empfehlung: erst gleichwertig ablösen, Verbesserungen als eigene Vorhaben danach.
 
 ## 1. Fachlicher Zweck
 
@@ -57,19 +78,15 @@ epilot-Workflow, mit vorliegendem Inbetriebsetzungsprotokoll und gesetztem Zähl
 **Ergebnis / Nutzen:** Die erste Vergütungsabrechnung kann fristgerecht erfolgen. Der
 Betreiber bekommt sein Geld, ohne dass die Abrechnung auf eine Handanlage wartet.
 
-**Wegfallender Handbetrieb:** *Zu erheben — wie viele Minuten je Anlage werden heute für
-die Stammdatenanlage in SAP aufgewendet, und wo entstehen dabei Rückfragen?*
-
-**Mengengerüst:** *Zu erheben.*
+**Mengengerüst:** *Aus dem Altportal-Log auszulesen — dort liegen die echten Zahlen, es
+muss nichts geschätzt werden.*
 
 | | Wert |
 | --- | --- |
-| Inbetriebsetzungen pro Monat | |
-| Saisonale Spitze | *PV-Anlagen häufen sich im Frühjahr/Sommer* |
+| Übertragungen pro Monat (Ist) | |
+| Saisonale Spitze | |
+| Anteil Übertragungen mit Nacharbeit | |
 | Wachstum 2 Jahre | |
-
-*Die Menge entscheidet über das Verfahren: bei wenigen Dutzend im Monat genügt ein
-Tagesbatch, bei hunderten lohnt die ereignisgesteuerte Übergabe.*
 
 ---
 
@@ -129,20 +146,21 @@ Schönheitsfehler, sondern ein Fall für die Nachberechnung:
 
 ### Datenlücken — was epilot nicht liefern kann
 
-*Der wichtigste Abschnitt für die Planung. Für jede Lücke braucht es eine Antwort, sonst
-scheitert die Übergabe an unvollständigen Pflichtfeldern in SAP.*
+Nicht alle Felder, die SAP braucht, entstehen im Portal. **Im Altportal ist für jedes
+dieser Felder bereits ein Weg etabliert** — der ist zu erheben und zu bewerten, nicht neu
+zu erfinden.
 
-| Fehlendes Feld | Woher es kommt | Lösungsansatz |
-| --- | --- | --- |
-| MaLo-ID | Vergabe durch den Netzbetreiber | *offen — Nachschlag aus dem Netzsystem, oder Vergabe in SAP selbst?* |
-| Zählernummer, Zählwerke | Zählersetzung durch Messstellenbetrieb | *offen — Rückmeldung des Monteurs in epilot erfassen, oder aus dem Gerätesystem?* |
-| Bankverbindung (IBAN) | wird im Anmeldeformular oft nicht abgefragt | **Empfehlung: in der Journey erheben** — nachträglich ist es Handarbeit je Fall |
-| Umsatzsteuerstatus | Erklärung des Betreibers | **Empfehlung: in der Journey abfragen** |
-| MaStR-Nummer | Registrierung durch den Betreiber, teils nach IBN | *offen — Nachreichung über das Portal, mit Nachfassen* |
+| Feld | Entsteht außerhalb des Portals | Im Altportal gelöst durch | Übernehmen? |
+| --- | --- | --- | --- |
+| MaLo-ID | Vergabe Netzbetreiber | *zu erheben* | |
+| Zählernummer, Zählwerke | Zählersetzung | *zu erheben* | |
+| Bankverbindung (IBAN) | Erklärung des Betreibers | *zu erheben* | |
+| Umsatzsteuerstatus | Erklärung des Betreibers | *zu erheben* | |
+| MaStR-Nummer | Registrierung durch den Betreiber | *zu erheben* | |
 
-**Die zwei Empfehlungen sind billig, wenn ihr sie jetzt umsetzt, und teuer später.**
-Ein zusätzliches Feld in der Journey kostet eine Konfiguration; dieselben Daten
-nachträglich bei tausend Betreibern einzusammeln kostet Monate.
+*Wo der bestehende Weg Handarbeit erfordert, ist die Ablösung die Gelegenheit, das Feld
+stattdessen in der Journey zu erheben. Das ist aber eine Verbesserung im Sinne von Punkt 4
+oben — bewusst entscheiden, nicht nebenbei mitnehmen.*
 
 ### Korrelations-ID
 
@@ -163,18 +181,19 @@ Diese Tabelle ist die eigentliche Arbeit des Konzepts.*
 
 ## 4. Technische Umsetzung
 
-*Bewusst offen. Die Frage ist nicht „welchen Endpunkt rufen wir auf", sondern
-**wie ihr überhaupt an SAP herankommt** — und das ist eine organisatorische Entscheidung,
-keine technische.*
+*Der bestehende Weg ist die Vorgabe, solange nichts dagegen spricht. Zu erheben statt
+zu entwerfen:*
 
-**Zu entscheiden:**
-
-| Frage | Anmerkung |
+| Frage | Aus dem Bestand zu klären |
 | --- | --- |
-| Gibt es eine Middleware? | SAP Integration Suite / CPI, PI/PO, oder ein anderer Bus. Wenn ja, führt der Weg fast sicher darüber — dann ist eure Schnittstelle epilot → Middleware, und die SAP-Seite ist deren Sache. |
-| Welches Verfahren nimmt SAP an? | OData-Service, IDoc, BAPI/RFC, Datei — hängt an Release und Betriebsmodell. |
-| Wer betreibt und ändert die SAP-Seite? | Oft der eigentliche Engpass. Interne SAP-Abteilung, Dienstleister, Konzern-IT? |
-| Synchron oder Batch? | Bei diesen Mengen ist ein Tagesbatch meist ausreichend und deutlich robuster. |
+| Welchen Weg nimmt das Altportal? | Middleware (Integration Suite / CPI, PI/PO, anderer Bus) oder direkt? |
+| Welches Verfahren? | OData, IDoc, BAPI/RFC, Datei |
+| Wer betreibt die SAP-Seite? | Die Zuständigkeit ist meist der Engpass, nicht die Technik |
+| Synchron, ereignisgesteuert oder Batch? | Was heute läuft, ist der Ausgangspunkt |
+
+**Wenn eine Middleware im Spiel ist, ist das die gute Nachricht:** Dann endet eure
+Schnittstelle dort, die SAP-Seite bleibt unberührt, und das Vorhaben schrumpft auf
+epilot → Middleware im bestehenden Format.
 
 **epilot-Seite** (steht bereits fest, siehe [`../epilot-api/`](../epilot-api/)):
 Auslöser über Webhook auf ein Workflow-Ereignis; ausgehende Aufrufe werden von epilot
@@ -194,22 +213,29 @@ der Webhooks-API nachträglich einspielen.
 | Technisch vorübergehend | SAP oder Middleware nicht erreichbar | Wiederholung, dann Alarm |
 | Technisch dauerhaft | Pflichtfeld in SAP abgelehnt | Alarm, keine stille Wiederholung |
 
-**Doppelte Anlage in SAP ist der teuerste Fehler dieser Strecke** — ein zweiter
-Geschäftspartner zum selben Betreiber zieht sich durch die gesamte Abrechnung.
-Deshalb: Prüfung auf die Korrelations-ID vor jedem Anlegen, und ein Abgleich auf
-bestehende Geschäftspartner (Name, Adresse, Bankverbindung) vor der Neuanlage.
+*Auch hier gilt: Die bestehende Fehlerbehandlung des Altportals ist die Vorlage. Was dort
+heute in Klärlisten landet und wie oft, ist gleichzeitig die Anforderung an die neue
+Strecke — und zeigt, wo sie besser sein sollte.*
 
-**Was der Betreiber merkt:** Nichts — solange die Erstabrechnung fristgerecht kommt.
-*Zu klären: Ab welcher Verzögerung wird es kritisch, und wer überwacht das?*
+**Zwei Punkte, die bei einer Ablösung neu hinzukommen:**
+
+**Dubletten über die Systemgrenze.** Solange beide Portale Daten liefern können, muss
+ausgeschlossen sein, dass derselbe Vorgang zweimal in SAP landet — einmal aus dem
+Altportal, einmal aus epilot. Der Abgleich darf sich nicht allein auf die epilot-ID
+stützen, denn die kennt das Altportal nicht.
+
+**Vorgänge über dem Umstellzeitpunkt.** Anlagen, die im Altportal angemeldet, aber erst
+nach der Umstellung in Betrieb gesetzt werden. Wer überträgt sie — und woher kommen die
+Antragsdaten dafür?
 
 ---
 
 ## 6. Betrieb
 
-*Nach der technischen Entscheidung auszufüllen. Die eine Kennzahl, die hier auf jeden
-Fall hingehört: **Anzahl inbetriebgesetzter Anlagen ohne Stammdatensatz in SAP, nach
-Alter.** Das ist die Zahl, die zeigt, ob die Strecke wirklich funktioniert — und die
-niemand sieht, wenn man nur Fehlerquoten misst.*
+*Übernehmt, was im Altportal überwacht wird, und ergänzt die eine Kennzahl, die dort
+oft fehlt: **Anzahl inbetriebgesetzter Anlagen ohne Stammdatensatz in SAP, nach Alter.**
+Sie zeigt, ob die Strecke wirklich trägt — eine reine Fehlerquote tut das nicht, denn
+ein Vorgang, der gar nicht erst losläuft, erzeugt keinen Fehler.*
 
 ---
 
@@ -228,14 +254,21 @@ niemand sieht, wenn man nur Fehlerquoten misst.*
 
 ## 8. Test und Abnahme
 
-*Nach der technischen Entscheidung auszufüllen. Zwingend im Testumfang:*
+**Die Ablösung hat ein Abnahmekriterium, das ein Neubau nicht hat: den Vergleich.**
 
-- Betreiber ≠ Antragsteller
-- Anlage mit abweichender Ist-Leistung gegenüber dem Antrag
-- Betreiber ohne Umsatzsteuerausweis (Kleinunternehmerregelung) und mit
-- Zweite Anlage desselben Betreibers am selben Standort *(Erweiterung — Neuanlage oder Zuordnung?)*
-- Doppelte Zustellung desselben Ereignisses
-- Betreiberwechsel kurz nach IBS
+Nehmt einen Satz realer, bereits übertragener Vorgänge aus dem Altportal, spielt dieselben
+Eingangsdaten durch die neue Strecke und vergleicht die erzeugten Nachrichten Feld für
+Feld. Jede Abweichung ist entweder ein Fehler oder eine bewusste Entscheidung — beides
+muss benannt sein. Das ist belastbarer als jede Testfallliste, weil es genau die
+Sonderfälle trifft, die niemand aufgeschrieben hat.
+
+Ergänzend die Fälle, die im Bestand selten vorkommen und deshalb im Vergleichssatz
+fehlen könnten: Betreiber ≠ Antragsteller, abweichende Ist-Leistung, Betreiberwechsel
+kurz nach IBS, zweite Anlage am selben Standort.
+
+**Inbetriebnahme:** Parallelbetrieb ist hier heikel — zwei Portale, die in dasselbe
+SAP schreiben, brauchen eine klare Trennung, wer welchen Vorgang überträgt.
+*Zu entscheiden: harter Stichtag oder Trennung nach Vorgangsart?*
 
 ---
 
@@ -243,10 +276,10 @@ niemand sieht, wenn man nur Fehlerquoten misst.*
 
 | # | Punkt | Wer entscheidet | Ergebnis |
 | --- | --- | --- | --- |
-| 1 | Auslöser ist die bestätigte IBS, nicht die Anmeldung — Bestätigung durch den Fachbereich | Fachbereich Netzanschluss | offen |
-| 2 | Wie kommt die MaLo-ID in den Datensatz? | Fachbereich + Marktkommunikation | offen |
-| 3 | Wie kommen Zählernummer und Zählwerke aus der Zählersetzung nach epilot? | Messstellenbetrieb | offen |
-| 4 | IBAN und Umsatzsteuerstatus in der Journey erheben? | Fachbereich + Abrechnung | offen |
-| 5 | Nachreichung der MaStR-Nummer — Prozess und Nachfassen | Fachbereich | offen |
-| 6 | SAP-Anbindungsweg (Middleware, Verfahren, Zuständigkeit) | IT-Architektur + SAP-Betrieb | offen |
-| 7 | Änderungen nach Übergabe — eigener Änderungsdienst nötig? | Fachbereich + Abrechnung | offen |
+| 1 | **Bleibt die SAP-Seite unverändert (Quellsystemtausch) oder wird beidseitig neu gebaut?** | IT-Architektur + SAP-Betrieb | offen |
+| 2 | Wer betreut die bestehende Schnittstelle im Altportal — und wann sprechen wir mit dieser Person? | Cluster | offen |
+| 3 | Export produktiver Nachrichten aus dem Altportal für die Mapping-Erhebung | Betrieb Altportal | offen |
+| 4 | Umstellung: harter Stichtag oder Parallelbetrieb mit Trennregel? | Fachbereich + IT | offen |
+| 5 | Vorgänge, die im Altportal angemeldet und nach der Umstellung in Betrieb gesetzt werden | Fachbereich | offen |
+| 6 | Bekannte Schwachstellen des Altportals — welche werden mit abgelöst, welche später? | Fachbereich + Cluster | offen |
+| 7 | Änderungen nach Übergabe an SAP — wie heute gelöst, bleibt es dabei? | Abrechnung | offen |
