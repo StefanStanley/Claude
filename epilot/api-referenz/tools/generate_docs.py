@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Erzeugt die Markdown-Referenz unter epilot-api/ aus den OpenAPI-Specs des epilot SDK.
+"""Erzeugt die Markdown-Referenz unter epilot/api-referenz/ aus den OpenAPI-Specs des epilot SDK.
 
 Quelle: https://github.com/epilot-dev/sdk-js  (clients/*/src/openapi.json)
 
     git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js
-    python3 epilot-api/tools/generate_docs.py /tmp/sdk-js
+    python3 epilot/api-referenz/tools/generate_docs.py /tmp/sdk-js
 """
 
 import json
@@ -269,7 +269,7 @@ def render_index(apis):
     L.append("")
     L.append("```bash")
     L.append("git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js")
-    L.append("python3 epilot-api/tools/generate_docs.py /tmp/sdk-js")
+    L.append("python3 epilot/api-referenz/tools/generate_docs.py /tmp/sdk-js")
     L.append("```")
     L.append("")
     L.append(f"_Stand: {date.today().isoformat()} · generiert, nicht von Hand gepflegt._")

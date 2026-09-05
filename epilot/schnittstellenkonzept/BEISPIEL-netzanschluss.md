@@ -6,7 +6,7 @@
 > über eure tatsächliche Systemlandschaft.
 >
 > Die epilot-Endpunkte sind echt — sie stammen aus den OpenAPI-Specs
-> (siehe [`../epilot-api/`](../epilot-api/)).
+> (siehe [`../api-referenz/`](../api-referenz/)).
 
 | | |
 | --- | --- |
