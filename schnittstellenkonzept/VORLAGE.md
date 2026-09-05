@@ -129,7 +129,7 @@ die Signatur prüfen. Alternativ unterstützt die Webhooks-API OAuth gegen das Z
 **Richtung extern → epilot (API-Aufruf):**
 Bearer-JWT im `Authorization`-Header, ausgestellt über die Access Token API als
 `token_type: api` mit expliziten Rollenzuweisungen und, wo möglich, `read_only: true`.
-Details und Fallstricke: [`../epilot-api/authentifizierung.md`](../epilot-api/authentifizierung.md).
+Details und Fallstricke: [`../api-referenz/authentifizierung.md`](../api-referenz/authentifizierung.md).
 
 | | |
 | --- | --- |
