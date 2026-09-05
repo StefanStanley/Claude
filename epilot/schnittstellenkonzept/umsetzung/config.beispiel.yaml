@@ -1,0 +1,219 @@
+# SK-001 - Einspeiseanlagen aus epilot nach SAP
+#
+# ACHTUNG: Alle Werte hier sind Platzhalter. Sie werden durch die Angaben aus der
+# Erhebungsmappe ersetzt (schnittstellenkonzept/erhebung/). Bis der Rücklauf da ist,
+# ist diese Datei ein Gerüst zum Testen, keine gültige Konfiguration.
+#
+# Der Grundsatz: Was aus der Erhebung kommt, steht hier - nicht im Code.
+
+format:
+  # ---- DIE Entscheidungszeile. Aus der Originaldatei ermitteln, nicht raten. ----
+  # utf-8 | cp1252 (= Windows-1252/ANSI) | latin-1 (= ISO-8859-1)
+  kodierung: cp1252
+  bom: false                     # nur bei utf-8 zulässig
+  trennzeichen: ";"
+  textbegrenzer: '"'
+  quoting: minimal               # minimal | all | keines
+  doppelte_begrenzer: true       # "" statt \" zum Maskieren
+  zeilenende: CRLF               # CRLF | LF
+  kopfzeile: true
+  dezimaltrennzeichen: ","
+  leerwert: ""
+
+ablage:
+  verzeichnis: "//fileserver/sap_import/einspeiser"
+  dateiname: "EINSPEISER_%Y%m%d_%H%M%S.csv"
+  temp_endung: ".tmp"            # Endung, die der SAP-Importjob NICHT abholt
+  leerlauf: keine_datei          # keine_datei | leere_datei_mit_kopf
+  protokoll_verzeichnis: "//fileserver/sap_import/einspeiser/_protokoll"
+
+epilot:
+  basis_url: "https://entity.sls.epilot.io"
+  schema: "netzanschluss_anfrage"
+  # Selektion über den Übertragungsstatus, nicht über einen Zeitraum:
+  # Zeitraumfilter verlieren Nachzügler und erzeugen bei Wiederholung Dubletten.
+  query: '_schema:netzanschluss_anfrage AND uebertragungsstatus:bereit'
+  seitengroesse: 500             # API-Grenze ist 1000
+  hydrate: true                  # löst $relation auf - sonst kommt nur die entity_id
+  status_attribut: "uebertragungsstatus"
+  status_nach_uebertragung: "uebertragen"
+  # org_id: "739224"             # nur bei mandantenübergreifendem Zugriff
+
+# Wenn ein Zeichen in der Zielkodierung fehlt (z.B. ein Name mit 'Ł' bei cp1252):
+#   zeile_zurueckhalten -> Vorgang in die Klärliste, Rest wird geliefert
+#   lauf_abbrechen      -> gar nichts wird geliefert
+bei_kodierungsfehler: zeile_zurueckhalten
+
+# ---------------------------------------------------------------- Wertelisten
+# Links der Wert aus epilot, rechts der Schlüssel, den SAP erwartet.
+# Kommt aus Blatt "3 Wertelisten" der Erhebungsmappe.
+wertelisten:
+  anlagenart:
+    pv: "PVA"
+    wind: "WEA"
+    kwk: "KWK"
+    wasser: "WKA"
+    biomasse: "BIO"
+    speicher: "SPE"
+  verguetungsart:
+    volleinspeisung: "VOLL"
+    ueberschuss: "UEBS"
+    direktvermarktung: "DIVE"
+  ust_status:
+    kleinunternehmer: "0"
+    regelbesteuerung: "1"
+
+# ----------------------------------------------------------------- Prüfungen
+# Ersetzt die Kontrolle, die heute im Kopf der Sachbearbeitung stattfindet.
+# Nach dem Gespräch mit ihr hier ergänzen.
+pruefungen:
+  - feld: ibs_datum
+    art: pflicht
+  - feld: ibs_datum
+    art: datum_nicht_zukunft
+  - feld: ibs_datum
+    art: datum_nicht_aelter_als
+    tage: 730
+  - feld: leistung_kwp
+    art: pflicht
+  - feld: leistung_kwp
+    art: zahl_zwischen
+    min: 0.1
+    max: 2000
+  - feld: mastr_nummer
+    art: pflicht
+  - feld: mastr_nummer
+    art: regex
+    muster: '[A-Za-z]{3}[0-9]{12}'
+    hinweis: "MaStR-Nummer hat nicht das erwartete Format"
+  - feld: anlagenart
+    art: in_werteliste
+    liste: anlagenart
+  - feld: verguetungsart
+    art: in_werteliste
+    liste: verguetungsart
+  - feld: iban
+    art: pflicht
+  - feld: ust_status
+    art: pflicht
+
+# ------------------------------------------------------------------- Spalten
+# Reihenfolge = Spaltenreihenfolge in der CSV.
+# Kommt aus Blatt "2 Feldmapping" der Erhebungsmappe -
+# tools/config_aus_erhebung.py erzeugt diesen Abschnitt daraus.
+spalten:
+  - name: EXT_REFERENZ
+    quelle: _id
+    pflicht: true
+    max_laenge: 36
+
+  - name: EINGANGSKANAL
+    konstante: "PORTAL"
+
+  - name: NACHNAME
+    quelle: betreiber.0.nachname
+    pflicht: true
+    max_laenge: 40
+    transform:
+      - art: trimmen
+
+  - name: VORNAME
+    quelle: betreiber.0.vorname
+    max_laenge: 40
+    transform:
+      - art: trimmen
+
+  - name: STRASSE
+    quelle: betreiber.0.address.0.street
+    pflicht: true
+    max_laenge: 60
+
+  - name: HAUSNUMMER
+    quelle: betreiber.0.address.0.street_number
+    max_laenge: 10
+
+  - name: PLZ
+    quelle: betreiber.0.address.0.postal_code
+    pflicht: true
+    max_laenge: 5
+
+  - name: ORT
+    quelle: betreiber.0.address.0.city
+    pflicht: true
+    max_laenge: 40
+
+  - name: LAND
+    quelle: betreiber.0.address.0.country
+    transform:
+      - art: gross
+
+  - name: EMAIL
+    quelle: betreiber.0.email
+    transform:
+      - art: klein
+
+  - name: IBAN
+    quelle: iban
+    pflicht: true
+    transform:
+      - art: gross
+      - art: ersetzen
+        muster: '\s'
+        durch: ''
+
+  - name: UST_KZ
+    quelle: ust_status
+    pflicht: true
+    transform:
+      - art: werteliste
+        liste: ust_status
+
+  - name: ANLAGEN_TYP
+    quelle: anlagenart
+    pflicht: true
+    transform:
+      - art: werteliste
+        liste: anlagenart
+
+  - name: LEISTUNG_KWP
+    quelle: leistung_kwp
+    pflicht: true
+    transform:
+      - art: dezimal
+        stellen: 2
+        trennzeichen: ","
+
+  - name: IBN_DATUM
+    quelle: ibs_datum
+    pflicht: true
+    transform:
+      - art: datum
+        muster: "%d%m%Y"
+
+  - name: MASTR_NR
+    quelle: mastr_nummer
+    pflicht: true
+    max_laenge: 15
+
+  - name: VERGUETUNGSART
+    quelle: verguetungsart
+    pflicht: true
+    transform:
+      - art: werteliste
+        liste: verguetungsart
+
+  - name: MALO_ID
+    quelle: malo_id
+    max_laenge: 11
+
+  - name: ZAEHLER_NR
+    quelle: zaehlernummer
+    max_laenge: 20
+
+  - name: ANLAGE_PLZ
+    quelle: anlagen_adresse.0.postal_code
+    max_laenge: 5
+
+  - name: ANLAGE_ORT
+    quelle: anlagen_adresse.0.city
+    max_laenge: 40
