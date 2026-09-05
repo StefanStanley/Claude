@@ -1,0 +1,4 @@
+requests>=2.31
+PyYAML>=6.0
+# nur für tools/config_aus_erhebung.py
+openpyxl>=3.1
