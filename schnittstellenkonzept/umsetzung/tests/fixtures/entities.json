@@ -1,0 +1,101 @@
+[
+  {
+    "_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "_title": "PV-Anlage Musterweg 12",
+    "_schema": "netzanschluss_anfrage",
+    "uebertragungsstatus": "bereit",
+    "anlagenart": "pv",
+    "leistung_kwp": 9.9,
+    "ibs_datum": "2026-03-17T00:00:00.000Z",
+    "mastr_nummer": "SEE912345678901",
+    "verguetungsart": "ueberschuss",
+    "iban": "DE89 3704 0044 0532 0130 00",
+    "ust_status": "kleinunternehmer",
+    "malo_id": "51238401234",
+    "zaehlernummer": "1ESY1161234567",
+    "betreiber": [
+      {
+        "vorname": "Anna",
+        "nachname": "Beispiel-Müller",
+        "email": "Anna.Beispiel@Example.ORG",
+        "address": [
+          {"street": "Musterweg", "street_number": "12", "postal_code": "40233",
+           "city": "Düsseldorf", "country": "DE"}
+        ]
+      }
+    ],
+    "anlagen_adresse": [{"postal_code": "40233", "city": "Düsseldorf"}]
+  },
+  {
+    "_id": "aaaaaaaa-1111-2222-3333-444444444444",
+    "_title": "Wärmepumpe ohne MaStR",
+    "_schema": "netzanschluss_anfrage",
+    "uebertragungsstatus": "bereit",
+    "anlagenart": "pv",
+    "leistung_kwp": 12.5,
+    "ibs_datum": "2026-04-02T00:00:00.000Z",
+    "mastr_nummer": null,
+    "verguetungsart": "volleinspeisung",
+    "iban": "DE89370400440532013000",
+    "ust_status": "regelbesteuerung",
+    "betreiber": [
+      {"vorname": "Bernd", "nachname": "Testmann", "email": "b@example.org",
+       "address": [{"street": "Teststraße", "street_number": "1", "postal_code": "40210",
+                    "city": "Düsseldorf", "country": "DE"}]}
+    ]
+  },
+  {
+    "_id": "bbbbbbbb-1111-2222-3333-555555555555",
+    "_title": "Anlage mit unbekannter Anlagenart",
+    "_schema": "netzanschluss_anfrage",
+    "uebertragungsstatus": "bereit",
+    "anlagenart": "geothermie",
+    "leistung_kwp": 30,
+    "ibs_datum": "2026-01-10T00:00:00.000Z",
+    "mastr_nummer": "SEE111111111111",
+    "verguetungsart": "volleinspeisung",
+    "iban": "DE89370400440532013000",
+    "ust_status": "regelbesteuerung",
+    "betreiber": [
+      {"vorname": "Clara", "nachname": "Prüfer", "email": "c@example.org",
+       "address": [{"street": "Hauptstraße", "street_number": "5", "postal_code": "40211",
+                    "city": "Düsseldorf", "country": "DE"}]}
+    ]
+  },
+  {
+    "_id": "cccccccc-1111-2222-3333-666666666666",
+    "_title": "Betreiber mit Zeichen ausserhalb Windows-1252",
+    "_schema": "netzanschluss_anfrage",
+    "uebertragungsstatus": "bereit",
+    "anlagenart": "pv",
+    "leistung_kwp": 7.2,
+    "ibs_datum": "2026-02-20T00:00:00.000Z",
+    "mastr_nummer": "SEE222222222222",
+    "verguetungsart": "ueberschuss",
+    "iban": "DE89370400440532013000",
+    "ust_status": "regelbesteuerung",
+    "betreiber": [
+      {"vorname": "Łukasz", "nachname": "Wiśniewski", "email": "l@example.org",
+       "address": [{"street": "Oststraße", "street_number": "9", "postal_code": "40211",
+                    "city": "Düsseldorf", "country": "DE"}]}
+    ]
+  },
+  {
+    "_id": "dddddddd-1111-2222-3333-777777777777",
+    "_title": "IBS-Datum in der Zukunft",
+    "_schema": "netzanschluss_anfrage",
+    "uebertragungsstatus": "bereit",
+    "anlagenart": "pv",
+    "leistung_kwp": 15.0,
+    "ibs_datum": "2027-12-01T00:00:00.000Z",
+    "mastr_nummer": "SEE333333333333",
+    "verguetungsart": "volleinspeisung",
+    "iban": "DE89370400440532013000",
+    "ust_status": "regelbesteuerung",
+    "betreiber": [
+      {"vorname": "Dora", "nachname": "Zukunft", "email": "d@example.org",
+       "address": [{"street": "Weststraße", "street_number": "3", "postal_code": "40212",
+                    "city": "Düsseldorf", "country": "DE"}]}
+    ]
+  }
+]
