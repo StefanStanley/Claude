@@ -75,13 +75,30 @@ müssen an den Diskriminator gebunden werden. Vermutlich gilt dasselbe für `Mes
 ### Was in den Spalten schon sichtbar ist
 
 - **`referenceNumber`** ist der Kandidat für die Korrelations-ID.
-- **`lovion_id`** verknüpft in das Lovion-System — es gibt also einen dritten Beteiligten
-  neben epilot und SAP. Wer diese Kennung setzt und wann, ist zu klären.
+- **`lovion_id`** ist die Vorgangskennung im Altportal — **Lovion ist das abzulösende
+  System.** Damit stellt sich die Frage, woher dieses Feld künftig kommt: Erzeugt epilot
+  die Datei, gibt es keine Lovion-Kennung mehr. Bleibt Lovion im Prozess, ist der
+  Zuschnitt dieses Konzepts ein anderer — siehe Abschnitt 2b.
 - **`Datum_IBN`** und **`Modul_1_2`** sind die rechtlich kritischen Felder dieser Strecke.
 - **Zwei Zähler** sind fest vorgesehen (`Z1`, `Z2`) mit OBIS-Ständen 1.8.1 und 1.8.2.
   Was bei drei Zählern passiert, ist offen.
 - **`Dateiupload`** und **`Ladepunkt_Dokumente`** sind Dateiverweise — wie sie in einer
   CSV transportiert werden, ist zu klären.
+
+## 2b. Zielbildfrage: Bleibt Lovion?
+
+**Lovion ist das Altportal.** Es erzeugt heute die CSV und trägt seine Vorgangskennung
+als `lovion_id` darin. Bevor dieses Konzept weitergeschrieben wird, muss geklärt sein,
+welche Rolle Lovion künftig hat:
+
+| Szenario | Zu bauende Schnittstelle | Folge für dieses Konzept |
+| --- | --- | --- |
+| **Lovion fällt für diesen Prozess weg** | epilot → SAP (CSV) | SK-002 gilt wie beschrieben. Offen: Was tritt an die Stelle der `lovion_id`, und kommt SAP ohne sie aus? |
+| **Lovion bleibt Bearbeitungssystem**, epilot liefert nur die Anmeldung | epilot → Lovion | Die SAP-Strecke bleibt unberührt — Lovion erzeugt die Datei weiter. Dieses Konzept beschriebe dann den falschen Datenfluss und wäre neu zuzuschneiden. |
+| **Übergangsphase mit beidem** | beide | Klare Trennregel nötig, welcher Vorgang über welchen Weg läuft. Sonst Dubletten in SAP. |
+
+*Der Aufwand unterscheidet sich zwischen den Szenarien erheblich. Die Frage gehört
+beantwortet, bevor Feldmapping oder Formularbau beginnen.*
 
 ## 3. Was fachlich anders ist als bei den Einspeisern
 
@@ -144,6 +161,7 @@ formatunabhängig und lässt sich für § 14a mit angepasster Feldliste verwende
 
 | # | Punkt | Entscheidet | Stand |
 | --- | --- | --- | --- |
+| 0 | **Bleibt Lovion im Prozess, oder wird es abgelöst?** Bestimmt den Zuschnitt | Programmleitung | offen |
 | 1 | Ein Format oder zwei? Ein Erzeugungsmechanismus oder zwei? | IT-Architektur | offen |
 | 2 | Reihenfolge: § 14a oder Einspeiser zuerst? | Programmleitung | offen |
 | 3 | Zugang zum Erzeugungscode der § 14a-Strecke | IT-Betrieb | offen |
@@ -153,7 +171,7 @@ formatunabhängig und lässt sich für § 14a mit angepasster Feldliste verwende
 | 7 | Mengengerüst aus dem Protokoll der bestehenden Erzeugung | IT-Betrieb | offen |
 | 8 | **Verarbeitet SAP alle 86 Spalten oder nur einen Teil?** | SAP-Betrieb | offen |
 | 9 | Erkennt SAP die Spalten an der Position oder am Namen? | SAP-Betrieb | offen |
-| 10 | Wer setzt `lovion_id`, und zu welchem Zeitpunkt? | IT-Betrieb | offen |
+| 10 | Woher kommt `lovion_id`, wenn epilot die Datei erzeugt? Kommt SAP ohne sie aus? | SAP-Betrieb | offen |
 | 11 | Unterschied `Ladepunkt_Netzentnahmescheinleistung` / `netzentnahmescheinleistung` | Fachbereich | offen |
 | 12 | Bedeutung von `RK_Leistung`; Verhältnis `Modul_1_2` zu `Wahl_Modul_1` | Fachbereich | offen |
 | 13 | Transport der Dateiverweise (`Dateiupload`, `Ladepunkt_Dokumente`) | IT-Betrieb | offen |
