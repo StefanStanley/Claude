@@ -31,20 +31,20 @@ beide übergeben Daten an SAP:
 Formularstrecke § 14a (öffentlich):
 https://www.netz-duesseldorf.de/netzanschluss/steuerbare-verbrauchseinrichtungen/anmeldung-von-verbrauchseinrichtungen
 
-## Die offene Kernfrage zum Zielbild
+## Zielbild: epilot ersetzt Lovion
 
-**Wird Lovion für diese Prozesse abgelöst, oder bleibt es als Bearbeitungssystem
-bestehen und epilot übernimmt nur die Formularstrecke?** Davon hängt ab, welche
-Schnittstelle überhaupt zu bauen ist:
+**Entschieden.** Lovion wird abgelöst, epilot erzeugt die CSV-Dateien künftig selbst.
+Der Zuschnitt von SK-001 und SK-002 ist damit bestätigt.
 
-| Szenario | Zu bauende Schnittstelle |
-| --- | --- |
-| Lovion fällt für diese Prozesse weg | **epilot → SAP** (CSV), wie in SK-001/SK-002 beschrieben |
-| Lovion bleibt Bearbeitungssystem | **epilot → Lovion**; Lovion erzeugt die CSV weiterhin, die SAP-Strecke bleibt unberührt |
+**Die daraus wichtigste offene Frage:** Beide Exporte tragen eine Lovion-Kennung — beim
+Einspeiser-Export ist `Lovion ID` sogar der **einzige** Schlüssel. Fällt Lovion weg,
+verliert dieses Feld seine Quelle. Drei Wege (SK-001, Abschnitt 0a): Nummernkreis in
+epilot fortführen, neue Kennung in SAP akzeptieren, oder Umsetzungstabelle führen.
+Empfohlen ist der Nummernkreis — nur er lässt die SAP-Seite wirklich unberührt.
 
-Im zweiten Fall sind SK-001 und SK-002 in der jetzigen Form falsch zugeschnitten.
-**Diese Frage vor allem anderen klären.** Hinweis darauf, dass sie real ist: Der
-§ 14a-Export enthält eine Spalte `lovion_id`.
+Ebenfalls offen und über die Konzepte hinausreichend: Bestandsdaten (Lovion-IDs stehen
+in SAP zu Altanlagen) und die **übrigen Schnittstellen von Lovion**, die mit abgelöst
+werden müssen.
 
 ## Das Wichtigste in vier Sätzen
 
