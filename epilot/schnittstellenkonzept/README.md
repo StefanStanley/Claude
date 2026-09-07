@@ -53,9 +53,13 @@ entsteht daraus ein eigenes Dokument.
 
 | ID | Kurzname | Von → Nach | Fachlicher Zweck | Menge/Monat | Aufwand heute | Prio | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [SK-001](./SK-001-einspeiser-sap.md) | Einspeiser → SAP | epilot → SAP IS-U | Stammdaten für die EEG-Abrechnung nach Inbetriebsetzung | *zu erheben* | *zu erheben* | hoch | in Konzeption |
-| SK-002 | | | | | | | offen |
+| [SK-001](./SK-001-einspeiser-sap.md) | Einspeiser → SAP | epilot → SAP | Stammdaten für die EEG-Abrechnung; löst die bestehende automatisierte CSV-Erzeugung ab | *zu erheben* | läuft heute automatisiert | hoch | in Konzeption |
+| SK-002 | § 14a → SAP | epilot → SAP | Steuerbare Verbrauchseinrichtungen (Wärmepumpe, Wallbox, Speicher); ebenfalls bestehende CSV-Strecke | *zu erheben* | läuft heute automatisiert | hoch | offen |
 | SK-003 | | | | | | | offen |
+
+> **Zu klären vor beiden Konzepten:** Erzeugen § 14a und Einspeiser dasselbe Dateiformat
+> über denselben Mechanismus? Wenn ja, genügt ein Konzept mit zwei Ausprägungen und eine
+> Umsetzung mit zwei Konfigurationen.
 
 Status: `offen` → `in Konzeption` → `in Freigabe` → `freigegeben` → `umgesetzt` → `produktiv`
 
