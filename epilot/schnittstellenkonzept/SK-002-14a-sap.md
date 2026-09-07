@@ -1,6 +1,6 @@
 # SK-002 — Steuerbare Verbrauchseinrichtungen (§ 14a EnWG) aus epilot in SAP
 
-> **Entwurf 0.2, Stand 07.09.2026.** Ausgangspunkt für die Bearbeitung der § 14a-Strecke.
+> **Entwurf 0.3, Stand 07.09.2026.** Ausgangspunkt für die Bearbeitung der § 14a-Strecke.
 > Was aus SK-001 übertragbar ist, steht hier verkürzt mit Verweis; was § 14a-spezifisch
 > ist, steht als Frage. **Es ist bewusst nichts erfunden** — die Felder und Formate
 > ergeben sich aus dem bestehenden Erzeugungscode und einer produktiven Originaldatei.
@@ -85,20 +85,21 @@ müssen an den Diskriminator gebunden werden. Vermutlich gilt dasselbe für `Mes
 - **`Dateiupload`** und **`Ladepunkt_Dokumente`** sind Dateiverweise — wie sie in einer
   CSV transportiert werden, ist zu klären.
 
-## 2b. Zielbildfrage: Bleibt Lovion?
+## 2b. Zielbild: epilot ersetzt Lovion
 
-**Lovion ist das Altportal.** Es erzeugt heute die CSV und trägt seine Vorgangskennung
-als `lovion_id` darin. Bevor dieses Konzept weitergeschrieben wird, muss geklärt sein,
-welche Rolle Lovion künftig hat:
+**Entschieden.** epilot erzeugt die Datei künftig selbst, die SAP-Strecke bleibt im
+Grundsatz unberührt. Der Zuschnitt dieses Konzepts ist damit bestätigt.
 
-| Szenario | Zu bauende Schnittstelle | Folge für dieses Konzept |
-| --- | --- | --- |
-| **Lovion fällt für diesen Prozess weg** | epilot → SAP (CSV) | SK-002 gilt wie beschrieben. Offen: Was tritt an die Stelle der `lovion_id`, und kommt SAP ohne sie aus? |
-| **Lovion bleibt Bearbeitungssystem**, epilot liefert nur die Anmeldung | epilot → Lovion | Die SAP-Strecke bleibt unberührt — Lovion erzeugt die Datei weiter. Dieses Konzept beschriebe dann den falschen Datenfluss und wäre neu zuzuschneiden. |
-| **Übergangsphase mit beidem** | beide | Klare Trennregel nötig, welcher Vorgang über welchen Weg läuft. Sonst Dubletten in SAP. |
+Daraus folgt dieselbe vorrangige Frage wie bei den Einspeisern: **Die Spalte `lovion_id`
+verliert ihre Quelle.** Wird Lovion ersetzt, gibt es keine Lovion-Kennung mehr. Die drei
+möglichen Wege — Nummernkreis fortführen, neue Kennung in SAP, oder Umsetzungstabelle —
+sind in [SK-001, Abschnitt 0a](./SK-001-einspeiser-sap.md) beschrieben und sollten für
+beide Strecken **einheitlich** entschieden werden.
 
-*Der Aufwand unterscheidet sich zwischen den Szenarien erheblich. Die Frage gehört
-beantwortet, bevor Feldmapping oder Formularbau beginnen.*
+Zu beachten: Der § 14a-Export führt neben `lovion_id` zusätzlich `referenceNumber` als
+eigene Kennung. Ob diese die Identifikation in SAP allein tragen kann, ist zu prüfen —
+dann wäre der Wegfall der Lovion-ID hier weniger kritisch als bei den Einspeisern, wo
+`Lovion ID` der einzige Schlüssel ist.
 
 ## 3. Was fachlich anders ist als bei den Einspeisern
 
@@ -161,7 +162,9 @@ formatunabhängig und lässt sich für § 14a mit angepasster Feldliste verwende
 
 | # | Punkt | Entscheidet | Stand |
 | --- | --- | --- | --- |
-| 0 | **Bleibt Lovion im Prozess, oder wird es abgelöst?** Bestimmt den Zuschnitt | Programmleitung | offen |
+| 0 | ~~Bleibt Lovion im Prozess?~~ | — | **entschieden: epilot ersetzt Lovion** |
+| 0a | Was tritt an die Stelle von `lovion_id`? Einheitlich mit SK-001 entscheiden | IT-Architektur | offen |
+| 0b | Kann `referenceNumber` die Identifikation in SAP allein tragen? | SAP-Betrieb | offen |
 | 1 | Ein Format oder zwei? Ein Erzeugungsmechanismus oder zwei? | IT-Architektur | offen |
 | 2 | Reihenfolge: § 14a oder Einspeiser zuerst? | Programmleitung | offen |
 | 3 | Zugang zum Erzeugungscode der § 14a-Strecke | IT-Betrieb | offen |
