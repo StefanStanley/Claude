@@ -1,6 +1,6 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.6.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> **Entwurf 0.7.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
 > Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
 > deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
 > und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.6 — 07.09.2026 |
+| **Version / Stand** | 0.7 — 07.09.2026 |
 | **Status** | Entwurf — Entscheidungsvorlage Middleware |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
@@ -29,7 +29,14 @@ Das gilt für zwei Strecken:
 
 Abgelöst wird also eine **produktiv laufende, automatisierte Schnittstelle**. Nicht die
 Erzeugung ist neu, sondern das Quellsystem: Die Formularstrecke wandert vom Altportal
-nach epilot, und die dahinterliegende Dateierzeugung muss mitwandern.
+— **das ist Lovion** — nach epilot, und die dahinterliegende Dateierzeugung muss
+mitwandern.
+
+> **Vorgelagerte Zielbildfrage:** Wird Lovion für diesen Prozess abgelöst, oder bleibt es
+> als Bearbeitungssystem bestehen und epilot liefert nur die Anmeldung? Im zweiten Fall
+> erzeugt Lovion die CSV weiterhin, die SAP-Strecke bleibt unberührt, und die zu bauende
+> Schnittstelle wäre **epilot → Lovion** statt epilot → SAP. Dieses Konzept wäre dann neu
+> zuzuschneiden. Siehe [SK-002](./SK-002-14a-sap.md), Abschnitt 2b.
 
 ```
 Formularstrecke ──► Vorgangsbearbeitung ──► automatische ──► Netzlaufwerk ──► SAP
@@ -140,68 +147,82 @@ Datensatz in SAP unabhängig von epilot weiter. Was danach im Portal geändert w
 
 ## 3. Datenobjekte und Feldmapping
 
-### Was SAP für die EEG-Abrechnung braucht
+Die Spaltenüberschriften des Ist-Exports liegen vor: **30 Spalten, keine Duplikate.**
+Vollständige Auswertung in
+[`bestand/einspeiser_spaltenanalyse.md`](./bestand/einspeiser_spaltenanalyse.md),
+Rohliste in [`bestand/einspeiser_spalten_ist.txt`](./bestand/einspeiser_spalten_ist.txt).
 
-Ein Datensatz in epilot wird in SAP zu mehreren Objekten. Das ist der Grund, warum diese
-Schnittstelle mehr ist als ein Feldmapping:
+### Der wichtigste Befund: keine Personendaten
 
-| SAP-Objekt | Inhalt | Quelle |
-| --- | --- | --- |
-| Geschäftspartner | Anlagenbetreiber | epilot — **Achtung: nicht zwingend der Antragsteller** |
-| Vertragskonto (FI-CA) | Zahlungsdaten für die Auszahlung | teilweise epilot, Bankverbindung oft fehlend |
-| Anschlussobjekt / Verbrauchsstelle | Standort der Anlage | epilot |
-| Anlage (Einspeiseanlage) | technische Anlagendaten | epilot + IBS-Protokoll |
-| Marktlokation (MaLo) | Zählpunktbezeichnung | **nicht aus epilot** |
-| Gerät / Zähler | Zählernummer, Zählwerke | **nicht aus epilot** |
-| Vertrag | Einspeisetarif, Vergütungsart | epilot + Tarifierung in SAP |
+Die Datei enthält **keinerlei Angaben zum Anlagenbetreiber** — kein Name, keine Anschrift,
+keine Bankverbindung, keinen Umsatzsteuerstatus. Ebenso fehlen MaStR-Nummer, Marktlokation,
+Messlokation und Zählernummer. Einziger Schlüssel ist die `Lovion ID`.
+
+> **Diese Schnittstelle überträgt die technische Anlage am Anschlussobjekt, nicht den
+> Kunden.** Das ist plausibel — beim Netzanschluss existiert der Anschlussnehmer bereits,
+> die Anlage kommt hinzu.
+
+**Korrektur gegenüber Fassung 0.6:** Frühere Fassungen dieses Konzepts nahmen an, dass die
+Strecke Geschäftspartner, Vertragskonto und Bankverbindung überträgt, und leiteten daraus
+Datenlücken bei IBAN, Umsatzsteuerstatus und MaStR-Nummer ab. **Das trifft auf diese Datei
+nicht zu.** Die Empfehlung, diese Felder in der Anmeldestrecke zu erheben, ist für diesen
+Datenfluss gegenstandslos.
+
+Offen bleibt die Anschlussfrage: **Wie kommt SAP von der `Lovion ID` zum Geschäftspartner
+und zum Vertrag?** Über eine zweite Datei, über einen getrennten Prozess, oder ist die
+Zuordnung bereits vorhanden? Das ist zu klären, betrifft aber möglicherweise gar nicht
+dieses Konzept.
+
+### Was die Datei überträgt
+
+| Bereich | Felder |
+| --- | --- |
+| Referenz | `Lovion ID` |
+| Standort | Straße, Hausnummer, PLZ, Ort des Anschlussobjekts; Gemarkung, Flur, Flurstück; `Geodaten_Lage_PV` |
+| Anlage | `Energieart`, `Energieträger`, `Anlagenart nach §48`, `EEG_Inbetriebnahmedatum`, `Neu_Bestand_Erweiterung` |
+| Leistung | `Bruttoleistung_kW`, `Nettoleistung_kW`, `Wechselrichterleistung_kW` |
+| Speicher | `Speicherkapazität_kWh`, `Max_Entladeleistung_kW` |
+| Netz | `Einspeisespannungsebene` |
+| Vergütung | `Art der Einspeisung`, `Mieterstromzuschlag_gültig_ab`, `Datum_Auslauf_Vergütung` |
+| KWK | `BAFA-Nummer`, `Datum_Wirksamkeit_BAFA_Zulassung`, `Kleinanlage_KWKG_2016` |
+| Steuerung | `Einspeisemanagement`, `Fernsteuerbarkeit`, `Inselbetrieb` |
+| Messung | `Messkonzept` |
 
 ### Rechtlich kritische Felder
 
-Diese fünf entscheiden über Geld und Fristen. Bei ihnen ist ein Übertragungsfehler kein
-Schönheitsfehler, sondern ein Fall für die Nachberechnung:
+Bei diesen fünf wirkt ein Übertragungsfehler über die gesamte Förderdauer:
 
-| Feld | Warum kritisch |
+| Feld | Bedeutung |
 | --- | --- |
-| **Inbetriebnahmedatum** | Bestimmt den Vergütungssatz für die gesamte Förderdauer. Muss dem IBS-Protokoll entsprechen, nicht dem Antragsdatum. |
-| **Installierte Leistung (kWp)** | Bestimmt die Vergütungsklasse und das Überschreiten gesetzlicher Schwellen; kann von der Antragsangabe abweichen — es zählt der Ist-Wert aus der IBS. |
-| **MaStR-Nummer** | Ohne Registrierung im Marktstammdatenregister droht die Kürzung des Vergütungsanspruchs. Wird vom Betreiber selbst registriert, liegt bei IBS oft noch nicht vor. |
-| **Vergütungsart** | Volleinspeisung / Überschusseinspeisung / Direktvermarktung — unterschiedliche Sätze und Abrechnungslogik. |
-| **Umsatzsteuerstatus des Betreibers** | Die Vergütung wird per Gutschrift abgerechnet. Ob Umsatzsteuer auszuweisen ist, hängt am Status des Betreibers (Kleinunternehmerregelung oder Regelbesteuerung). Ein Klassiker unter den Abrechnungsfehlern. |
+| `EEG_Inbetriebnahmedatum` | bestimmt den Vergütungssatz |
+| `Bruttoleistung_kW` | bestimmt Vergütungsklasse und gesetzliche Schwellen |
+| `Anlagenart nach §48` | EEG-Vergütungsklasse |
+| `Art der Einspeisung` | Voll- oder Überschusseinspeisung |
+| `Datum_Auslauf_Vergütung` | Ende der Förderung |
 
-### Datenlücken — was epilot nicht liefern kann
+### Fallstricke in den Spaltennamen
 
-Nicht alle Felder, die SAP braucht, entstehen in der Formularstrecke. **Die bestehende
-Erzeugung holt sie heute bereits von irgendwoher** — der Weg ist im Code nachvollziehbar
-und zu übernehmen, nicht neu zu erfinden.
+`Lovion ID`, `Anlagenart nach §48` und `Art der Einspeisung` enthalten **Leerzeichen**,
+`Anlagenart nach §48` zusätzlich ein **Paragrafenzeichen**, `BAFA-Nummer` einen
+**Bindestrich**, wo der Rest Unterstriche verwendet. Sechs Spalten tragen **Umlaute** —
+an ihnen entscheidet sich, ob die Kodierung stimmt.
 
-| Feld | Entsteht außerhalb der Formularstrecke | Bestehende Erzeugung holt es aus | Übernehmen? |
-| --- | --- | --- | --- |
-| MaLo-ID | Vergabe Netzbetreiber | *zu erheben* | |
-| Zählernummer, Zählwerke | Zählersetzung | *zu erheben* | |
-| Bankverbindung (IBAN) | Erklärung des Betreibers | *zu erheben* | |
-| Umsatzsteuerstatus | Erklärung des Betreibers | *zu erheben* | |
-| MaStR-Nummer | Registrierung durch den Betreiber | *zu erheben* | |
-
-*Kommt ein Feld heute aus einem System, das epilot nicht erreicht, ist das ein echter
-Klärungspunkt für die Architektur — dann braucht der neue Lauf entweder denselben Zugang
-oder das Feld muss in der Formularstrecke erhoben werden.*
+Immerhin keine Duplikate und keine Anzeigetexte: Ein Mapping über Spaltennamen ist hier
+möglich, anders als bei § 14a.
 
 ### Korrelations-ID
 
-Die epilot-Entity-ID (`_id`) wird in SAP in einem Referenzfeld am Geschäftspartner oder
-an der Anlage abgelegt und dient beiden Seiten als gemeinsamer Schlüssel.
-*Zu klären: Welches SAP-Feld nimmt sie auf, und ist es suchbar?*
+Die `Lovion ID` ist heute der einzige Schlüssel. **Erzeugt künftig epilot die Datei, gibt
+es keine Lovion-Kennung mehr** — was an ihre Stelle tritt und ob SAP damit umgehen kann,
+ist eine der vorrangigen Fragen (siehe Abschnitt 0).
 
-### Feldmapping
+### Was noch fehlt
 
-*Auszufüllen, sobald das epilot-Entity-Schema und die SAP-Zielfelder feststehen.
-Diese Tabelle ist die eigentliche Arbeit des Konzepts.*
-
-| Quellfeld (epilot) | SAP-Objekt | SAP-Feld | Pflicht | Transformation |
-| --- | --- | --- | --- | --- |
-| | | | | |
-
----
+Die Spaltennamen sind bekannt, **Werte und Formate nicht**. Eine produktive Datei mit
+Inhalten klärt Kodierung, Trennzeichen, Zeilenende, Datumsformate, Dezimaltrennzeichen
+und die tatsächlich vorkommenden Werte in `Energieart`, `Anlagenart nach §48`,
+`Art der Einspeisung` und `Neu_Bestand_Erweiterung`. Sie ist zugleich der Referenzsatz
+für den Abnahmevergleich.
 
 ## 4. Technische Umsetzung
 
@@ -488,16 +509,19 @@ abgeschaltet wird. Dieser Termin gehört in die Planung, bevor über Phasen gesp
 | --- | --- | --- | --- |
 | 1 | ~~Bleibt die SAP-Seite unverändert?~~ | — | **entschieden: ja, CSV bleibt** |
 | 2 | ~~Ablageort?~~ | — | **entschieden: Netzlaufwerk** |
-| 3 | **Wann wird das Altportal abgeschaltet?** Daraus folgt der Endtermin | Programmleitung | offen |
+| 0 | **Bleibt Lovion im Prozess, oder wird es abgelöst?** Bestimmt den Zuschnitt | Programmleitung | offen |
+| 3 | **Wann wird Lovion für diese Prozesse abgeschaltet?** Daraus folgt der Endtermin | Programmleitung | offen |
 | 4 | **Zugang zum bestehenden Erzeugungscode** — wer betreut ihn, wo liegt er? | IT-Betrieb | offen |
 | 5 | Produktive Referenzdateien für Abnahmevergleich beschaffen | Betrieb Altportal | offen |
 | 6 | Kodierung der Originaldatei feststellen — entscheidet die Werkzeugwahl | Fachbereich | offen |
-| 7 | **§ 14a und Einspeiser: ein Format oder zwei?** Ein Erzeugungsmechanismus oder zwei? | IT-Architektur | offen |
+| 7 | ~~§ 14a und Einspeiser: ein Format oder zwei?~~ | — | **beantwortet: zwei Formate**, siehe [Vergleich](./bestand/vergleich_beide_strecken.md) |
 | 8 | Reihenfolge der Ablösung beider Strecken | Programmleitung | offen |
 | 9 | Werkzeug: Power Automate allein oder Databricks + Power Automate | IT-Architektur | offen |
 | 10 | Betreibt ihr Databricks bereits produktiv? Sonst Azure Function prüfen | IT-Architektur | offen |
 | 11 | Pfad und Schreibrechte auf dem Netzlaufwerk für den neuen Lauf | IT-Betrieb | offen |
 | 12 | Wie wird heute ein fehlgeschlagener Import bemerkt? | SAP-Betrieb | offen |
-| 13 | Woher holt die bestehende Erzeugung MaLo-ID, Zähler, IBAN, USt-Status, MaStR? | IT-Betrieb | offen |
+| 13 | Wie kommt SAP von der `Lovion ID` zum Geschäftspartner und Vertrag? Gibt es eine zweite Datei? | SAP-Betrieb | offen |
+| 16 | Unterschied `Energieart` / `Energieträger`, Abgrenzung Brutto-/Nettoleistung | Fachbereich | offen |
+| 17 | Herkunft von Gemarkung, Flur, Flurstück und Format der Geodaten | Fachbereich | offen |
 | 14 | Dauer des Parallelbetriebs und Kriterium für die Umschaltung | Fachbereich + IT | offen |
 | 15 | Bekannte Schwachstellen: welche werden mit abgelöst, welche später? | Fachbereich | offen |

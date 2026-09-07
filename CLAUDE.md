@@ -5,16 +5,46 @@ Details stehen in `schnittstellenkonzept/`.
 
 ## Worum es geht
 
-epilot wird als **Anmeldeportal für Netzanschlüsse** eingeführt und löst ein
-Altportal ab. Zwei Formularstrecken sind im Fokus, beide übergeben Daten an SAP:
+epilot wird als **Anmeldeportal für Netzanschlüsse** eingeführt und löst das
+Altportal ab. **Das Altportal ist Lovion.** Zwei Formularstrecken sind im Fokus,
+beide übergeben Daten an SAP:
 
 | Strecke | Gegenstand | Konzept | Stand |
 | --- | --- | --- | --- |
-| **Einspeiser** | Einspeiseanlagen, Stammdaten für die EEG-Abrechnung | [SK-001](./schnittstellenkonzept/SK-001-einspeiser-sap.md) | Entwurf 0.6 |
-| **§ 14a EnWG** | steuerbare Verbrauchseinrichtungen (Wärmepumpe, Wallbox, Speicher) | [SK-002](./schnittstellenkonzept/SK-002-14a-sap.md) | Gerüst, in Arbeit |
+| **Einspeiser** | Einspeiseanlagen, technische Anlagendaten für die EEG-Abrechnung | [SK-001](./schnittstellenkonzept/SK-001-einspeiser-sap.md) | Entwurf 0.7 |
+| **§ 14a EnWG** | steuerbare Verbrauchseinrichtungen (Wärmepumpe, Wallbox, Speicher) | [SK-002](./schnittstellenkonzept/SK-002-14a-sap.md) | Entwurf 0.2 |
+
+**Beide Ist-Exporte sind analysiert** — Spaltenlisten und Auswertung in
+`schnittstellenkonzept/bestand/`. Kernbefunde:
+
+- **Zwei verschiedene Formate.** Einspeiser 30 Spalten, § 14a 86. Gemeinsam nur die
+  Lovion-Kennung (in unterschiedlicher Schreibweise!) und `Messkonzept`.
+- **Der Einspeiser-Export enthält keine Personendaten** — keinen Namen, keine IBAN,
+  keinen Umsatzsteuerstatus, keine MaStR-Nummer, keine Zählernummer. Nur die technische
+  Anlage am Anschlussobjekt plus `Lovion ID`. Frühere Annahmen im Konzept dazu waren
+  falsch und sind in 0.7 korrigiert.
+- **Der § 14a-Export ist ein Formular-Abzug** mit Anzeigetexten, Bestätigungshäkchen und
+  einer dreifach vorkommenden Spalte. Dort ist die Formularstruktur Teil der
+  Schnittstellenspezifikation.
+- **Empfehlung: Einspeiser zuerst ablösen** — weniger Felder, keine Formularkopplung.
 
 Formularstrecke § 14a (öffentlich):
 https://www.netz-duesseldorf.de/netzanschluss/steuerbare-verbrauchseinrichtungen/anmeldung-von-verbrauchseinrichtungen
+
+## Die offene Kernfrage zum Zielbild
+
+**Wird Lovion für diese Prozesse abgelöst, oder bleibt es als Bearbeitungssystem
+bestehen und epilot übernimmt nur die Formularstrecke?** Davon hängt ab, welche
+Schnittstelle überhaupt zu bauen ist:
+
+| Szenario | Zu bauende Schnittstelle |
+| --- | --- |
+| Lovion fällt für diese Prozesse weg | **epilot → SAP** (CSV), wie in SK-001/SK-002 beschrieben |
+| Lovion bleibt Bearbeitungssystem | **epilot → Lovion**; Lovion erzeugt die CSV weiterhin, die SAP-Strecke bleibt unberührt |
+
+Im zweiten Fall sind SK-001 und SK-002 in der jetzigen Form falsch zugeschnitten.
+**Diese Frage vor allem anderen klären.** Hinweis darauf, dass sie real ist: Der
+§ 14a-Export enthält eine Spalte `lovion_id`.
 
 ## Das Wichtigste in vier Sätzen
 
@@ -25,6 +55,8 @@ https://www.netz-duesseldorf.de/netzanschluss/steuerbare-verbrauchseinrichtungen
    mitwandern. Der Endtermin kommt vom Abschalttermin des Altportals.
 3. **Die SAP-Seite bleibt unangetastet.** Gleiches Format, gleicher Ort, gleicher
    Takt — die Abnahme ist ein Dateivergleich.
+   *(Gilt unter der Annahme, dass epilot die Datei künftig selbst erzeugt — siehe
+   Kernfrage oben.)*
 4. **Der bestehende Erzeugungscode ist die Spezifikation.** Mapping,
    Transformationen und Prüfregeln sind dort implementiert und zu übernehmen.
 
@@ -90,6 +122,14 @@ in `api-referenz/` (51 APIs, 1141 Operationen).
   die primäre.
 - **IBAN ist kein Standardfeld** — muss über `payment` oder ein eigenes Attribut
   modelliert werden.
+
+## Beteiligte Systeme
+
+| System | Rolle |
+| --- | --- |
+| **epilot** | künftiges Anmeldeportal (SaaS) |
+| **Lovion** | Altportal und Bearbeitungssystem; erzeugt heute die CSV. Ob es bleibt, ist offen |
+| **SAP** | Zielsystem der Abrechnung, liest die CSV vom Netzlaufwerk |
 - **Webhooks** signieren ausgehend mit Ed25519; öffentlicher Schlüssel über
   `GET /v1/webhooks/.well-known/public-key`. Ereignisnamen liefert
   `GET /v1/webhooks/configured-events`; eigene fachliche Ereignisse lassen sich im

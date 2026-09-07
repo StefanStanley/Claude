@@ -57,9 +57,13 @@ entsteht daraus ein eigenes Dokument.
 | [SK-002](./SK-002-14a-sap.md) | § 14a → SAP | epilot → SAP | Steuerbare Verbrauchseinrichtungen (Wärmepumpe, Wallbox, Speicher); ebenfalls bestehende CSV-Strecke | *zu erheben* | läuft heute automatisiert | hoch | Gerüst |
 | SK-003 | | | | | | | offen |
 
-> **Zu klären vor beiden Konzepten:** Erzeugen § 14a und Einspeiser dasselbe Dateiformat
-> über denselben Mechanismus? Wenn ja, genügt ein Konzept mit zwei Ausprägungen und eine
-> Umsetzung mit zwei Konfigurationen.
+> **Beantwortet:** Es sind **zwei verschiedene Formate** — gemeinsam haben die Exporte nur
+> die Lovion-Kennung und `Messkonzept`. Zwei Erhebungen und zwei Feldmappings, aber eine
+> Umsetzung mit zwei Konfigurationen. Einzelheiten im
+> [Vergleich beider Strecken](./bestand/vergleich_beide_strecken.md).
+>
+> **Empfehlung zur Reihenfolge: Einspeiser zuerst** — 30 klar benannte Felder, keine
+> Formularkopplung, keine Duplikate. Das Verfahren lässt sich dort risikoärmer erproben.
 
 Status: `offen` → `in Konzeption` → `in Freigabe` → `freigegeben` → `umgesetzt` → `produktiv`
 
