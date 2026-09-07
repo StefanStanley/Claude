@@ -67,6 +67,16 @@ entsteht daraus ein eigenes Dokument.
 
 Status: `offen` → `in Konzeption` → `in Freigabe` → `freigegeben` → `umgesetzt` → `produktiv`
 
+## Offen: die übrigen Lovion-Schnittstellen
+
+**epilot ersetzt Lovion.** SK-001 und SK-002 decken die beiden bekannten CSV-Strecken nach
+SAP ab — das sind aber vermutlich nicht die einzigen Verbindungen des Systems. Bevor ein
+Abschalttermin gesetzt wird, gehört erhoben, was sonst an Lovion hängt: GIS, Dokumenten-
+ablage, weitere Fachsysteme, Auswertungen.
+
+Jede gefundene Verbindung wird eine Zeile im Register oben. Die Frage an den Betrieb lautet
+schlicht: **Welche Systeme tauschen heute Daten mit Lovion aus, in welche Richtung?**
+
 ## Wer zeichnet mit
 
 Klärt das **vor** dem ersten Dokument, nicht danach — sonst schreibt ihr für den falschen

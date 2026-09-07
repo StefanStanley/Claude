@@ -1,6 +1,6 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.7.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> **Entwurf 0.8.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
 > Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
 > deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
 > und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.7 — 07.09.2026 |
+| **Version / Stand** | 0.8 — 07.09.2026 |
 | **Status** | Entwurf — Entscheidungsvorlage Middleware |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
@@ -32,11 +32,45 @@ Erzeugung ist neu, sondern das Quellsystem: Die Formularstrecke wandert vom Altp
 — **das ist Lovion** — nach epilot, und die dahinterliegende Dateierzeugung muss
 mitwandern.
 
-> **Vorgelagerte Zielbildfrage:** Wird Lovion für diesen Prozess abgelöst, oder bleibt es
-> als Bearbeitungssystem bestehen und epilot liefert nur die Anmeldung? Im zweiten Fall
-> erzeugt Lovion die CSV weiterhin, die SAP-Strecke bleibt unberührt, und die zu bauende
-> Schnittstelle wäre **epilot → Lovion** statt epilot → SAP. Dieses Konzept wäre dann neu
-> zuzuschneiden. Siehe [SK-002](./SK-002-14a-sap.md), Abschnitt 2b.
+> **Zielbild entschieden: epilot ersetzt Lovion.** Damit ist der Zuschnitt dieses Konzepts
+> bestätigt — epilot erzeugt die Datei künftig selbst. Zugleich entsteht daraus die
+> vorrangige technische Frage dieser Strecke, siehe Abschnitt 0a.
+
+## 0a. Die Lovion-ID fällt weg
+
+Der Einspeiser-Export hat **genau einen Schlüssel: `Lovion ID`.** Er ist die Kennung des
+Vorgangs im abzulösenden System. Wird Lovion ersetzt, gibt es diese Kennung nicht mehr —
+und damit fehlt der Datei das Feld, über das SAP den Vorgang identifiziert.
+
+Das ist der erste Punkt, an dem die Festlegung „die SAP-Seite bleibt unangetastet"
+möglicherweise nicht mehr trägt. Drei Wege sind denkbar:
+
+| Weg | Was zu tun ist | Bewertung |
+| --- | --- | --- |
+| **epilot führt den Nummernkreis fort** | Die neue Strecke erzeugt Kennungen im Format der bisherigen Lovion-IDs, überschneidungsfrei zum Bestand | Für SAP ändert sich nichts. Setzt voraus, dass Format und höchster vergebener Wert bekannt sind und keine Kollision mit Altbeständen entsteht. |
+| **SAP akzeptiert eine neue Kennung** | Die epilot-Entity-ID tritt an die Stelle der Lovion-ID | Sauberer, aber **eine Änderung auf der SAP-Seite** — mit eigener Freigabekette und eigenem Aufwand. |
+| **Umsetzungstabelle** | Eine Zuordnung alt/neu wird geführt und beim Export aufgelöst | Zusätzliche Komponente, die dauerhaft gepflegt werden muss. Nur sinnvoll, wenn beide anderen Wege ausscheiden. |
+
+**Empfehlung: Nummernkreis fortführen**, sofern Format und Bestand das hergeben. Es ist der
+einzige Weg, der die SAP-Seite wirklich unberührt lässt — und genau darauf beruht der
+gesamte risikoarme Zuschnitt dieses Vorhabens.
+
+*Zu klären: Wie ist die Lovion-ID aufgebaut, wer vergibt sie, und welcher Wertebereich ist
+bereits verbraucht? Dieselbe Frage stellt sich für § 14a — dort heißt das Feld `lovion_id`.*
+
+## 0b. Was die Ablösung von Lovion sonst noch auslöst
+
+Lovion wird nicht nur als Formularstrecke ersetzt, sondern als System. Zwei Themen, die
+über dieses Konzept hinausreichen und in die Programmplanung gehören:
+
+**Bestandsdaten und laufende Vorgänge.** In SAP stehen Lovion-IDs zu Anlagen, die vor der
+Umstellung angelegt wurden. Diese Verknüpfung muss erhalten bleiben. Ebenso ist zu klären,
+was mit Vorgängen geschieht, die in Lovion begonnen und nach der Umstellung abgeschlossen
+werden.
+
+**Weitere Schnittstellen von Lovion.** Diese beiden CSV-Strecken sind vermutlich nicht die
+einzigen Verbindungen des Systems. Was sonst an Lovion hängt, gehört in das
+[Schnittstellen-Register](./README.md) aufgenommen, bevor ein Abschalttermin gesetzt wird.
 
 ```
 Formularstrecke ──► Vorgangsbearbeitung ──► automatische ──► Netzlaufwerk ──► SAP
@@ -509,7 +543,11 @@ abgeschaltet wird. Dieser Termin gehört in die Planung, bevor über Phasen gesp
 | --- | --- | --- | --- |
 | 1 | ~~Bleibt die SAP-Seite unverändert?~~ | — | **entschieden: ja, CSV bleibt** |
 | 2 | ~~Ablageort?~~ | — | **entschieden: Netzlaufwerk** |
-| 0 | **Bleibt Lovion im Prozess, oder wird es abgelöst?** Bestimmt den Zuschnitt | Programmleitung | offen |
+| 0 | ~~Bleibt Lovion im Prozess?~~ | — | **entschieden: epilot ersetzt Lovion** |
+| 0a | **Was tritt an die Stelle der `Lovion ID`?** Nummernkreis fortführen, neue Kennung in SAP, oder Umsetzungstabelle | IT-Architektur + SAP-Betrieb | offen |
+| 0b | Aufbau der Lovion-ID, Vergabestelle, bereits verbrauchter Wertebereich | IT-Betrieb | offen |
+| 0c | Bestandsdaten: Lovion-IDs in SAP zu Altanlagen — Verknüpfung erhalten | SAP-Betrieb | offen |
+| 0d | Welche weiteren Schnittstellen hängen an Lovion? | IT-Architektur | offen |
 | 3 | **Wann wird Lovion für diese Prozesse abgeschaltet?** Daraus folgt der Endtermin | Programmleitung | offen |
 | 4 | **Zugang zum bestehenden Erzeugungscode** — wer betreut ihn, wo liegt er? | IT-Betrieb | offen |
 | 5 | Produktive Referenzdateien für Abnahmevergleich beschaffen | Betrieb Altportal | offen |
