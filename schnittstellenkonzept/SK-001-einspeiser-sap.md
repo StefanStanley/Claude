@@ -1,6 +1,6 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.5.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> **Entwurf 0.6.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
 > Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
 > deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
 > und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.5 — 04.09.2026 |
+| **Version / Stand** | 0.6 — 07.09.2026 |
 | **Status** | Entwurf — Entscheidungsvorlage Middleware |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
@@ -17,90 +17,74 @@
 
 ---
 
-## 0. Ausgangslage: Automatisierung eines Handprozesses
+## 0. Ausgangslage: Ablösung einer laufenden Schnittstelle
 
-Heute wird die CSV **manuell** erzeugt und auf einem **Netzlaufwerk** abgelegt, von dort
-holt SAP sie ab. Es gibt also keine bestehende Schnittstelle, die abgelöst wird — es gibt
-einen Menschen, der die Schnittstelle ist.
+Die CSV für SAP wird heute **automatisiert erzeugt** und auf einem Netzlaufwerk abgelegt.
+Das gilt für zwei Strecken:
 
-```
-Anmeldung ──► Prüfung ──► Anschlusszusage ──► Errichtung ──► Inbetriebsetzung
-                                                                    │
-                                                        ┌───────────┘
-                                                        ▼
-                                              [ Handarbeit: CSV erzeugen ]
-                                                        │
-                                                        ▼
-                                              Netzlaufwerk ──► SAP
-```
-
-**Was das für dieses Vorhaben bedeutet:**
-
-**Die gute Nachricht — der technische Weg ist der einfachste denkbare.** Netzlaufwerk statt
-SFTP oder Middleware heißt: ein Job im internen Netz, der die Datei genau dorthin schreibt,
-wo sie heute von Hand landet. Nach außen braucht es nur ausgehendes HTTPS zu epilot. Keine
-eingehende Freigabe, keine Middleware, keine Änderung auf der SAP-Seite.
-
-**Die eigentliche Arbeit liegt woanders.** Wer heute die Datei erzeugt, tut mehr als
-kopieren: Er entscheidet, welche Vorgänge reif sind. Er sieht, wenn eine Angabe unplausibel
-ist. Er weiß, was bei Sonderfällen zu tun ist, und ruft im Zweifel jemanden an. **Diese
-Prüfung ist nirgends aufgeschrieben, und sie fällt weg, sobald ein Job die Datei schreibt.**
-
-Das ist der übliche Grund, warum die Automatisierung eines Handprozesses schiefgeht: Nicht
-die Technik, sondern das stillschweigende Urteilsvermögen, das mit wegautomatisiert wird.
-
-### Die zwei Quellen
-
-| Quelle | Liefert |
+| Strecke | Gegenstand |
 | --- | --- |
-| **Eine produktive CSV** | Das exakte Zielformat. SAP frisst sie — damit ist sie die verbindliche Spezifikation, unabhängig davon, was irgendwo dokumentiert ist. |
-| **Die Person, die sie erzeugt** | Alles andere: Selektion, Prüfungen, Sonderfälle, Takt, was bei Fehlern passiert. Die mit Abstand wichtigere Quelle. |
+| **Einspeiser** | Einspeiseanlagen, Stammdaten für die EEG-Abrechnung — dieses Konzept |
+| **§ 14a EnWG** | steuerbare Verbrauchseinrichtungen (Wärmepumpen, Wallboxen, Speicher) — eigenes Konzept, siehe unten |
 
-### Fragen an die Person, die es heute macht
+Abgelöst wird also eine **produktiv laufende, automatisierte Schnittstelle**. Nicht die
+Erzeugung ist neu, sondern das Quellsystem: Die Formularstrecke wandert vom Altportal
+nach epilot, und die dahinterliegende Dateierzeugung muss mitwandern.
 
-*Ein Termin, eine Stunde. Das ist die Konzeptarbeit — nicht das Ausfüllen von Vorlagen.*
+```
+Formularstrecke ──► Vorgangsbearbeitung ──► automatische ──► Netzlaufwerk ──► SAP
+  (wandert nach                              Dateierzeugung
+   epilot)                                   (muss mitwandern)
+```
 
-**Auswahl**
-- Woran erkennst du, welche Vorgänge in die nächste Datei gehören?
-- Kommt es vor, dass ein Vorgang eigentlich reif wäre, du ihn aber bewusst zurückhältst? Warum?
-- Wie stellst du sicher, dass keiner doppelt geht — und keiner vergessen wird?
+### Was das für dieses Konzept bedeutet
 
-**Prüfung**
-- Worauf schaust du, bevor du die Datei ablegst?
-- Wann hast du zuletzt einen Vorgang wegen einer Auffälligkeit herausgenommen? Was war es?
-- Bei welchen Angaben rufst du im Zweifel jemanden an?
+**Die bestehende Erzeugung ist die Spezifikation.** Feldmapping, Transformationsregeln,
+Wertelisten, Prüfungen und Sonderfälle sind implementiert und laufen. Sie müssen nicht
+erdacht, sondern **aus dem Bestand übernommen** werden — aus dem Quellcode und aus
+produktiven Dateien, nicht aus einer Beschreibung.
 
-**Sonderfälle**
-- Welche Fälle behandelst du anders als den Normalfall?
-- Gibt es Vorgänge, die du gar nicht über die Datei schickst, sondern anders?
+**Der Auslöser ist nicht Effizienz, sondern Ablösungszwang.** Es fällt keine Handarbeit
+weg. Die Strecke muss weiterlaufen, wenn das Altportal abgeschaltet wird. Das ist für die
+Priorisierung wichtig: Der Termin ergibt sich aus dem Abschalttermin des Altportals, nicht
+aus einem Nutzenversprechen.
 
-**Ablauf**
-- Wie oft machst du das, und wann?
-- Was passiert, wenn du im Urlaub bist?
-- Woher weißt du, dass SAP die Datei verarbeitet hat? Was war das letzte Mal, dass etwas
-  schiefging, und wie hast du es gemerkt?
+**Aus Sicht von SAP darf sich nichts ändern.** Gleiches Format, gleicher Ort, gleicher
+Takt. Damit wird die Abnahme zu einem Dateivergleich — dem verlässlichsten Kriterium,
+das eine Ablösung haben kann.
 
-**Zeitaufwand**
-- Wie lange dauert ein Durchgang, und was davon ist die eigentliche Prüfung?
+### Was aus dem Bestand zu erheben ist
 
-*Die Antwort auf die letzte Frage ist euer Nutzenargument. Die Antworten auf „Prüfung" und
-„Sonderfälle" sind die Anforderungen, ohne die die Automatisierung Schaden anrichtet.*
+*Reihenfolge nach Nutzen:*
 
-### Einführung in zwei Stufen
+**1. Der Erzeugungscode.** Er enthält das vollständige Mapping einschließlich aller
+Sonderfälle, die über die Jahre eingebaut wurden. Zugang dazu ist der wichtigste
+Einzelschritt dieses Vorhabens.
 
-Weil der Prozess heute manuell ist, gibt es einen risikoarmen Weg — nutzt ihn:
+**2. Produktive Dateien, nicht die Dokumentation.** Ein Satz echter Übertragungen zeigt,
+welche Felder tatsächlich befüllt sind und welche Werte in den Schlüsselfeldern wirklich
+vorkommen. Bei gewachsenen Schnittstellen weicht die Dokumentation regelmäßig vom
+implementierten Stand ab. Diese Dateien sind gleichzeitig der Referenzsatz für die Abnahme.
 
-**Stufe 1 — Job erzeugt, Mensch gibt frei.** Der Job schreibt die Datei in einen
-Prüfordner. Die Person, die es heute macht, sieht sie durch und verschiebt sie auf das
-Netzlaufwerk. Der Zeitaufwand sinkt sofort, das Risiko bleibt bei null, und jede Abweichung
-fällt genau der Person auf, die sie erkennen kann.
+**3. Die Betriebserfahrung.** Wer die Strecke betreut, kennt die Fälle, die regelmäßig
+hängenbleiben, und weiß, wie ein fehlgeschlagener Import bemerkt wird. Ein Gespräch von
+einer Stunde — nicht mehr die Konzeptarbeit selbst, aber die Absicherung gegen das,
+was im Code nicht sichtbar ist.
 
-**Stufe 2 — Job schreibt direkt.** Nach einer vereinbarten Zahl beanstandungsfreier Läufe
-entfällt der Handgriff. Die Prüfungen, die in Stufe 1 aufgefallen sind, sind bis dahin als
-Regeln im Job abgebildet.
+**4. Die gewollten Änderungen.** Was an der heutigen Strecke stört, gehört benannt, aber
+getrennt. Eine Ablösung, die gleichzeitig alles verbessert, wird nicht fertig. Empfehlung:
+erst gleichwertig ablösen, Verbesserungen als eigene Vorhaben danach.
 
-*Stufe 1 ist keine Zwischenlösung, sondern die Testphase mit Produktivdaten — und sie
-kostet fast nichts.*
+### Verhältnis zur § 14a-Strecke
+
+Beide Strecken erzeugen eine CSV für SAP, beide hängen an einer Formularstrecke, die nach
+epilot wandert. Ob es sich um dasselbe Dateiformat, denselben Erzeugungsmechanismus und
+denselben Zielprozess in SAP handelt, ist **offen und vorrangig zu klären** — davon hängt
+ab, ob ein Konzept mit zwei Ausprägungen genügt oder zwei getrennte Konzepte nötig sind.
+
+Für die technische Umsetzung ist die Antwort weniger kritisch: Der Export-Lauf ist
+konfigurationsgetrieben gebaut. Zwei Formate bedeuten zwei Konfigurationen, nicht
+zwei Programme.
 
 ## 1. Fachlicher Zweck
 
@@ -111,15 +95,15 @@ sie aus dem Portal abtippt.
 **Auslösendes Ereignis:** Abschluss des Prozessschritts „Inbetriebsetzung bestätigt" im
 epilot-Workflow, mit vorliegendem Inbetriebsetzungsprotokoll und gesetztem Zähler.
 
-**Ergebnis / Nutzen:** Die Übertragung läuft ohne Handgriff und ohne Abhängigkeit von einer
-einzelnen Person. Die erste Vergütungsabrechnung kann fristgerecht erfolgen, auch in
-Urlaubszeiten und bei steigenden Anlagenzahlen.
+**Ergebnis / Nutzen:** Die Übertragung läuft nach der Ablösung des Altportals unverändert
+weiter. Die Vergütungsabrechnung bleibt fristgerecht möglich.
 
-*Der bezifferbare Teil: Zeitaufwand je Durchgang × Anzahl Durchgänge. Zu erheben im
-Gespräch, siehe Abschnitt 0.*
+*Der Nutzen dieses Vorhabens ist die Aufrechterhaltung des Betriebs, nicht eine Einsparung.
+Das ist keine Schwäche des Vorhabens, sondern seine Begründung: Ohne die Ablösung bricht
+eine produktive Strecke weg.*
 
-**Mengengerüst:** *Aus dem Altportal-Log auszulesen — dort liegen die echten Zahlen, es
-muss nichts geschätzt werden.*
+**Mengengerüst:** *Aus dem Protokoll der bestehenden Erzeugung auszulesen — dort liegen
+die echten Zahlen, es muss nichts geschätzt werden.*
 
 | | Wert |
 | --- | --- |
@@ -186,11 +170,11 @@ Schönheitsfehler, sondern ein Fall für die Nachberechnung:
 
 ### Datenlücken — was epilot nicht liefern kann
 
-Nicht alle Felder, die SAP braucht, entstehen im Portal. **Im Altportal ist für jedes
-dieser Felder bereits ein Weg etabliert** — der ist zu erheben und zu bewerten, nicht neu
-zu erfinden.
+Nicht alle Felder, die SAP braucht, entstehen in der Formularstrecke. **Die bestehende
+Erzeugung holt sie heute bereits von irgendwoher** — der Weg ist im Code nachvollziehbar
+und zu übernehmen, nicht neu zu erfinden.
 
-| Feld | Entsteht außerhalb des Portals | Im Altportal gelöst durch | Übernehmen? |
+| Feld | Entsteht außerhalb der Formularstrecke | Bestehende Erzeugung holt es aus | Übernehmen? |
 | --- | --- | --- | --- |
 | MaLo-ID | Vergabe Netzbetreiber | *zu erheben* | |
 | Zählernummer, Zählwerke | Zählersetzung | *zu erheben* | |
@@ -198,9 +182,9 @@ zu erfinden.
 | Umsatzsteuerstatus | Erklärung des Betreibers | *zu erheben* | |
 | MaStR-Nummer | Registrierung durch den Betreiber | *zu erheben* | |
 
-*Wo der bestehende Weg Handarbeit erfordert, ist die Ablösung die Gelegenheit, das Feld
-stattdessen in der Journey zu erheben. Das ist aber eine Verbesserung im Sinne von Punkt 4
-oben — bewusst entscheiden, nicht nebenbei mitnehmen.*
+*Kommt ein Feld heute aus einem System, das epilot nicht erreicht, ist das ein echter
+Klärungspunkt für die Architektur — dann braucht der neue Lauf entweder denselben Zugang
+oder das Feld muss in der Formularstrecke erhoben werden.*
 
 ### Korrelations-ID
 
@@ -376,16 +360,20 @@ Verbesserungen, die man bei der Ablösung mitnimmt, weil sie nichts kostet.*
 | Technisch vorübergehend | SAP oder Middleware nicht erreichbar | Wiederholung, dann Alarm |
 | Technisch dauerhaft | Pflichtfeld in SAP abgelehnt | Alarm, keine stille Wiederholung |
 
-### Heute ist die Kontrolle ein Mensch
+### Die Prüfungen stehen im Bestand
 
-Solange die Datei von Hand erzeugt wird, ist die Fehlerkontrolle implizit: Wer die Datei
-baut, sieht dabei, ob etwas nicht stimmt. Diese Kontrolle fällt mit der Automatisierung
-weg und muss ersetzt werden — durch Regeln im Job für das, was prüfbar ist, und durch eine
-Klärliste für alles, was ein Mensch entscheiden muss.
+Welche Vorgänge die bestehende Erzeugung zurückhält und warum, ist implementiert. Diese
+Regeln sind zu übernehmen — sie sind über Jahre an realen Fällen gewachsen und enthalten
+Ausnahmen, die niemand aus dem Kopf rekonstruiert.
 
-**Was im Zweifel gilt: nicht liefern.** Ein Vorgang, der in der Klärliste hängt, ist ein
-sichtbares Problem. Ein Vorgang, der mit falschen Werten in SAP landet, ist ein unsichtbares
-— und die falschen Werte sind hier Vergütungsgrundlagen.
+Zwei Dinge sind trotzdem aktiv zu klären, weil sie im Code oft nicht sichtbar sind:
+Was passiert heute mit einem zurückgehaltenen Vorgang, und wer sieht ihn? Und: Welche
+Fälle bleiben regelmäßig hängen? Beides beantwortet die Betriebserfahrung, nicht der
+Quellcode.
+
+**Grundsatz bleibt: im Zweifel nicht liefern.** Ein Vorgang in der Klärliste ist ein
+sichtbares Problem, ein falscher Wert in SAP ein unsichtbares — und die Werte hier sind
+Vergütungsgrundlagen.
 
 ### Der wunde Punkt jeder Dateischnittstelle: keine Quittung
 
@@ -458,9 +446,15 @@ Ergänzend die Fälle, die im Bestand selten vorkommen und deshalb im Vergleichs
 fehlen könnten: Betreiber ≠ Antragsteller, abweichende Ist-Leistung, Betreiberwechsel
 kurz nach IBS, zweite Anlage am selben Standort.
 
-**Inbetriebnahme:** Parallelbetrieb ist hier heikel — zwei Portale, die in dasselbe
-SAP schreiben, brauchen eine klare Trennung, wer welchen Vorgang überträgt.
-*Zu entscheiden: harter Stichtag oder Trennung nach Vorgangsart?*
+**Inbetriebnahme — Parallelbetrieb im Trockenlauf.** Weil die alte Strecke bis zur
+Abschaltung des Altportals weiterläuft, lässt sich die neue daneben betreiben, ohne dass
+sie liefert: Der neue Lauf erzeugt seine Datei in ein Prüfverzeichnis, die alte Strecke
+liefert weiterhin nach SAP. Beide Dateien werden automatisch verglichen. Erst wenn sie
+über einen vereinbarten Zeitraum übereinstimmen, wird umgeschaltet.
+
+Das ist die stärkste Absicherung, die dieses Vorhaben haben kann, und sie kostet fast
+nichts. Wichtig dabei: **Nur eine Strecke schreibt nach SAP.** Zwei Quellen, die in
+dasselbe Zielverzeichnis liefern, erzeugen Dubletten.
 
 ---
 
@@ -471,19 +465,22 @@ das epilot-Entity-Schema für Netzanschlussanfragen steht.*
 
 | Phase | Inhalt | Größenordnung |
 | --- | --- | --- |
-| **1 — Erhebung** | Gespräch mit der Sachbearbeitung, Originaldatei aufnehmen, Format byteweise dokumentieren, Kodierungsfrage klären | 2–3 PT |
+| **1 — Erhebung** | Zugang zum Erzeugungscode, produktive Dateien als Referenzsatz, Format byteweise dokumentieren, Kodierungsfrage klären | 2–3 PT |
 | **2 — Entscheidung** | Werkzeug festlegen (folgt aus Phase 1), Zielpfad und Rechte klären | 1 PT |
 | **3 — epilot** | Übertragungsstatus am Vorgang, fehlende Felder in der Journey ergänzen | 2–4 PT |
 | **4 — Erzeugung** | Abruf, Transformation, CSV-Erzeugung, Ablage | 5–8 PT |
-| **5 — Prüfregeln** | Was in Phase 1 als implizite Prüfung aufgetaucht ist, als Regeln mit Klärliste | 2–3 PT |
+| **5 — Prüfregeln** | Regeln aus dem bestehenden Erzeugungscode übernehmen, Klärliste ergänzen | 2–3 PT |
 | **6 — Zustellung** | Flow mit Gateway, atomare Übergabe per Umbenennung | 1–2 PT |
 | **7 — Vergleichstest** | Reale Altvorgänge durchspielen, Dateien byteweise vergleichen | 3–5 PT |
-| **8 — Stufe 1 im Betrieb** | Job schreibt in den Prüfordner, Freigabe von Hand | 4–6 Wochen Laufzeit |
+| **8 — Parallelbetrieb** | Neuer Lauf schreibt in ein Prüfverzeichnis, automatischer Vergleich gegen die Lieferung der alten Strecke | 4–6 Wochen Laufzeit |
 | **9 — Umstellung** | Direktschreiben, Abgleichskennzahl aktiv | 1 PT |
 
 **Kritischer Pfad ist Phase 1.** Ohne die Originaldatei ist die Werkzeugentscheidung nicht
-zu treffen, und ohne das Gespräch fehlen die Prüfregeln. Beides ist in einer Woche
-machbar, wenn die Termine stehen.
+zu treffen, und ohne Zugang zum Erzeugungscode fehlt das Mapping. Beides ist in einer Woche
+beschafft, wenn die Zuständigkeiten klar sind.
+
+**Der Endtermin ergibt sich von außen:** Die Strecke muss stehen, bevor das Altportal
+abgeschaltet wird. Dieser Termin gehört in die Planung, bevor über Phasen gesprochen wird.
 
 ## 9. Offene Punkte und Entscheidungen
 
@@ -491,13 +488,16 @@ machbar, wenn die Termine stehen.
 | --- | --- | --- | --- |
 | 1 | ~~Bleibt die SAP-Seite unverändert?~~ | — | **entschieden: ja, CSV bleibt** |
 | 2 | ~~Ablageort?~~ | — | **entschieden: Netzlaufwerk** |
-| 3 | **Gespräch mit der Person, die die Datei heute erzeugt** (Fragen in Abschnitt 0) | Cluster | offen |
-| 4 | Produktive Originaldatei besorgen, Format byteweise aufnehmen | Fachbereich | offen |
-| 5 | Genauer Pfad auf dem Netzlaufwerk, Schreibrechte für den Job | IT-Betrieb | offen |
-| 6 | Wann läuft der SAP-Import — fester Job oder manuell angestoßen? | SAP-Betrieb | offen |
-| 7 | Wie wird heute bemerkt, dass ein Import fehlgeschlagen ist? | SAP-Betrieb + Fachbereich | offen |
-| 8 | Werkzeug: Power Automate allein oder Databricks + Power Automate — **entscheidet sich an der Kodierung der Originaldatei** | IT-Architektur | offen |
-| 8b | Betreibt ihr Databricks bereits produktiv? Falls nein, Azure Function als Alternative prüfen | IT-Architektur | offen |
-| 9 | Selektionsregel: Übertragungsstatus in epilot einführen | Cluster + Fachbereich | offen |
-| 10 | Stufe 1 (Prüfordner): Dauer und Kriterium für den Übergang auf Stufe 2 | Fachbereich | offen |
-| 11 | Vertretungsregel — heute personenabhängig, künftig? | Fachbereich | offen |
+| 3 | **Wann wird das Altportal abgeschaltet?** Daraus folgt der Endtermin | Programmleitung | offen |
+| 4 | **Zugang zum bestehenden Erzeugungscode** — wer betreut ihn, wo liegt er? | IT-Betrieb | offen |
+| 5 | Produktive Referenzdateien für Abnahmevergleich beschaffen | Betrieb Altportal | offen |
+| 6 | Kodierung der Originaldatei feststellen — entscheidet die Werkzeugwahl | Fachbereich | offen |
+| 7 | **§ 14a und Einspeiser: ein Format oder zwei?** Ein Erzeugungsmechanismus oder zwei? | IT-Architektur | offen |
+| 8 | Reihenfolge der Ablösung beider Strecken | Programmleitung | offen |
+| 9 | Werkzeug: Power Automate allein oder Databricks + Power Automate | IT-Architektur | offen |
+| 10 | Betreibt ihr Databricks bereits produktiv? Sonst Azure Function prüfen | IT-Architektur | offen |
+| 11 | Pfad und Schreibrechte auf dem Netzlaufwerk für den neuen Lauf | IT-Betrieb | offen |
+| 12 | Wie wird heute ein fehlgeschlagener Import bemerkt? | SAP-Betrieb | offen |
+| 13 | Woher holt die bestehende Erzeugung MaLo-ID, Zähler, IBAN, USt-Status, MaStR? | IT-Betrieb | offen |
+| 14 | Dauer des Parallelbetriebs und Kriterium für die Umschaltung | Fachbereich + IT | offen |
+| 15 | Bekannte Schwachstellen: welche werden mit abgelöst, welche später? | Fachbereich | offen |
