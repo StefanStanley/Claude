@@ -1,0 +1,148 @@
+# Einspeiser -> SAP · Konfigurationsentwurf auf Basis des Billing-Mappings vom 08.09.2026
+#
+# STATUS: Entwurf. Belastbar sind die Feldzuordnungen aus dem Mapping; NICHT belastbar sind
+# Dateiformat (Kodierung, Trennzeichen, Zeilenende) und Spaltenreihenfolge — dafür fehlt
+# noch eine produktive Originaldatei.
+#
+# Der Abruf läuft über die Entity API, nicht über Template-Variablen: nur so kommen die
+# Adressbestandteile einzeln statt als gerenderter Block.
+# Siehe ../mapping/einspeiser_mapping_v1.md, Punkt 2.
+
+format:
+  kodierung: TODO_aus_originaldatei     # utf-8 | cp1252 | latin-1
+  bom: false
+  trennzeichen: ";"
+  textbegrenzer: '"'
+  quoting: minimal
+  doppelte_begrenzer: true
+  zeilenende: TODO_CRLF_oder_LF
+  kopfzeile: true
+  dezimaltrennzeichen: ","
+  leerwert: ""
+
+ablage:
+  verzeichnis: TODO_netzlaufwerkpfad
+  dateiname: "EINSPEISER_%Y%m%d_%H%M%S.csv"
+  temp_endung: ".tmp"
+  leerlauf: keine_datei
+  protokoll_verzeichnis: TODO
+
+epilot:
+  basis_url: "https://entity.sls.epilot.io"
+  schema: "opportunity"
+  # Selektion über einen Übertragungsstatus - Attribut ist noch anzulegen
+  query: '_schema:opportunity AND uebertragungsstatus:bereit'
+  seitengroesse: 500
+  hydrate: true                          # löst verknüpfte Datensätze auf
+  status_attribut: "uebertragungsstatus"
+  status_nach_uebertragung: "uebertragen"
+
+bei_kodierungsfehler: zeile_zurueckhalten
+
+wertelisten:
+  # Zielschlüssel laut Billing bereits festgelegt
+  art_der_einspeisung:
+    volleinspeisung: "01"
+    ueberschusseinspeisung: "02"
+    # TODO: die tatsächlichen Quellwerte aus ea_erzeugungsanlage_art_der_einspeisung ergänzen
+  energieart:
+    # TODO: Mapping von ea_erzeugungsanlage_anlagentyp auf die Energieart-Schlüssel,
+    # die SAP erwartet - laut Billing "Mapping notwendig", Zielwerte noch offen
+    {}
+
+pruefungen:
+  - feld: ea_inbetriebsetzungsdatum
+    art: pflicht
+  - feld: ea_inbetriebsetzungsdatum
+    art: datum_nicht_zukunft
+  - feld: ea_installierte_modulleistung_in_kwp
+    art: pflicht
+  - feld: ea_installierte_modulleistung_in_kwp
+    art: zahl_zwischen
+    min: 0.1
+    max: 20000
+  - feld: ea_see_erzeugungsanlage
+    art: pflicht
+  - feld: ea_erzeugungsanlage_art_der_einspeisung
+    art: in_werteliste
+    liste: art_der_einspeisung
+
+spalten:
+  - name: Opportunity Nummer
+    quelle: opportunity_number
+    pflicht: true
+
+  # --- Anschlussobjekt ---------------------------------------------------------
+  # ACHTUNG: Billing nennt als Quelle "Adresse Anlagenbetreiber". Die Zielspalten heißen
+  # jedoch "Anschlussobjekt". Fachlich sind das zwei verschiedene Orte.
+  # Vor der Umsetzung klären - siehe Mapping-Dokument, Punkt 3.
+  - name: Straße_Anschlussobjekt
+    quelle: delivery_address.0.street
+    pflicht: true
+    transform:
+      - art: trimmen
+
+  - name: Hausnummer_Anschlussobjekt
+    quelle: delivery_address.0.street_number
+
+  - name: PLZ_Anschlussobjekt
+    quelle: delivery_address.0.postal_code
+    pflicht: true
+    max_laenge: 5
+
+  - name: Ort_Anschlussobjekt
+    quelle: delivery_address.0.city
+    pflicht: true
+
+  # --- Anlage ------------------------------------------------------------------
+  - name: Energieart
+    quelle: ea_erzeugungsanlage_anlagentyp
+    pflicht: true
+    transform:
+      - art: werteliste
+        liste: energieart
+
+  - name: EEG_Inbetriebnahmedatum
+    quelle: ea_inbetriebsetzungsdatum
+    pflicht: true
+    transform:
+      - art: datum
+        muster: TODO_aus_originaldatei      # z. B. "%d.%m.%Y" oder "%Y%m%d"
+
+  - name: Gesamtleistung_kW
+    quelle: ea_installierte_modulleistung_in_kwp
+    pflicht: true
+    transform:
+      - art: dezimal
+        stellen: 2
+        trennzeichen: ","
+
+  - name: Nettoleistung_kW
+    konstante: ""                            # Entfall vorgeschlagen; Spalte bleibt vorerst leer
+                                             # TODO: durch SAP-Betrieb bestätigen lassen
+
+  - name: Wechselrichterleistung_kW
+    quelle: TODO_quelle_offen
+
+  - name: Mieterstromzuschlag_gültig_ab
+    konstante: ""                            # nicht go-live-kritisch
+
+  - name: Einspeisemanagement
+    quelle: TODO_quelle_offen
+
+  - name: Messkonzept
+    quelle: zaehlermeldung_messkonzept
+
+  - name: SEE-Nr.
+    quelle: ea_see_erzeugungsanlage
+    pflicht: true
+
+  - name: Art der Einspeisung
+    quelle: ea_erzeugungsanlage_art_der_einspeisung
+    pflicht: true
+    transform:
+      - art: werteliste
+        liste: art_der_einspeisung
+
+  - name: Fernsteuerbarkeit
+    quelle: TODO_quelle_offen

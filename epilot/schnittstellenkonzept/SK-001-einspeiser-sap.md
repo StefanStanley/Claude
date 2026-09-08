@@ -1,6 +1,6 @@
 # SK-001 — Einspeiseanlage aus epilot in SAP (EEG-Abrechnung)
 
-> **Entwurf 0.8.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
+> **Entwurf 0.9.** Kein Neubau, sondern die **Ablösung einer produktiven Schnittstelle**:
 > Die Strecke Portal → SAP ist im Altportal bereits umgesetzt. Dieses Dokument beschreibt
 > deshalb nicht, was man sich ausdenken müsste, sondern was aus dem Bestand zu übernehmen
 > und was bewusst zu ändern ist. Feldnamen auf der epilot-Seite bleiben Platzhalter,
@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **ID** | SK-001 |
-| **Version / Stand** | 0.8 — 07.09.2026 |
+| **Version / Stand** | 0.9 — 08.09.2026 |
 | **Status** | Entwurf — Entscheidungsvorlage Middleware |
 | **Fachlicher Owner** | *offen* |
 | **Technischer Owner** | Cluster Digitalisierung, Data & AI |
@@ -249,6 +249,43 @@ möglich, anders als bei § 14a.
 Die `Lovion ID` ist heute der einzige Schlüssel. **Erzeugt künftig epilot die Datei, gibt
 es keine Lovion-Kennung mehr** — was an ihre Stelle tritt und ob SAP damit umgehen kann,
 ist eine der vorrangigen Fragen (siehe Abschnitt 0).
+
+### Erste Feldzuordnung liegt vor
+
+Billing hat am 08.09.2026 eine Zuordnung der Lovion-Felder auf epilot-Attribute geliefert —
+**16 Zeilen als Minimalset für den Go-Live**, nicht als vollständige Ablösung der 30 Spalten.
+Vollständig mit Auswertung in
+[`mapping/einspeiser_mapping_v1.md`](./mapping/einspeiser_mapping_v1.md), daraus abgeleiteter
+Konfigurationsentwurf in
+[`umsetzung/config.einspeiser.entwurf.yaml`](./umsetzung/config.einspeiser.entwurf.yaml).
+
+**Was sich damit klärt:** Das epilot-Datenmodell existiert bereits (`opportunity` mit
+Attributen wie `ea_inbetriebsetzungsdatum`, `ea_see_erzeugungsanlage`). `SEE-Nr.` ist die
+MaStR-Kennung und schließt eine zuvor offene Lücke. Für `Art der Einspeisung` sind die
+Zielschlüssel bekannt (`01` Volleinspeisung, `02` Überschusseinspeisung).
+
+**Was dadurch zu entscheiden ist — drei Punkte mit Tragweite:**
+
+1. **`Opportunity Nummer` ersetzt die `Lovion ID`.** Damit ist der Weg „neue Kennung in
+   SAP" aus Abschnitt 0a gewählt — der einzige der drei, der **eine Änderung auf der
+   SAP-Seite erfordert**. Die Festlegung „SAP bleibt unangetastet" gilt damit nicht mehr
+   uneingeschränkt. Abstimmung mit dem SAP-Betrieb und Umgang mit Bestandsanlagen sind zu
+   klären.
+
+2. **Vierzehn Spalten des heutigen Exports entfallen im Minimalset** — darunter
+   `Anlagenart nach §48`, die in diesem Konzept als rechtlich kritisch geführt wird, weil
+   sie die EEG-Vergütungsklasse bestimmt. Zu klären, wie SAP mit fehlenden oder leeren
+   Spalten umgeht und woher die Vergütungsklasse sonst kommt.
+
+3. **Die Adresse liegt strukturiert vor.** Die Anmerkung „gibt's nur als einen Block"
+   trifft auf die Template-Variablen zu (Handlebars, für Vorlagen gedacht). Über die
+   Entity API kommen `street`, `street_number`, `postal_code` und `city` einzeln — Zerlegen
+   von Fließtext ist unnötig und wäre bei Hausnummernzusätzen fehleranfällig. **Der Abruf
+   sollte deshalb über die Entity API laufen, nicht über Template-Variablen.**
+
+*Zusätzlich zu prüfen: Billing spricht vom „Report". Erzeugt epilot die Datei über eine
+eigene Exportfunktion, verschiebt sich die Architektur — tragfähig ist das nur, wenn sich
+Kodierung, Trennzeichen, Zeilenende und Spaltenreihenfolge dort exakt steuern lassen.*
 
 ### Was noch fehlt
 
@@ -544,7 +581,7 @@ abgeschaltet wird. Dieser Termin gehört in die Planung, bevor über Phasen gesp
 | 1 | ~~Bleibt die SAP-Seite unverändert?~~ | — | **entschieden: ja, CSV bleibt** |
 | 2 | ~~Ablageort?~~ | — | **entschieden: Netzlaufwerk** |
 | 0 | ~~Bleibt Lovion im Prozess?~~ | — | **entschieden: epilot ersetzt Lovion** |
-| 0a | **Was tritt an die Stelle der `Lovion ID`?** Nummernkreis fortführen, neue Kennung in SAP, oder Umsetzungstabelle | IT-Architektur + SAP-Betrieb | offen |
+| 0a | **Was tritt an die Stelle der `Lovion ID`?** | IT-Architektur + SAP-Betrieb | **Billing schlägt `Opportunity Nummer` vor** — erfordert SAP-Anpassung, Abstimmung offen |
 | 0b | Aufbau der Lovion-ID, Vergabestelle, bereits verbrauchter Wertebereich | IT-Betrieb | offen |
 | 0c | Bestandsdaten: Lovion-IDs in SAP zu Altanlagen — Verknüpfung erhalten | SAP-Betrieb | offen |
 | 0d | Welche weiteren Schnittstellen hängen an Lovion? | IT-Architektur | offen |
@@ -560,6 +597,11 @@ abgeschaltet wird. Dieser Termin gehört in die Planung, bevor über Phasen gesp
 | 12 | Wie wird heute ein fehlgeschlagener Import bemerkt? | SAP-Betrieb | offen |
 | 13 | Wie kommt SAP von der `Lovion ID` zum Geschäftspartner und Vertrag? Gibt es eine zweite Datei? | SAP-Betrieb | offen |
 | 16 | Unterschied `Energieart` / `Energieträger`, Abgrenzung Brutto-/Nettoleistung | Fachbereich | offen |
+| 18 | Ist die Quelle für `…_Anschlussobjekt` wirklich die Betreiberadresse? | Fachbereich | offen |
+| 19 | Wie geht SAP mit den 14 im Minimalset fehlenden Spalten um? | SAP-Betrieb | offen |
+| 20 | Woher kommt die EEG-Vergütungsklasse, wenn `Anlagenart nach §48` entfällt? | Fachbereich | offen |
+| 21 | Erzeugt epilot die Datei als Report — mit voller Formatkontrolle? | IT-Architektur | offen |
+| 22 | Quellen für `Wechselrichterleistung_kW`, `Einspeisemanagement`, `Fernsteuerbarkeit` | Fachbereich | offen |
 | 17 | Herkunft von Gemarkung, Flur, Flurstück und Format der Geodaten | Fachbereich | offen |
 | 14 | Dauer des Parallelbetriebs und Kriterium für die Umschaltung | Fachbereich + IT | offen |
 | 15 | Bekannte Schwachstellen: welche werden mit abgelöst, welche später? | Fachbereich | offen |
