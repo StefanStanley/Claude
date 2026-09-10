@@ -123,6 +123,24 @@ in `api-referenz/` (51 APIs, 1141 Operationen).
 - **IBAN ist kein Standardfeld** — muss über `payment` oder ein eigenes Attribut
   modelliert werden.
 
+## KI im Prozess
+
+Seit 10.09. gibt es eine Use-Case-Landkarte: `ki/use-case-landkarte.md`, aufgebaut nach
+der Epic-Systematik des Clusters (siehe Skill `jira-cluster-struktur`).
+
+Kernaussage: Vier von sieben Kandidaten scheitern am DoR-Kriterium „Datenquelle
+identifiziert" — nicht an Technik oder Budget. Die fehlenden Daten (strukturierte
+Klärgründe, typisierte Dokumente, Ereignisspur, erhaltene Korrekturen) entstehen beim Bau
+des epilot-Prozesses oder gar nicht. **Sie gehören als Stories in die Lovion-Ablösung
+(Initiative Construction & Operations), nicht als eigener KI-Epic.**
+
+Erster echter Use Case ist die **Dokumentenprüfung** (Kennwerte aus Anhängen extrahieren
+und gegen die Formularangaben abgleichen, immer mit Belegstelle). Ausdrücklich *keine* KI
+gehört in Feldmapping, Fristen, Vergütungsklassen und MaStR-Abgleich.
+
+Offen: Das Pflichtfeld „Fachbereich" kennt keinen Eintrag **Netzanschluss**, und für keinen
+Kandidaten ist ein FB-Sponsor benannt — ohne den kommt kein Epic durch das DoR-Gate.
+
 ## Beteiligte Systeme
 
 | System | Rolle |
