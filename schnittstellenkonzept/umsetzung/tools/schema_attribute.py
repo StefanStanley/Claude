@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Liest die Attribute eines epilot-Schemas aus und schlägt Zuordnungen zu Exportspalten vor.
+"""Liest epilot-Attribute aus und schlägt Zuordnungen zu Exportspalten vor.
 
 Beantwortet die Frage, die beim Mapping zuerst kommt: Welche Attribute gibt es überhaupt?
-Statt Attributnamen zu raten, werden sie aus dem konfigurierten Schema gelesen.
+Statt Attributnamen zu raten, werden sie aus der Quelle gelesen. Zwei Quellen möglich:
+
+**Blueprint-Manifest** (keine Anmeldung nötig) — der Weg, wenn das Schema in der eigenen
+Instanz noch gar nicht steht. Das Manifest bringt die Definition mit:
+
+    python3 tools/schema_attribute.py --manifest 14a-blueprint.json \
+        --spalten ../bestand/14a_spalten_ist.txt -o vorschlag.csv
+
+**Konfiguriertes Schema** (Token nötig) — der Weg, wenn bereits installiert ist:
 
     export EPILOT_TOKEN="..."
-
-    # 1) Alle Attribute des Schemas auflisten
     python3 tools/schema_attribute.py --schema opportunity
-
-    # 2) Zuordnungsvorschläge zu einer Spaltenliste erzeugen
-    python3 tools/schema_attribute.py --schema opportunity \
-        --spalten ../bestand/14a_spalten_ist.txt -o vorschlag.csv
 
 Die Vorschläge beruhen auf Namensähnlichkeit — sie sind ein Startpunkt für die Runde,
 keine Entscheidung. Jede Zeile gehört geprüft.
@@ -40,6 +42,62 @@ def hole_schema(slug: str, token: str, basis: str = BASIS, org: str | None = Non
         raise SystemExit(f"Schema '{slug}' nicht gelesen: HTTP {antwort.status_code} "
                          f"{antwort.text[:300]}")
     return antwort.json()
+
+
+def aus_manifest(pfad: str) -> list[dict]:
+    """Attribute aus einem Blueprint-Manifest ziehen.
+
+    Manifeste bündeln Ressourcen unterschiedlicher Art (Schemas, Journeys, Workflows).
+    Gesucht sind die Schema-Ressourcen und darin die Attributdefinitionen. Weil der
+    Aufbau je nach Manifest-Version abweicht, wird rekursiv nach Objekten gesucht, die
+    wie eine Attributdefinition aussehen: ein `name` plus ein `type`.
+    """
+    import json as _json
+    daten = _json.loads(open(pfad, encoding="utf-8").read())
+    gefunden: dict[str, dict] = {}
+
+    def sieht_aus_wie_attribut(o: dict) -> bool:
+        return (isinstance(o.get("name"), str) and o.get("name")
+                and isinstance(o.get("type"), str)
+                and o.get("type") in ATTRIBUTTYPEN)
+
+    def geh(o, pfad_kette=()):
+        if isinstance(o, dict):
+            if sieht_aus_wie_attribut(o):
+                name = o["name"]
+                # erstes Vorkommen gewinnt, spätere ergänzen nur fehlende Angaben
+                eintrag = gefunden.setdefault(name, {
+                    "name": name, "label": "", "typ": o.get("type", ""),
+                    "pflicht": "", "gruppe": "", "optionen": "",
+                })
+                if not eintrag["label"]:
+                    eintrag["label"] = o.get("label") or ""
+                if o.get("required"):
+                    eintrag["pflicht"] = "ja"
+                if not eintrag["gruppe"]:
+                    eintrag["gruppe"] = o.get("group") or (pfad_kette[-1] if pfad_kette else "")
+                if not eintrag["optionen"] and o.get("options"):
+                    eintrag["optionen"] = ", ".join(
+                        (x.get("value") if isinstance(x, dict) else str(x))
+                        for x in o["options"])[:200]
+            for k, v in o.items():
+                geh(v, pfad_kette + (k,))
+        elif isinstance(o, list):
+            for x in o:
+                geh(x, pfad_kette)
+
+    geh(daten)
+    return sorted(gefunden.values(), key=lambda x: x["name"])
+
+
+# Attributtypen der Entity API - dient als Filter beim Durchsuchen eines Manifests
+ATTRIBUTTYPEN = {
+    "string", "text", "link", "date", "datetime", "country", "boolean", "select", "radio",
+    "multiselect", "checkbox", "status", "sequence", "relation", "relation_user", "address",
+    "relation_address", "relation_payment_method", "currency", "tags", "number", "table",
+    "consent", "internal", "ordered_list", "image", "file", "computed", "phone", "email",
+    "payment", "price_component", "purpose", "message_email_address",
+}
 
 
 def attribute(schema: dict) -> list[dict]:
@@ -96,7 +154,9 @@ def vorschlag(spalte: str, attr: list[dict], grenze: float = 0.55) -> list[tuple
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--schema", required=True, help="Schema-Slug, z. B. opportunity")
+    quelle = p.add_mutually_exclusive_group(required=True)
+    quelle.add_argument("--schema", help="Schema-Slug, z. B. opportunity (braucht EPILOT_TOKEN)")
+    quelle.add_argument("--manifest", help="Blueprint-Manifest als JSON-Datei (keine Anmeldung nötig)")
     p.add_argument("--spalten", help="Datei mit Spaltennamen (eine Zeile, tab-getrennt)")
     p.add_argument("-o", "--ausgabe", help="CSV-Datei für das Ergebnis")
     p.add_argument("--basis-url", default=BASIS)
@@ -105,14 +165,21 @@ def main(argv=None) -> int:
                    help="Mindestähnlichkeit für einen Vorschlag (0-1, Standard 0.55)")
     a = p.parse_args(argv)
 
-    token = os.environ.get("EPILOT_TOKEN", "")
-    if not token:
-        print("EPILOT_TOKEN ist nicht gesetzt.", file=sys.stderr)
-        return 2
-
-    schema = hole_schema(a.schema, token, a.basis_url, a.org)
-    attr = attribute(schema)
-    print(f"Schema '{a.schema}': {len(attr)} Attribute", file=sys.stderr)
+    if a.manifest:
+        attr = aus_manifest(a.manifest)
+        print(f"Manifest '{a.manifest}': {len(attr)} Attribute gefunden", file=sys.stderr)
+        if not attr:
+            print("Keine Attributdefinitionen erkannt. Aufbau des Manifests prüfen — "
+                  "gesucht werden Objekte mit 'name' und einem bekannten 'type'.",
+                  file=sys.stderr)
+            return 1
+    else:
+        token = os.environ.get("EPILOT_TOKEN", "")
+        if not token:
+            print("EPILOT_TOKEN ist nicht gesetzt.", file=sys.stderr)
+            return 2
+        attr = attribute(hole_schema(a.schema, token, a.basis_url, a.org))
+        print(f"Schema '{a.schema}': {len(attr)} Attribute", file=sys.stderr)
 
     if not a.spalten:
         schreiber = csv.DictWriter(
