@@ -1,0 +1,39 @@
+# Werkzeug- und Codekonventionen für die epilot-Ablösung.
+# Die Regeln stehen hier, nicht in einem Wiki: was nicht prüfbar ist, wird nicht eingehalten.
+# Siehe KONVENTIONEN.md für die Begründung.
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["api-referenz"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",    # pycodestyle
+    "F",         # pyflakes
+    "I",         # Importreihenfolge
+    "UP",        # veraltete Schreibweisen
+    "B",         # typische Fallen (flake8-bugbear)
+    "C4",        # Comprehensions
+    "SIM",       # unnötige Umwege
+    "ANN",       # Typannotationen
+    "D",         # Docstrings (PEP 257)
+    "RUF",
+]
+ignore = [
+    "D203",   # Konflikt mit D211 (keine Leerzeile vor der Klassen-Docstring)
+    "D213",   # Konflikt mit D212 (Zusammenfassung in der ersten Zeile)
+    "ANN401", # Any ist an den Stellen, wo es steht, die richtige Angabe
+    "E741",
+    # Deutsche Typografie ist gewollt: „Anführungszeichen“, · als Trenner, — als Gedankenstrich
+    "RUF001", "RUF002", "RUF003",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"schnittstellenkonzept/umsetzung/tests/*" = ["D1", "ANN"]  # Tests dokumentieren über ihre Namen
+
+[tool.ruff.format]
+quote-style = "double"

@@ -1,4 +1,8 @@
 requests>=2.31
 PyYAML>=6.0
-# nur für tools/config_aus_erhebung.py
+# nur für werkzeuge/config_aus_erhebung.py und werkzeuge/mappe_bauen.py
 openpyxl>=3.1
+
+# Entwicklung: Stil- und Docstring-Prüfung nach KONVENTIONEN.md
+ruff>=0.5
+pytest>=8.0
