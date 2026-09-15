@@ -15,7 +15,7 @@ description: >
 
 # epilot-Ablösung: Vorgehen und Werkzeuge
 
-Alles Inhaltliche liegt im Repository unter diesem Repository. **Zuerst `CLAUDE.md` lesen** —
+Alles Inhaltliche liegt im Repository unter `epilot/`. **Zuerst `epilot/CLAUDE.md` lesen** —
 dort steht der aktuelle Stand, die getroffenen Entscheidungen und die verifizierten
 epilot-Fakten. Dieser Skill beschreibt das *Verfahren*, nicht den Stand.
 
@@ -31,30 +31,30 @@ Ist-Export      →  Analyse    →  Attribute   →  Zuordnung  →  Mappe   �
 
 ## Werkzeugkette
 
-Alle Werkzeuge liegen in `werkzeuge/`. Reihenfolge wie oben:
+Alle Werkzeuge liegen in `epilot/werkzeuge/`. Reihenfolge wie oben:
 
 ```bash
 # 1 · Ist-Spalten analysieren — findet Duplikate, Randleerzeichen, Sonderzeichen, Blöcke
-python3 werkzeuge/spaltenanalyse.py spalten.txt -o analyse.md --titel "Strecke X"
+python3 epilot/werkzeuge/spaltenanalyse.py spalten.txt -o analyse.md --titel "Strecke X"
 
 #     Zwei Strecken vergleichen (ein Format oder zwei?)
-python3 werkzeuge/spaltenanalyse.py a.txt --vergleich b.txt -o vergleich.md
+python3 epilot/werkzeuge/spaltenanalyse.py a.txt --vergleich b.txt -o vergleich.md
 
 # 2 · Attribute des Zielmodells holen — Blueprint braucht keinen Token
-python3 werkzeuge/schema_attribute.py --manifest blueprint.json \
+python3 epilot/werkzeuge/schema_attribute.py --manifest blueprint.json \
     --spalten spalten.txt -o vorschlag.csv
 #     Alternative gegen die laufende Instanz (genauer, weil mit euren Anpassungen):
-EPILOT_TOKEN=… python3 werkzeuge/schema_attribute.py --schema opportunity
+EPILOT_TOKEN=… python3 epilot/werkzeuge/schema_attribute.py --schema opportunity
 
 # 3 · Arbeitsmappe für die Sitzung bauen
-python3 werkzeuge/mappe_bauen.py spalten.txt -o Mapping_X.xlsx \
+python3 epilot/werkzeuge/mappe_bauen.py spalten.txt -o Mapping_X.xlsx \
     --titel "Strecke X" --vorschlaege vorschlag.csv
 
 # 4 · Nach der Sitzung: Konfiguration aus der ausgefüllten Mappe erzeugen
-python3 werkzeuge/config_aus_erhebung.py Mapping_X.xlsx -o config.yaml
+python3 epilot/werkzeuge/config_aus_erhebung.py Mapping_X.xlsx -o config.yaml
 
 # 5 · Export im Trockenlauf prüfen
-cd schnittstellenkonzept/umsetzung
+cd epilot/schnittstellenkonzept/umsetzung
 python3 -m sap_export.job --config config.yaml --probelauf
 ```
 
@@ -62,12 +62,12 @@ Die API-Referenz erzeugt sich selbst neu, wenn epilot Schnittstellen ändert:
 
 ```bash
 git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js
-python3 werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js
+python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js
 ```
 
 ## Die Regeln, die in der Umsetzung stecken
 
-Der Export-Lauf in `schnittstellenkonzept/umsetzung/` ist
+Der Export-Lauf in `epilot/schnittstellenkonzept/umsetzung/` ist
 **konfigurationsgetrieben**: Alles Formatabhängige steht in einer YAML-Datei, der Code
 kennt keine Zielfeldnamen. **Eine neue Strecke ist eine neue Konfiguration, kein neues
 Programm.**
@@ -109,6 +109,9 @@ Alle schon einmal aufgetreten:
   (`address.0.street` …) — für Exporte immer die Entity API nutzen
 - **Relationen liefern nur `entity_id`** — ohne `hydrate: true` fehlen die Werte
 - **Org-Header uneinheitlich**: meist `x-epilot-org-id`, teils `x-ivy-org-id`
+- **Vokabelbrüche zwischen Formular und Schema**: Was das Formular „Wallbox" nennt, heißt
+  in epilot `ladeeinrichtung`/`ladepunkt` — das Wort „Wallbox" kommt im Schema nicht vor.
+  Ein Abgleich, der nichts findet, heißt „heißt anders", nicht „fehlt"
 
 ## Haltung
 
@@ -119,6 +122,46 @@ Alle schon einmal aufgetreten:
   besser macht, wird nicht fertig.
 - **Der Abnahmevergleich ist byteweise** gegen produktive Originaldateien — nicht nur die
   Werte, auch Kodierung, Trennzeichen, Maskierung und Zeilenenden.
+
+## Zuerst die Präfix-Familien, dann das Mapping
+
+epilot hängt die Felder **aller** Formularstrecken an dasselbe Schema — bei der NGD 880
+Attribute an `opportunity`; die übrigen 30 Schemas sind Standard und klein. Die Strecken
+unterscheiden sich allein am Namenspräfix: `ea_` Erzeugungsanlage (Einspeiser), `vb_`
+Verbrauchseinrichtung (§ 14a), `ha_` Hausanschluss.
+
+Daraus folgt das Vorgehen:
+
+1. `schema_attribute.py --schema opportunity --familien` — welche Strecken liegen drauf?
+2. Mit `--praefix` auf die eigene eingrenzen, **dann** erst abgleichen.
+
+Ein Abgleich gegen das ganze Schema liefert Rauschen: 86 Spalten ergaben 64 Vorschläge,
+davon 10 belastbar. Der Grund ist doppelt — bei 880 Kandidaten findet Ähnlichkeit fast
+immer irgendetwas, und die epilot-Namen tragen ihr Streckenpräfix mit, die Exportspalten
+nicht. `--praefix` behebt beides (`ZN_Z1 → 14a_anmeldung_zaehlernummer_z1` steigt von
+0,70 auf 1,00).
+
+**Ein Präfix ist nicht die Strecke.** `14a_*` umfasst nur 18 Felder (Zähler, Messkonzept,
+Modulwahl) — die Geräte einer § 14a-Anmeldung stehen unter `vb_*`. Vor dem Eingrenzen die
+Familienliste ganz lesen.
+
+## Konventionen im Code
+
+Gängige Standards, keine Hauskonvention: PEP 8, PEP 257 mit Google-Style-Docstrings
+(`Args:`/`Returns:`/`Raises:`), Typannotationen, Conventional Commits. Maschinenlesbar in
+`epilot/pyproject.toml`, begründet in `epilot/KONVENTIONEN.md`; `ruff check .` läuft ohne
+Befund durch.
+
+Zwei Regeln, die häufiger gebrochen werden als der Rest:
+
+- **Das „Warum" in den Docstring, das „Was" in den Code.** Ein Docstring, der die Signatur
+  wiederholt, ist Ballast; einer, der die Entscheidung begründet, überlebt die nächste
+  Änderung.
+- **Ausnahmeklassen dokumentieren, wann sie fliegen** — nicht, dass sie Ausnahmen sind.
+
+Bezeichner sind deutsch, weil die Domäne deutsch ist (Einspeiser, Zählpunkt,
+Inbetriebsetzung). Ausgenommen: Feldnamen fremder Systeme, die stehen so da, wie die API
+sie schreibt.
 
 ## Umgebung
 
