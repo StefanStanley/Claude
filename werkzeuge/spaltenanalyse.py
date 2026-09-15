@@ -29,6 +29,17 @@ TEXT_MUSTER = re.compile(r"^(text[-_]|hinweis|info[-_]|beschreibung)", re.I)
 
 
 def lies(pfad: str) -> list[str]:
+    """Spaltennamen aus einer Datei lesen.
+
+    Zwei Schreibweisen sind zugelassen, weil beide in der Praxis vorkommen: eine Zeile
+    tab-getrennt (so wie aus einer CSV-Kopfzeile kopiert) oder eine Spalte je Zeile.
+
+    Args:
+        pfad: Datei mit den Spaltennamen, UTF-8.
+
+    Returns:
+        Die Namen in Originalreihenfolge und -schreibweise, Randleerzeichen inbegriffen.
+    """
     roh = Path(pfad).read_text(encoding="utf-8").rstrip("\n")
     if "\t" in roh:
         return roh.split("\t")
@@ -36,12 +47,31 @@ def lies(pfad: str) -> list[str]:
 
 
 def normalisiere(name: str) -> str:
+    """Namen für den Vergleich vereinheitlichen: Umlaute auflösen, Trennzeichen angleichen.
+
+    Args:
+        name: Spaltenname, wie er im Export steht.
+
+    Returns:
+        Kleingeschriebener Name aus ASCII-Buchstaben, Ziffern und Unterstrichen.
+    """
     t = unicodedata.normalize("NFKD", name.strip()).replace("ß", "ss")
     t = "".join(c for c in t if not unicodedata.combining(c))
     return re.sub(r"[^a-zA-Z0-9]+", "_", t).strip("_").lower()
 
 
 def schema_von(name: str) -> str:
+    """Das Namensschema einer Spalte bestimmen.
+
+    Viele Schemata nebeneinander sind ein Hinweis auf ein über die Zeit gewachsenes
+    Formular — und darauf, dass es keine verbindliche Namenskonvention gibt.
+
+    Args:
+        name: Spaltenname.
+
+    Returns:
+        Bezeichnung des Schemas, etwa `snake_case klein` oder `mit Leerzeichen`.
+    """
     t = name.strip()
     if not t:
         return "leer"
@@ -59,7 +89,16 @@ def schema_von(name: str) -> str:
 
 
 def gruppiere(namen: list[str], mindestens: int = 2) -> dict[str, list[str]]:
-    """Spalten über ihr erstes Namenssegment bündeln - erkennt die Blöcke des Formulars."""
+    """Spalten über ihr erstes Namenssegment bündeln — das ergibt meist die Formularblöcke.
+
+    Args:
+        namen: Spaltennamen in Originalreihenfolge.
+        mindestens: Ab wie vielen Spalten ein Präfix als Block gilt.
+
+    Returns:
+        Je Block die zugehörigen Spalten, nach Größe absteigend. Zu kleine Präfixe
+        stehen gesammelt unter `(einzeln)`.
+    """
     eimer: dict[str, list[str]] = defaultdict(list)
     for n in namen:
         t = normalisiere(n)
@@ -73,6 +112,19 @@ def gruppiere(namen: list[str], mindestens: int = 2) -> dict[str, list[str]]:
 
 
 def befunde(namen: list[str]) -> dict:
+    """Die Fallstricke einer Spaltenliste zusammentragen.
+
+    Findet, was man einer Liste beim Lesen nicht ansieht: mehrfach vorkommende Namen,
+    Leerzeichen am Rand, Sonderzeichen, Umlaute, mutmaßliche Anzeigetexte.
+
+    Args:
+        namen: Spaltennamen in Originalreihenfolge.
+
+    Returns:
+        Auswertung mit den Schlüsseln `anzahl`, `mehrfach`, `randleerzeichen`,
+        `sonderzeichen`, `mit_leerzeichen`, `umlaute`, `anzeigetexte` und `schemata`.
+        Positionsangaben sind 1-basiert, damit sie zur Spaltennummer passen.
+    """
     zaehler = Counter(namen)
     return {
         "anzahl": len(namen),
@@ -94,6 +146,15 @@ def befunde(namen: list[str]) -> dict:
 
 
 def bericht(namen: list[str], titel: str) -> str:
+    """Die Auswertung einer Strecke als Markdown erzeugen.
+
+    Args:
+        namen: Spaltennamen in Originalreihenfolge.
+        titel: Name der Strecke für die Überschrift.
+
+    Returns:
+        Der vollständige Bericht: Fallstricke, Benennung, Blöcke, alle Spalten.
+    """
     b = befunde(namen)
     daten = b["anzahl"] - len(b["anzeigetexte"])
     z = [f"# {titel} — Analyse der Exportspalten", "",
@@ -117,13 +178,15 @@ def bericht(namen: list[str], titel: str) -> str:
         gesehen, beispiele = set(), []
         for _, n in b["sonderzeichen"] + b["mit_leerzeichen"]:
             if n.strip() not in gesehen:
-                gesehen.add(n.strip()); beispiele.append(n.strip())
+                gesehen.add(n.strip())
+                beispiele.append(n.strip())
             if len(beispiele) == 4:
                 break
         kritisch.append(
             "**Sonderzeichen und Leerzeichen in Spaltennamen** — etwa "
             + ", ".join(f"`{x}`" for x in beispiele)
-            + ". Spaltennamen sind Zeichenketten, keine Pfade; Punktnotation im Mapping bricht daran.")
+            + ". Spaltennamen sind Zeichenketten, keine Pfade; Punktnotation im Mapping "
+            "bricht daran.")
     if kritisch:
         z += ["## Fallstricke", ""]
         z += [f"{i}. {t}" for i, t in enumerate(kritisch, 1)] + [""]
@@ -171,6 +234,20 @@ def bericht(namen: list[str], titel: str) -> str:
 
 
 def vergleich(a: list[str], b: list[str], titel_a: str, titel_b: str) -> str:
+    """Zwei Spaltenlisten gegeneinander stellen.
+
+    Beantwortet die Frage, die vor jeder Umsetzung kommt: ein Format mit zwei
+    Ausprägungen oder zwei getrennte Formate?
+
+    Args:
+        a: Spaltennamen der ersten Strecke.
+        b: Spaltennamen der zweiten Strecke.
+        titel_a: Name der ersten Strecke.
+        titel_b: Name der zweiten Strecke.
+
+    Returns:
+        Der Vergleich als Markdown, verglichen werden normalisierte Namen.
+    """
     na = {normalisiere(x) for x in a}
     nb = {normalisiere(x) for x in b}
     gemeinsam = sorted(na & nb)
@@ -198,7 +275,16 @@ def vergleich(a: list[str], b: list[str], titel_a: str, titel_b: str) -> str:
     return "\n".join(z) + "\n"
 
 
-def main(argv=None) -> int:
+def main(argv: list[str] | None = None) -> int:
+    """Einstiegspunkt für den Aufruf über die Kommandozeile.
+
+    Args:
+        argv: Argumente; `None` nimmt die der Kommandozeile.
+
+    Returns:
+        1, wenn doppelte Namen oder Randleerzeichen gefunden wurden — dann muss das
+        Mapping über die Position laufen. Sonst 0.
+    """
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("spalten", help="Datei mit den Spaltennamen")
