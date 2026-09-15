@@ -109,6 +109,9 @@ Alle schon einmal aufgetreten:
   (`address.0.street` …) — für Exporte immer die Entity API nutzen
 - **Relationen liefern nur `entity_id`** — ohne `hydrate: true` fehlen die Werte
 - **Org-Header uneinheitlich**: meist `x-epilot-org-id`, teils `x-ivy-org-id`
+- **Vokabelbrüche zwischen Formular und Schema**: Was das Formular „Wallbox" nennt, heißt
+  in epilot `ladeeinrichtung`/`ladepunkt` — das Wort „Wallbox" kommt im Schema nicht vor.
+  Ein Abgleich, der nichts findet, heißt „heißt anders", nicht „fehlt"
 
 ## Haltung
 
@@ -119,6 +122,28 @@ Alle schon einmal aufgetreten:
   besser macht, wird nicht fertig.
 - **Der Abnahmevergleich ist byteweise** gegen produktive Originaldateien — nicht nur die
   Werte, auch Kodierung, Trennzeichen, Maskierung und Zeilenenden.
+
+## Zuerst die Präfix-Familien, dann das Mapping
+
+epilot hängt die Felder **aller** Formularstrecken an dasselbe Schema — bei der NGD 880
+Attribute an `opportunity`; die übrigen 30 Schemas sind Standard und klein. Die Strecken
+unterscheiden sich allein am Namenspräfix: `ea_` Erzeugungsanlage (Einspeiser), `vb_`
+Verbrauchseinrichtung (§ 14a), `ha_` Hausanschluss.
+
+Daraus folgt das Vorgehen:
+
+1. `schema_attribute.py --schema opportunity --familien` — welche Strecken liegen drauf?
+2. Mit `--praefix` auf die eigene eingrenzen, **dann** erst abgleichen.
+
+Ein Abgleich gegen das ganze Schema liefert Rauschen: 86 Spalten ergaben 64 Vorschläge,
+davon 10 belastbar. Der Grund ist doppelt — bei 880 Kandidaten findet Ähnlichkeit fast
+immer irgendetwas, und die epilot-Namen tragen ihr Streckenpräfix mit, die Exportspalten
+nicht. `--praefix` behebt beides (`ZN_Z1 → 14a_anmeldung_zaehlernummer_z1` steigt von
+0,70 auf 1,00).
+
+**Ein Präfix ist nicht die Strecke.** `14a_*` umfasst nur 18 Felder (Zähler, Messkonzept,
+Modulwahl) — die Geräte einer § 14a-Anmeldung stehen unter `vb_*`. Vor dem Eingrenzen die
+Familienliste ganz lesen.
 
 ## Konventionen im Code
 
