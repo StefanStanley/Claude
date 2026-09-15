@@ -11,6 +11,7 @@ Umsetzung der Anbindung an SAP.
 
 | Ordner | Inhalt |
 | --- | --- |
+| [`werkzeuge/`](./werkzeuge/) | Die Werkzeugkette für eine Ablösestrecke: Spaltenanalyse, Attributabruf, Mappen-Generator, Konfigurationserzeugung. |
 | [`api-referenz/`](./api-referenz/) | Alle 51 epilot-APIs mit 1141 Operationen, erzeugt aus den offiziellen OpenAPI-Specs. Dazu das Token-Modell und die Org-Header-Fallstricke. |
 | [`schnittstellenkonzept/`](./schnittstellenkonzept/) | Vorgehen, Vorlage und die laufenden Konzepte. Aktuell **SK-001**: Einspeiseanlagen nach SAP. |
 | [`schnittstellenkonzept/erhebung/`](./schnittstellenkonzept/erhebung/) | Arbeitsmappe zum Einsammeln der SAP-Seite. |
@@ -45,6 +46,19 @@ weg. Der Fragenkatalog dafür steht in SK-001, Abschnitt 0.
 
 Danach ist der Job in wenigen Stunden konfiguriert — die Bausteine stehen.
 
+## Eine neue Strecke aufsetzen
+
+Das Vorgehen steht im Skill `epilot-abloesung`, die Werkzeugkette in
+[`werkzeuge/README.md`](./werkzeuge/). Kurzfassung:
+
+```bash
+python3 werkzeuge/spaltenanalyse.py spalten.txt -o analyse.md --titel "Strecke X"
+python3 werkzeuge/schema_attribute.py --manifest blueprint.json --spalten spalten.txt -o v.csv
+python3 werkzeuge/mappe_bauen.py spalten.txt -o Mapping_X.xlsx --titel "Strecke X" --vorschlaege v.csv
+```
+
+**Eine neue Strecke ist eine neue Konfiguration, kein neues Programm.**
+
 ## Quellen
 
 Die API-Referenz stammt aus den OpenAPI-Specs des offiziellen SDK
@@ -53,5 +67,5 @@ abgeschriebener Dokumentation. Aktualisieren:
 
 ```bash
 git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js
-python3 epilot/api-referenz/tools/generate_docs.py /tmp/sdk-js
+python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js
 ```
