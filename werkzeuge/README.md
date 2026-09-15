@@ -17,8 +17,13 @@ Ergebnis in eine Datei — nichts hängt von einem laufenden Dienst ab.
 # 1 · Ist-Export verstehen
 python3 werkzeuge/spaltenanalyse.py spalten.txt -o analyse.md --titel "Strecke X"
 
-# 2 · Zielmodell holen (Blueprint braucht keinen Token)
-python3 werkzeuge/schema_attribute.py --manifest blueprint.json \
+# 2a · Zielmodell sichten: welche Strecken liegen auf dem Schema?
+export EPILOT_TOKEN="..."
+python3 werkzeuge/schema_attribute.py --schema opportunity --familien
+
+# 2b · Auf die eigene Strecke eingrenzen, dann abgleichen
+python3 werkzeuge/schema_attribute.py --schema opportunity \
+    --praefix 14a_ --praefix vb_waermepumpe --praefix vb_ladeeinrichtung \
     --spalten spalten.txt -o vorschlag.csv
 
 # 3 · Arbeitsmappe bauen
@@ -43,7 +48,18 @@ Werkzeuge `TODO` statt einer Vermutung.
 dem Ähnlichsten zu — auch wenn das Richtige fehlt. Deshalb die Gütespalte: Alles unter
 etwa 0,75 gehört angeschaut.
 
+**Erst die Familie, dann der Abgleich.** Ein gewachsenes Schema trägt die Felder aller
+Formularstrecken (bei der NGD: 880 an `opportunity`). Gegen alle 880 zu vergleichen
+liefert vor allem Zufallstreffer. `--familien` zeigt die Präfixe, `--praefix` grenzt ein
+— und zieht das Präfix beim Vergleich ab, weil die Exportspalten es nicht tragen.
+
 ## Abhängigkeiten
 
 `requests`, `PyYAML`, `openpyxl`. Installation über
 `schnittstellenkonzept/umsetzung/requirements.txt`.
+
+## Beim Ändern
+
+Der Code folgt den Konventionen in [`../KONVENTIONEN.md`](../KONVENTIONEN.md): PEP 8,
+Google-Style-Docstrings, Typannotationen. Geprüft wird mit `ruff check .` aus `epilot/` —
+das läuft ohne Befund durch und soll es bleiben.

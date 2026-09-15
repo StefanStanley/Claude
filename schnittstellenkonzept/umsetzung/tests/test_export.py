@@ -59,7 +59,7 @@ class TestMapping(unittest.TestCase):
     def test_vollstaendiger_vorgang_wird_abgebildet(self):
         werte, fehler = zeile(FIXTURES[0], self.cfg)
         self.assertEqual(fehler, [])
-        spalten = {s.name: w for s, w in zip(self.cfg.spalten, werte)}
+        spalten = {s.name: w for s, w in zip(self.cfg.spalten, werte, strict=True)}
         self.assertEqual(spalten["IBN_DATUM"], "17032026")          # ISO -> TTMMJJJJ
         self.assertEqual(spalten["LEISTUNG_KWP"], "9,90")           # Dezimalkomma
         self.assertEqual(spalten["ANLAGEN_TYP"], "PVA")             # Werteliste
@@ -104,7 +104,7 @@ class TestDateiformat(unittest.TestCase):
         self.assertNotIn(b"\n\n", roh)
         # Umlaut in Windows-1252, nicht UTF-8
         self.assertIn("Düsseldorf".encode("cp1252"), roh)
-        self.assertNotIn("Düsseldorf".encode("utf-8"), roh)
+        self.assertNotIn("Düsseldorf".encode(), roh)
 
     def test_kopfzeile_steht_in_konfigurierter_reihenfolge(self):
         roh = baue_datei([], self.cfg)
@@ -202,7 +202,9 @@ class TestConfigPruefung(unittest.TestCase):
             type(cfg.format)(kodierung="gibtsnicht")
 
     def test_doppelter_spaltenname_faellt_auf(self):
-        import tempfile, yaml
+        import tempfile
+
+        import yaml
         roh = yaml.safe_load((BASIS / "config.beispiel.yaml").read_text(encoding="utf-8"))
         roh["spalten"].append({"name": "PLZ", "quelle": "_id"})
         with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as f:
