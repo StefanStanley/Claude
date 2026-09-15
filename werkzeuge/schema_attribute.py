@@ -29,6 +29,7 @@ import os
 import re
 import sys
 import unicodedata
+from collections import Counter
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, TextIO
@@ -157,11 +158,56 @@ def attribute(schema: dict) -> list[dict]:
     return sorted(ergebnis, key=lambda x: x["name"])
 
 
+def familien(attr: list[dict], mindestens: int = 5) -> list[tuple[str, int]]:
+    """Attribute nach ihrem Namenspräfix bündeln.
+
+    Der wichtigste Schritt vor jedem Mapping an einem gewachsenen Schema. epilot hängt
+    die Felder aller Formularstrecken an dasselbe Schema (bei der NGD: 880 Attribute an
+    `opportunity`); die Strecken unterscheiden sich allein am Präfix — `vb_` für
+    Verbrauchseinrichtungen nach § 14a, `ea_` für Erzeugungsanlagen, `ha_` für
+    Hausanschlüsse.
+
+    Ein Abgleich gegen das ganze Schema findet deshalb vor allem Zufallstreffer. Erst
+    die Familie eingrenzen, dann zuordnen.
+
+    Args:
+        attr: Attributliste aus Schema oder Manifest.
+        mindestens: Ab wie vielen Attributen ein Präfix als Familie zählt.
+
+    Returns:
+        Je Familie ihr Präfix und ihre Größe, nach Größe absteigend.
+    """
+    zaehler: Counter[str] = Counter()
+    for a in attr:
+        teile = a["name"].split("_")
+        zaehler["_".join(teile[:2]) if len(teile) > 1 else teile[0]] += 1
+    return [(k, n) for k, n in zaehler.most_common() if n >= mindestens]
+
+
+def nach_praefix(attr: list[dict], praefixe: list[str]) -> list[dict]:
+    """Auf die Attribute einer oder mehrerer Familien eingrenzen.
+
+    Args:
+        attr: Attributliste aus Schema oder Manifest.
+        praefixe: Namensanfänge, etwa `["14a_", "vb_waermepumpe"]`.
+
+    Returns:
+        Die passenden Attribute; die Reihenfolge der Eingabe bleibt erhalten.
+    """
+    muster = tuple(praefixe)
+    return [a for a in attr if a["name"].startswith(muster)]
+
+
 def normalisiere(text: str) -> str:
     """Text für den Namensvergleich vereinheitlichen.
 
     Löst zusätzlich die Abkürzungen auf, die in den Exportspalten stehen (`WP`, `SP`,
     `ZN`, `IBN`) — ohne sie findet der Ähnlichkeitsvergleich die richtige Zuordnung nicht.
+
+    Dasselbe gilt für Vokabelbrüche zwischen Formular und Schema: Was das Formular
+    „Wallbox" nennt, heißt in epilot `ladeeinrichtung` beziehungsweise `ladepunkt`. Ohne
+    die Auflösung findet der Abgleich dazu nichts — und niemand merkt, dass 25 Felder
+    fehlen.
 
     Args:
         text: Spaltenname oder Attributname.
@@ -177,12 +223,30 @@ def normalisiere(text: str) -> str:
     for kurz, lang in [("ab", "anlagenbetreiber"), ("ao", "anlagenort"), ("zn", "zaehlernummer"),
                        ("zs", "zaehlerstand"), ("wp", "waermepumpe"), ("sp", "speicher"),
                        ("ibn", "inbetriebnahme"), ("leist", "leistung"), ("nr", "nummer"),
-                       ("bestaetigung", "bestaetigung"), ("anm", "anmerkung")]:
+                       ("bestaetigung", "bestaetigung"), ("anm", "anmerkung"),
+                       ("wallbox", "ladeeinrichtung"), ("ladepunkt", "ladeeinrichtung")]:
         t = re.sub(rf"\b{kurz}\b", lang, t)
     return t
 
 
-def vorschlag(spalte: str, attr: list[dict], grenze: float = 0.55) -> list[tuple[str, float]]:
+def ohne_praefix(name: str, praefixe: list[str]) -> str:
+    """Das Streckenpräfix vom Attributnamen abschneiden.
+
+    Args:
+        name: Attributname, etwa `14a_anmeldung_zaehlernummer_z1`.
+        praefixe: Die Präfixe, auf die eingegrenzt wurde.
+
+    Returns:
+        Der Name ohne das längste passende Präfix, sonst unverändert.
+    """
+    passend = [p for p in praefixe if name.startswith(p)]
+    if not passend:
+        return name
+    return name[len(max(passend, key=len)):].lstrip("_") or name
+
+
+def vorschlag(spalte: str, attr: list[dict], grenze: float = 0.55,
+              praefixe: list[str] | None = None) -> list[tuple[str, float]]:
     """Zu einer Exportspalte die ähnlichsten Attribute vorschlagen.
 
     Der Abgleich ordnet immer dem Ähnlichsten zu — auch wenn das Richtige gar nicht in
@@ -190,20 +254,27 @@ def vorschlag(spalte: str, attr: list[dict], grenze: float = 0.55) -> list[tuple
     angeschaut.** Ein Vorschlag ist ein Startpunkt für die Mapping-Sitzung, keine
     Entscheidung.
 
+    `praefixe` hebt die Trefferquote deutlich, wenn zuvor mit `nach_praefix` eingegrenzt
+    wurde: Die epilot-Namen tragen ihr Streckenpräfix mit, die Exportspalten nicht.
+    `ZN_Z1` gegen `14a_anmeldung_zaehlernummer_z1` kommt auf 0,70 und fällt damit unter
+    die Schwelle — ohne das Präfix auf 1,0.
+
     Args:
         spalte: Spaltenname aus dem Ist-Export.
         attr: Attributliste aus Schema oder Manifest.
         grenze: Mindestähnlichkeit zwischen 0 und 1.
+        praefixe: Streckenpräfixe, die beim Vergleich unberücksichtigt bleiben.
 
     Returns:
-        Bis zu drei Paare aus Attributname und Güte, nach Güte absteigend.
+        Bis zu drei Paare aus vollem Attributnamen und Güte, nach Güte absteigend.
     """
     ziel = normalisiere(spalte)
     if not ziel:
         return []
     treffer = []
     for a in attr:
-        for kandidat in (a["name"], a["label"]):
+        kurz = ohne_praefix(a["name"], praefixe) if praefixe else a["name"]
+        for kandidat in (kurz, a["label"]):
             if not kandidat:
                 continue
             wert = difflib.SequenceMatcher(None, ziel, normalisiere(kandidat)).ratio()
@@ -245,6 +316,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--org")
     p.add_argument("--grenze", type=float, default=0.55,
                    help="Mindestähnlichkeit für einen Vorschlag (0-1, Standard 0.55)")
+    p.add_argument("--familien", action="store_true",
+                   help="nur die Präfix-Familien des Schemas ausgeben — der Schritt vor "
+                        "jedem Mapping an einem gewachsenen Schema")
+    p.add_argument("--praefix", action="append", metavar="PRAEFIX",
+                   help="Abgleich auf diese Familie eingrenzen, mehrfach angebbar "
+                        "(z. B. --praefix 14a_ --praefix vb_waermepumpe)")
     a = p.parse_args(argv)
 
     if a.manifest:
@@ -263,6 +340,24 @@ def main(argv: list[str] | None = None) -> int:
         attr = attribute(hole_schema(a.schema, token, a.basis_url, a.org))
         print(f"Schema '{a.schema}': {len(attr)} Attribute", file=sys.stderr)
 
+    if a.familien:
+        print(f"\n{'Attribute':>9}  Familie")
+        for praefix, n in familien(attr):
+            print(f"{n:9}  {praefix}_*")
+        print("\nMit --praefix auf eine Familie eingrenzen, bevor abgeglichen wird.",
+              file=sys.stderr)
+        return 0
+
+    if a.praefix:
+        vorher = len(attr)
+        attr = nach_praefix(attr, a.praefix)
+        print(f"auf {len(attr)} von {vorher} Attributen eingegrenzt "
+              f"({', '.join(a.praefix)})", file=sys.stderr)
+        if not attr:
+            print("Kein Attribut mit diesem Präfix — Schreibweise mit --familien prüfen.",
+                  file=sys.stderr)
+            return 1
+
     if not a.spalten:
         with _ausgabe(a.ausgabe) as ziel:
             schreiber = csv.DictWriter(
@@ -280,7 +375,7 @@ def main(argv: list[str] | None = None) -> int:
 
     zeilen, ohne = [], 0
     for i, sp in enumerate(spalten, 1):
-        treffer = vorschlag(sp, attr, a.grenze)
+        treffer = vorschlag(sp, attr, a.grenze, a.praefix)
         if not treffer:
             ohne += 1
         zeilen.append({
