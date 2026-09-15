@@ -158,18 +158,32 @@ Kandidaten ist ein FB-Sponsor benannt — ohne den kommt kein Epic durch das DoR
 - **`docs.epilot.io` und `www.netz-duesseldorf.de` sind per Netzwerkrichtlinie
   gesperrt.** Die API-Referenz wurde deshalb aus dem öffentlichen SDK erzeugt:
   `git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js`, dann
-  `python3 epilot/api-referenz/tools/generate_docs.py /tmp/sdk-js`.
+  `python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js`.
 - **LibreOffice startet nicht.** Word- und Excel-Dateien lassen sich nicht rendern
   und nicht visuell prüfen — nur strukturell validieren (`validate.py` beim
   docx-Skill). Bei .xlsx deshalb möglichst formelfrei arbeiten, sonst fehlt der
   Recalc.
 - `openpyxl`, `docx` (npm), `lxml`, `defusedxml` mussten nachinstalliert werden.
 
+## Verfahren und Werkzeuge
+
+Für das *Vorgehen* gibt es einen Skill: **`epilot-abloesung`** (unter
+`.claude/skills/epilot-abloesung/`). Er beschreibt die Werkzeugkette, die Entscheidungen,
+die bei jeder Strecke zuerst fallen müssen, und die wiederkehrenden Fallstricke. Diese
+Datei hier beschreibt den *Stand*.
+
+Alle Werkzeuge liegen in `werkzeuge/` — Spaltenanalyse, Attributabruf aus Blueprint oder
+Schema, Mappen-Generator, Konfigurationserzeugung, API-Referenz. Die Kette steht in
+`werkzeuge/README.md`.
+
+**Eine neue Strecke ist eine neue Konfiguration, kein neues Programm.**
+
 ## Was hier liegt
 
 ```
 epilot/
-  api-referenz/            51 APIs, Authentifizierung, Generator
+  werkzeuge/               die Kette: Analyse, Attribute, Mappe, Konfiguration
+  api-referenz/            51 APIs, Authentifizierung
   schnittstellenkonzept/
     README.md              Vorgehen, Schnittstellen-Register, häufige Fehler
     VORLAGE.md             Kopiervorlage für weitere Konzepte
@@ -182,7 +196,7 @@ epilot/
 
 **Der Export-Job trägt beide Strecken.** Alles Formatabhängige steht in einer
 YAML-Konfiguration; zwei Dateiformate bedeuten zwei Konfigurationen, nicht zwei
-Programme. `tools/config_aus_erhebung.py` erzeugt die Konfiguration aus der
+Programme. `../../werkzeuge/config_aus_erhebung.py` erzeugt die Konfiguration aus der
 ausgefüllten Erhebungsmappe.
 
 ## Arbeitsweise im Repository
