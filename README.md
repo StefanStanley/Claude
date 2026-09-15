@@ -1,8 +1,10 @@
-# epilot
+# epilot-netzanschluss
 
-Einführung von **epilot** als Anmeldeportal für den Netzanschluss von
-Einspeiseanlagen — API-Referenz, Schnittstellenkonzepte und die technische
-Umsetzung der Anbindung an SAP.
+Ablösung von **Lovion** durch **epilot** für die Netzanschlussprozesse der
+Netzgesellschaft Düsseldorf — Anmeldestrecken für Einspeiseanlagen und steuerbare
+Verbrauchseinrichtungen nach § 14a EnWG, samt Datenübergabe an SAP.
+
+Cluster Digitalisierung, Data & AI.
 
 > Status: Konzeptphase. SK-001 ist Entwurf 0.5, der Export-Job läuft gegen
 > Testdaten. Was fehlt, sind zwei Termine — nicht Technik.
@@ -59,6 +61,16 @@ python3 werkzeuge/mappe_bauen.py spalten.txt -o Mapping_X.xlsx --titel "Strecke 
 
 **Eine neue Strecke ist eine neue Konfiguration, kein neues Programm.**
 
+## Einrichtung
+
+```bash
+pip install -r requirements.txt
+```
+
+Für die Ausführung in Databricks wird dieses Repository als **Git-Ordner** eingebunden;
+der Export-Lauf braucht dort nur `requests` und `PyYAML`. `openpyxl` wird ausschließlich
+von den Werkzeugen für Arbeitsmappen benötigt.
+
 ## Quellen
 
 Die API-Referenz stammt aus den OpenAPI-Specs des offiziellen SDK
@@ -67,5 +79,5 @@ abgeschriebener Dokumentation. Aktualisieren:
 
 ```bash
 git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js
-python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js
+python3 werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js
 ```

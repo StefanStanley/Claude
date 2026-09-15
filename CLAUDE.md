@@ -158,7 +158,7 @@ Kandidaten ist ein FB-Sponsor benannt — ohne den kommt kein Epic durch das DoR
 - **`docs.epilot.io` und `www.netz-duesseldorf.de` sind per Netzwerkrichtlinie
   gesperrt.** Die API-Referenz wurde deshalb aus dem öffentlichen SDK erzeugt:
   `git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js`, dann
-  `python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js`.
+  `python3 werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js`.
 - **LibreOffice startet nicht.** Word- und Excel-Dateien lassen sich nicht rendern
   und nicht visuell prüfen — nur strukturell validieren (`validate.py` beim
   docx-Skill). Bei .xlsx deshalb möglichst formelfrei arbeiten, sonst fehlt der
