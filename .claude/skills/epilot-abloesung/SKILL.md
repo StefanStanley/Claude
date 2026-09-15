@@ -120,6 +120,24 @@ Alle schon einmal aufgetreten:
 - **Der Abnahmevergleich ist byteweise** gegen produktive Originaldateien — nicht nur die
   Werte, auch Kodierung, Trennzeichen, Maskierung und Zeilenenden.
 
+## Konventionen im Code
+
+Gängige Standards, keine Hauskonvention: PEP 8, PEP 257 mit Google-Style-Docstrings
+(`Args:`/`Returns:`/`Raises:`), Typannotationen, Conventional Commits. Maschinenlesbar in
+`epilot/pyproject.toml`, begründet in `epilot/KONVENTIONEN.md`; `ruff check .` läuft ohne
+Befund durch.
+
+Zwei Regeln, die häufiger gebrochen werden als der Rest:
+
+- **Das „Warum" in den Docstring, das „Was" in den Code.** Ein Docstring, der die Signatur
+  wiederholt, ist Ballast; einer, der die Entscheidung begründet, überlebt die nächste
+  Änderung.
+- **Ausnahmeklassen dokumentieren, wann sie fliegen** — nicht, dass sie Ausnahmen sind.
+
+Bezeichner sind deutsch, weil die Domäne deutsch ist (Einspeiser, Zählpunkt,
+Inbetriebsetzung). Ausgenommen: Feldnamen fremder Systeme, die stehen so da, wie die API
+sie schreibt.
+
 ## Umgebung
 
 `docs.epilot.io` und `www.netz-duesseldorf.de` sind in Cloud-Sessions per Netzwerkrichtlinie

@@ -47,3 +47,9 @@ etwa 0,75 gehört angeschaut.
 
 `requests`, `PyYAML`, `openpyxl`. Installation über
 `schnittstellenkonzept/umsetzung/requirements.txt`.
+
+## Beim Ändern
+
+Der Code folgt den Konventionen in [`../KONVENTIONEN.md`](../KONVENTIONEN.md): PEP 8,
+Google-Style-Docstrings, Typannotationen. Geprüft wird mit `ruff check .` aus `epilot/` —
+das läuft ohne Befund durch und soll es bleiben.

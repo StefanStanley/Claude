@@ -182,6 +182,8 @@ Schema, Mappen-Generator, Konfigurationserzeugung, API-Referenz. Die Kette steht
 
 ```
 epilot/
+  KONVENTIONEN.md          wie hier Code und Doku geschrieben werden
+  pyproject.toml           dieselben Regeln maschinenlesbar (ruff)
   werkzeuge/               die Kette: Analyse, Attribute, Mappe, Konfiguration
   api-referenz/            51 APIs, Authentifizierung
   schnittstellenkonzept/
@@ -198,6 +200,22 @@ epilot/
 YAML-Konfiguration; zwei Dateiformate bedeuten zwei Konfigurationen, nicht zwei
 Programme. `../../werkzeuge/config_aus_erhebung.py` erzeugt die Konfiguration aus der
 ausgefüllten Erhebungsmappe.
+
+## Wie hier geschrieben wird
+
+Gängige Python-Standards, keine Hauskonvention: **PEP 8**, **PEP 257 mit
+Google-Style-Docstrings**, **Typannotationen**, **Conventional Commits**. Die Regeln
+stehen maschinenlesbar in `pyproject.toml`, begründet in `KONVENTIONEN.md`.
+
+```bash
+cd epilot && ruff check .      # läuft ohne Befund durch
+cd epilot/schnittstellenkonzept/umsetzung && python3 -m pytest tests/ -q
+```
+
+Der Grundsatz dahinter: **Das „Warum" gehört in den Docstring, das „Was" in den Code.**
+Ein Docstring, der die Signatur in Prosa wiederholt, ist Ballast. Die automatische
+Formatierung (`ruff format`) ist bewusst nicht eingeschaltet — Begründung in
+`KONVENTIONEN.md`.
 
 ## Arbeitsweise im Repository
 
