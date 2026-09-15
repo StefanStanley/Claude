@@ -21,12 +21,17 @@ keine Entscheidung. Jede Zeile gehört geprüft.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import csv
 import difflib
+import json
 import os
 import re
 import sys
 import unicodedata
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any, TextIO
 
 import requests
 
@@ -34,6 +39,21 @@ BASIS = "https://entity.sls.epilot.io"
 
 
 def hole_schema(slug: str, token: str, basis: str = BASIS, org: str | None = None) -> dict:
+    """Ein konfiguriertes Entity-Schema aus der epilot-Instanz holen.
+
+    Args:
+        slug: Schema-Slug, etwa `opportunity`.
+        token: Access Token für die Entity API.
+        basis: Dienst-URL der Entity API.
+        org: Organisationskennung, nur bei mandantenübergreifendem Zugriff nötig.
+
+    Returns:
+        Das Schema, wie die API es liefert.
+
+    Raises:
+        SystemExit: Die API hat nicht mit HTTP 200 geantwortet — der Aufruf ist ein
+            Werkzeugaufruf, kein Bibliotheksaufruf, deshalb endet er hier sofort.
+    """
     kopf = {"Authorization": f"Bearer {token}"}
     if org:
         kopf["x-epilot-org-id"] = org
@@ -50,10 +70,19 @@ def aus_manifest(pfad: str) -> list[dict]:
     Manifeste bündeln Ressourcen unterschiedlicher Art (Schemas, Journeys, Workflows).
     Gesucht sind die Schema-Ressourcen und darin die Attributdefinitionen. Weil der
     Aufbau je nach Manifest-Version abweicht, wird rekursiv nach Objekten gesucht, die
-    wie eine Attributdefinition aussehen: ein `name` plus ein `type`.
+    wie eine Attributdefinition aussehen: ein `name` plus ein bekannter `type`.
+
+    Der Weg ohne Anmeldung — er trägt, solange das Schema in der eigenen Instanz noch
+    gar nicht steht.
+
+    Args:
+        pfad: Manifest als JSON-Datei.
+
+    Returns:
+        Die gefundenen Attribute, nach Namen sortiert, je mit `name`, `label`, `typ`,
+        `pflicht`, `gruppe` und `optionen`.
     """
-    import json as _json
-    daten = _json.loads(open(pfad, encoding="utf-8").read())
+    daten = json.loads(Path(pfad).read_text(encoding="utf-8"))
     gefunden: dict[str, dict] = {}
 
     def sieht_aus_wie_attribut(o: dict) -> bool:
@@ -61,7 +90,7 @@ def aus_manifest(pfad: str) -> list[dict]:
                 and isinstance(o.get("type"), str)
                 and o.get("type") in ATTRIBUTTYPEN)
 
-    def geh(o, pfad_kette=()):
+    def geh(o: Any, pfad_kette: tuple[str, ...] = ()) -> None:
         if isinstance(o, dict):
             if sieht_aus_wie_attribut(o):
                 name = o["name"]
@@ -81,7 +110,7 @@ def aus_manifest(pfad: str) -> list[dict]:
                         (x.get("value") if isinstance(x, dict) else str(x))
                         for x in o["options"])[:200]
             for k, v in o.items():
-                geh(v, pfad_kette + (k,))
+                geh(v, (*pfad_kette, k))
         elif isinstance(o, list):
             for x in o:
                 geh(x, pfad_kette)
@@ -101,7 +130,15 @@ ATTRIBUTTYPEN = {
 
 
 def attribute(schema: dict) -> list[dict]:
-    """Attribute flach auflisten - Name, Label, Typ, Pflicht."""
+    """Die Attribute eines Schemas flach auflisten.
+
+    Args:
+        schema: Schema, wie `hole_schema` es liefert.
+
+    Returns:
+        Die Attribute, nach Namen sortiert, je mit `name`, `label`, `typ`, `pflicht`,
+        `gruppe` und `optionen`.
+    """
     ergebnis = []
     for a in schema.get("attributes", []) or []:
         if not isinstance(a, dict):
@@ -121,7 +158,17 @@ def attribute(schema: dict) -> list[dict]:
 
 
 def normalisiere(text: str) -> str:
-    """Für den Vergleich: Umlaute auflösen, Trennzeichen vereinheitlichen, kleinschreiben."""
+    """Text für den Namensvergleich vereinheitlichen.
+
+    Löst zusätzlich die Abkürzungen auf, die in den Exportspalten stehen (`WP`, `SP`,
+    `ZN`, `IBN`) — ohne sie findet der Ähnlichkeitsvergleich die richtige Zuordnung nicht.
+
+    Args:
+        text: Spaltenname oder Attributname.
+
+    Returns:
+        Kleingeschriebener Text aus ASCII-Wörtern, durch Leerzeichen getrennt.
+    """
     t = unicodedata.normalize("NFKD", text)
     t = t.replace("ß", "ss")
     t = "".join(c for c in t if not unicodedata.combining(c))
@@ -136,6 +183,21 @@ def normalisiere(text: str) -> str:
 
 
 def vorschlag(spalte: str, attr: list[dict], grenze: float = 0.55) -> list[tuple[str, float]]:
+    """Zu einer Exportspalte die ähnlichsten Attribute vorschlagen.
+
+    Der Abgleich ordnet immer dem Ähnlichsten zu — auch wenn das Richtige gar nicht in
+    der Liste steht. Deshalb kommt die Güte mit zurück: **Alles unter etwa 0,75 gehört
+    angeschaut.** Ein Vorschlag ist ein Startpunkt für die Mapping-Sitzung, keine
+    Entscheidung.
+
+    Args:
+        spalte: Spaltenname aus dem Ist-Export.
+        attr: Attributliste aus Schema oder Manifest.
+        grenze: Mindestähnlichkeit zwischen 0 und 1.
+
+    Returns:
+        Bis zu drei Paare aus Attributname und Güte, nach Güte absteigend.
+    """
     ziel = normalisiere(spalte)
     if not ziel:
         return []
@@ -151,12 +213,32 @@ def vorschlag(spalte: str, attr: list[dict], grenze: float = 0.55) -> list[tuple
     return sorted(treffer, key=lambda x: -x[1])[:3]
 
 
-def main(argv=None) -> int:
+@contextlib.contextmanager
+def _ausgabe(pfad: str | None) -> Iterator[TextIO]:
+    """Zieldatei oder die Standardausgabe öffnen — die Datei mit BOM, damit Excel sie liest."""
+    if pfad:
+        with open(pfad, "w", newline="", encoding="utf-8-sig") as f:
+            yield f
+    else:
+        yield sys.stdout
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Einstiegspunkt für den Aufruf über die Kommandozeile.
+
+    Args:
+        argv: Argumente; `None` nimmt die der Kommandozeile.
+
+    Returns:
+        0 bei Erfolg, 1 wenn im Manifest keine Attribute erkannt wurden, 2 wenn der
+        Token fehlt.
+    """
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     quelle = p.add_mutually_exclusive_group(required=True)
     quelle.add_argument("--schema", help="Schema-Slug, z. B. opportunity (braucht EPILOT_TOKEN)")
-    quelle.add_argument("--manifest", help="Blueprint-Manifest als JSON-Datei (keine Anmeldung nötig)")
+    quelle.add_argument("--manifest",
+                        help="Blueprint-Manifest als JSON-Datei (keine Anmeldung nötig)")
     p.add_argument("--spalten", help="Datei mit Spaltennamen (eine Zeile, tab-getrennt)")
     p.add_argument("-o", "--ausgabe", help="CSV-Datei für das Ergebnis")
     p.add_argument("--basis-url", default=BASIS)
@@ -182,16 +264,18 @@ def main(argv=None) -> int:
         print(f"Schema '{a.schema}': {len(attr)} Attribute", file=sys.stderr)
 
     if not a.spalten:
-        schreiber = csv.DictWriter(
-            open(a.ausgabe, "w", newline="", encoding="utf-8-sig") if a.ausgabe else sys.stdout,
-            fieldnames=["name", "label", "typ", "pflicht", "gruppe", "optionen"], delimiter=";")
-        schreiber.writeheader()
-        schreiber.writerows(attr)
+        with _ausgabe(a.ausgabe) as ziel:
+            schreiber = csv.DictWriter(
+                ziel,
+                fieldnames=["name", "label", "typ", "pflicht", "gruppe", "optionen"],
+                delimiter=";")
+            schreiber.writeheader()
+            schreiber.writerows(attr)
         if a.ausgabe:
             print(f"geschrieben: {a.ausgabe}", file=sys.stderr)
         return 0
 
-    roh = open(a.spalten, encoding="utf-8").read().rstrip("\n")
+    roh = Path(a.spalten).read_text(encoding="utf-8").rstrip("\n")
     spalten = roh.split("\t") if "\t" in roh else roh.splitlines()
 
     zeilen, ohne = [], 0
@@ -208,10 +292,10 @@ def main(argv=None) -> int:
             "vorschlag_3": treffer[2][0] if len(treffer) > 2 else "",
         })
 
-    ziel = open(a.ausgabe, "w", newline="", encoding="utf-8-sig") if a.ausgabe else sys.stdout
-    schreiber = csv.DictWriter(ziel, fieldnames=list(zeilen[0].keys()), delimiter=";")
-    schreiber.writeheader()
-    schreiber.writerows(zeilen)
+    with _ausgabe(a.ausgabe) as ziel:
+        schreiber = csv.DictWriter(ziel, fieldnames=list(zeilen[0].keys()), delimiter=";")
+        schreiber.writeheader()
+        schreiber.writerows(zeilen)
 
     print(f"{len(spalten)} Spalten, davon {len(spalten)-ohne} mit Vorschlag, {ohne} ohne.",
           file=sys.stderr)
