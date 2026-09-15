@@ -116,7 +116,7 @@ Kleine Nachschlage-APIs.
 
 ```bash
 git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js
-python3 epilot/api-referenz/tools/generate_docs.py /tmp/sdk-js
+python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js
 ```
 
-_Stand: 2026-09-05 · generiert, nicht von Hand gepflegt._
+_Stand: 2026-09-15 · generiert, nicht von Hand gepflegt._

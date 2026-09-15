@@ -37,7 +37,7 @@ pip install -r requirements.txt
 export EPILOT_TOKEN="..."          # Access Token, token_type: api
 
 # Konfigurationsentwurf aus der zurückgelaufenen Erhebungsmappe
-python3 tools/config_aus_erhebung.py ../erhebung/SK-001_Erhebung_Schnittstelle_SAP.xlsx -o config.yaml
+python3 ../../werkzeuge/config_aus_erhebung.py ../erhebung/SK-001_Erhebung_Schnittstelle_SAP.xlsx -o config.yaml
 
 # Probelauf: erzeugt die Datei, legt nichts ab, schreibt keinen Status
 python3 -m sap_export.job --config config.yaml --probelauf

@@ -7,13 +7,13 @@ Statt Attributnamen zu raten, werden sie aus der Quelle gelesen. Zwei Quellen m�
 **Blueprint-Manifest** (keine Anmeldung nötig) — der Weg, wenn das Schema in der eigenen
 Instanz noch gar nicht steht. Das Manifest bringt die Definition mit:
 
-    python3 tools/schema_attribute.py --manifest 14a-blueprint.json \
-        --spalten ../bestand/14a_spalten_ist.txt -o vorschlag.csv
+    python3 werkzeuge/schema_attribute.py --manifest 14a-blueprint.json \
+        --spalten ../schnittstellenkonzept/bestand/14a_spalten_ist.txt -o vorschlag.csv
 
 **Konfiguriertes Schema** (Token nötig) — der Weg, wenn bereits installiert ist:
 
     export EPILOT_TOKEN="..."
-    python3 tools/schema_attribute.py --schema opportunity
+    python3 werkzeuge/schema_attribute.py --schema opportunity
 
 Die Vorschläge beruhen auf Namensähnlichkeit — sie sind ein Startpunkt für die Runde,
 keine Entscheidung. Jede Zeile gehört geprüft.

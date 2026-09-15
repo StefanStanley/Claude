@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Erzeugt aus der ausgefüllten Erhebungsmappe den Konfigurationsentwurf.
 
-    python3 tools/config_aus_erhebung.py \
-        ../erhebung/SK-001_Erhebung_Schnittstelle_SAP.xlsx \
+    python3 werkzeuge/config_aus_erhebung.py \
+        ../schnittstellenkonzept/erhebung/SK-001_Erhebung_Schnittstelle_SAP.xlsx \
         -o config.yaml
 
 Das Ergebnis ist ein Entwurf, keine fertige Konfiguration: Transformationen und

@@ -4,7 +4,7 @@
 Quelle: https://github.com/epilot-dev/sdk-js  (clients/*/src/openapi.json)
 
     git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js
-    python3 epilot/api-referenz/tools/generate_docs.py /tmp/sdk-js
+    python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js
 """
 
 import json
@@ -60,7 +60,7 @@ GROUPS = [
     ),
 ]
 
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "api-referenz")
 
 
 def camel(slug):
@@ -269,7 +269,7 @@ def render_index(apis):
     L.append("")
     L.append("```bash")
     L.append("git clone --depth 1 https://github.com/epilot-dev/sdk-js /tmp/sdk-js")
-    L.append("python3 epilot/api-referenz/tools/generate_docs.py /tmp/sdk-js")
+    L.append("python3 epilot/werkzeuge/api_referenz_erzeugen.py /tmp/sdk-js")
     L.append("```")
     L.append("")
     L.append(f"_Stand: {date.today().isoformat()} · generiert, nicht von Hand gepflegt._")
