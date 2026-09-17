@@ -182,6 +182,8 @@ Schema, Mappen-Generator, Konfigurationserzeugung, API-Referenz. Die Kette steht
 
 ```
 epilot/
+  KONVENTIONEN.md          wie hier Code und Doku geschrieben werden
+  pyproject.toml           dieselben Regeln maschinenlesbar (ruff)
   werkzeuge/               die Kette: Analyse, Attribute, Mappe, Konfiguration
   api-referenz/            51 APIs, Authentifizierung
   schnittstellenkonzept/
@@ -199,8 +201,121 @@ YAML-Konfiguration; zwei Dateiformate bedeuten zwei Konfigurationen, nicht zwei
 Programme. `../../werkzeuge/config_aus_erhebung.py` erzeugt die Konfiguration aus der
 ausgefüllten Erhebungsmappe.
 
+## Wie hier geschrieben wird
+
+Gängige Python-Standards, keine Hauskonvention: **PEP 8**, **PEP 257 mit
+Google-Style-Docstrings**, **Typannotationen**, **Conventional Commits**. Die Regeln
+stehen maschinenlesbar in `pyproject.toml`, begründet in `KONVENTIONEN.md`.
+
+```bash
+cd epilot && ruff check .      # läuft ohne Befund durch
+cd epilot/schnittstellenkonzept/umsetzung && python3 -m pytest tests/ -q
+```
+
+Der Grundsatz dahinter: **Das „Warum" gehört in den Docstring, das „Was" in den Code.**
+Ein Docstring, der die Signatur in Prosa wiederholt, ist Ballast. Die automatische
+Formatierung (`ruff format`) ist bewusst nicht eingeschaltet — Begründung in
+`KONVENTIONEN.md`.
+
+## Das Zielmodell: ein Schema für alles
+
+**Stand 15.09.2026, aus der produktiven Instanz gelesen** (Databricks, Entity API).
+
+Alle Formularstrecken hängen an **einem** Schema: `opportunity` mit **880 Attributen**.
+Die 30 übrigen Schemas sind epilot-Standard und klein (`contact` 47, `meter` 17,
+`contract` 39). Die Strecken unterscheiden sich allein am **Namenspräfix**:
+
+| Präfix | Bedeutung | Attribute |
+| --- | --- | --- |
+| `ea_*` | **E**rzeugungs**a**nlage → Einspeiser (SK-001) | ~155 (`ea_generator_` 55, `ea_speicher_` 26, `ea_solarmodul_` 20, …) |
+| `vb_*` | **V**er**b**rauchseinrichtung → § 14a (SK-002) | ~107 (`vb_fertigmeldung_` 50, `vb_ladeeinrichtung_` 25, `vb_waermepumpe_` 13, `vb_speicher_` 10, `vb_raumkuehlung_` 9) |
+| `14a_*` | nur Zähler und Konzept, **nicht** die ganze Strecke | 18 (`14a_anmeldung_` 15, `14a_konzept_` 3) |
+| `ha_*` | Hausanschluss | 33 (Strom 27, Wasser 6) |
+| `z1_ausbau_` … `z4_ausbau_` | Zählerausbau, vier Blöcke | je 10 |
+| `vorgang_1_` … `vorgang_9_` | **neun identisch ausgerollte Blöcke** | je 23 = **207** |
+
+**Drei Befunde daraus:**
+
+1. **`14a_*` ist nicht die § 14a-Strecke.** Die Geräte stehen unter `vb_*`. Wer nur nach
+   `14a` sucht, findet 18 von rund 125 Feldern und hält die Strecke für unvollständig.
+2. **Vokabelbruch Wallbox.** Das Wort kommt im Schema **null** mal vor — epilot nennt es
+   `ladeeinrichtung` und `ladepunkt`. Genau deshalb werden Attributnamen nicht geraten.
+   Die Auflösung steht jetzt in `werkzeuge/schema_attribute.py`.
+3. **`vorgang_1_*` bis `vorgang_9_*` sind ein Viertel des Schemas.** Eine flach
+   ausgerollte Wiederholstruktur. Kann ein Vorgang mehrere Teilvorgänge tragen, braucht
+   die Exportdatei dafür eine Regel — **offene Frage für die Mapping-Sitzung.**
+
+**Offen:** `marktlokation`, `malo`, `melo` kommen an `opportunity` **nicht** vor. Erwartet
+SAP eine MaLo-/MeLo-ID, steht sie woanders — Kandidaten sind die Schemas `meter` (17) und
+`meter_counter` (12). Ungeklärt.
+
+**Verfahren:** Ein Namensabgleich gegen alle 880 Attribute liefert Rauschen (86 Spalten →
+64 Vorschläge, davon nur 10 belastbar). Erst mit `--familien` die Präfixe sichten, dann
+mit `--praefix` eingrenzen. Der Präfix-Abzug beim Vergleich hebt Treffer wie
+`ZN_Z1 → 14a_anmeldung_zaehlernummer_z1` von 0,70 auf 1,00.
+
+## Mapping-Sitzung 19.09.2026 — vier Entscheidungen
+
+- **Die Kennung ist abgestimmt:** `Opportunity Nummer` ersetzt `Lovion ID`, SAP zieht nach.
+- **Die Datei darf schrumpfen:** 16 Spalten statt 30.
+- **epilot kann die Datei nicht selbst erzeugen** — der eigene Export-Lauf über die
+  Entity API ist der Weg. Der vorhandene Code in `umsetzung/` wird gebraucht.
+- **Anschlussobjekt ≠ Anlagenbetreiberadresse.** Zwei getrennte Adressen; welches
+  Attribut das Anschlussobjekt trägt, ist noch zu belegen.
+
+Daraus entstand `umsetzung/config.einspeiser.probelauf.yaml` — lauffähig, mit allen
+Annahmen als solche gekennzeichnet. Acht Tests sichern sie ab.
+
+**Noch offen:** Werteliste `Energieart` (Quell- und Zielwerte), Quellwerte für
+`Art der Einspeisung`, die Felder `Einspeisemanagement` und `Fernsteuerbarkeit`, der
+Attributname für `Wechselrichterleistung_kW` (Quelle ist bestätigt).
+
+## Wo die Arbeit steht (17.09.2026)
+
+Die Datenstrecke ist angefangen, das Mapping liegt auf Eis — **in dieser Reihenfolge
+bewusst.** Ein Mapping ändert sich, solange die Abstimmung läuft; die Rohdaten nicht.
+
+**Fertig und geprüft:**
+
+- Zugriff auf die produktive epilot-Instanz aus Databricks (Secret Scope `epilot`,
+  Schlüssel `access_token`)
+- `werkzeuge/entity_laden.py` — Vorgänge seitenweise holen, 10 Tests
+- `databricks/01_vorgaenge_laden.py` — Notebook mit acht Markdown-Zellen
+- Präfix-Systematik des Schemas verstanden und im Werkzeug abgebildet
+
+**Zwei Stränge, die nicht voneinander abhängen:**
+
+`databricks/02_sap_export_probelauf.py` erzeugt aus echten Vorgängen eine echte CSV —
+das ist die EEG-Schnittstelle. Sie läuft direkt gegen die Entity API und braucht die
+Bronze-Ablage **nicht**. Wenn der Termindruck steigt, ist das der Entkopplungspunkt.
+
+`databricks/03_bronze_ablegen` (noch zu bauen) legt die Rohdaten als Delta-Tabelle ab —
+für Auswertung und Wiederverwendung. Dafür fehlen zwei Angaben aus der Instanz:
+
+1. **Zelle 5 aus Notebook 01** — wie viele Felder sind überhaupt gefüllt, und was ist
+   der Median je Vorgang? Daran hängt, ob die Bronze-Tabelle eine **JSON-Spalte**
+   bekommt (dünn besetzt) oder **flach** wird (dicht besetzt).
+2. **Der Unity-Catalog-Katalog**, in den geschrieben werden darf —
+   `spark.sql("SHOW CATALOGS").display()`.
+
+Danach: Wiederholbarkeit ohne Dubletten, dann ein geplanter Job.
+
+**Offene fachliche Fragen** (gehören in die Mapping-Sitzung, nicht in den Code):
+
+- Bilden die neun `vorgang_*`-Blöcke mehrere Teilvorgänge ab, und nach welcher Regel
+  kommen sie in die Exportdatei?
+- Woher kommt eine MaLo-/MeLo-ID, falls SAP sie erwartet? An `opportunity` steht sie
+  nicht; Kandidaten sind die Schemas `meter` und `meter_counter`.
+- Gehört `vb_fertigmeldung_*` (50 Felder) zur Anmeldestrecke oder ist das ein
+  eigener Vorgang?
+
 ## Arbeitsweise im Repository
 
-Entwicklungsbranch `claude/epilot-api-docs-zpfvzb`, nach Freigabe auf `main`
-gemerged. Der Nutzer schaut über die GitHub-App auf `main` — was dort nicht liegt,
-sieht er nicht.
+**Dieses Repository ist `StefanStanleyNGD/ePilot`, Branch `main`.** Es ist aus dem
+Branch `epilot-standalone` von `StefanStanley/Claude` hervorgegangen (dort lag alles
+unter `epilot/`; hier ist es die Wurzel). Die Historie ist vollständig übernommen.
+
+Der Databricks-Git-Ordner hängt an diesem Repository — Änderungen an `werkzeuge/`
+oder `databricks/` werden dort erst nach einem Pull sichtbar. **Das war schon einmal
+die Ursache eines `AttributeError`:** Code gepusht, Notebook gegen den alten Stand
+gelaufen.

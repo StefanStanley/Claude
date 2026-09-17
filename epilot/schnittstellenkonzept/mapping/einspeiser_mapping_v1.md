@@ -50,7 +50,23 @@ siehe Rückfrage 1.
 
 ---
 
-## Fünf Punkte, die vor der Umsetzung zu klären sind
+## Entscheidungen der Mapping-Sitzung vom 19.09.2026
+
+Vier der fünf Punkte unten sind entschieden. Die Abschnitte bleiben stehen, weil sie
+die Begründung tragen — hier steht, wie es ausgegangen ist.
+
+| Punkt | Entscheidung |
+| --- | --- |
+| **1 · Kennung** | **Abgestimmt.** `Opportunity Nummer` ersetzt `Lovion ID`. Die SAP-Seite zieht nach. |
+| **3 · Adresse** | **Zu unterscheiden.** Anschlussobjekt und Anlagenbetreiberadresse sind zwei verschiedene Orte und fallen in der Praxis auseinander. Welches epilot-Attribut das Anschlussobjekt trägt, ist noch zu belegen. |
+| **4 · Fehlende Spalten** | **Die Datei darf schrumpfen.** 16 Spalten statt 30. SAP passt den Import an. Damit ist auch `Anlagenart nach §48` vorerst nicht dabei — siehe Vorbehalt unten. |
+| **5 · Report oder Job** | **Variante A.** epilot kann die Datei nicht selbst erzeugen. Der Weg ist der eigene Export-Lauf über die Entity API; der vorhandene Code wird gebraucht. |
+
+**Ein Vorbehalt zu Punkt 4:** `Anlagenart nach §48` bestimmt die EEG-Vergütungsklasse.
+Fällt die Spalte weg, muss SAP die Klasse anders herleiten. Das ist keine
+Blockade für den ersten Lauf, gehört aber vor dem Produktivgang geklärt.
+
+## Fünf Punkte, die vor der Umsetzung zu klären waren
 
 ### 1. Die Kennung wechselt — weiß SAP davon?
 
@@ -143,10 +159,32 @@ gebraucht wird oder nur noch der Transport.*
 
 ## Offene Felder
 
+Stand nach der Sitzung vom 19.09.2026:
+
 | Feld | Status |
 | --- | --- |
-| `Wechselrichterleistung_kW` | Quelle in epilot zu klären |
-| `Einspeisemanagement` | Quelle in epilot zu klären |
-| `Fernsteuerbarkeit` | keine Quelle genannt |
-| `Nettoleistung_kW` | Entfall vorgeschlagen — Bestätigung durch SAP-Betrieb nötig |
+| `Wechselrichterleistung_kW` | **Quelle bestätigt** — der exakte Attributname fehlt noch in der Konfiguration |
+| `Einspeisemanagement` | weiter offen |
+| `Fernsteuerbarkeit` | weiter offen |
+| `Nettoleistung_kW` | weiter offen — Entfall vorgeschlagen, nicht bestätigt |
 | `Mieterstromzuschlag_gültig_ab` | zurückgestellt, nicht go-live-kritisch |
+| Werteliste `Energieart` | weiter offen — Quell- **und** Zielwerte fehlen beide |
+| Werteliste `Art der Einspeisung` | Zielwerte `01`/`02` bestätigt, Quellwerte aus epilot fehlen |
+
+Drei offene Felder halten den ersten Lauf **nicht** auf: Sie stehen in der
+Probelauf-Konfiguration als leere Spalten und erscheinen so auch in der Datei.
+
+## Was für den produktiven Betrieb fehlt
+
+Kein Feldmapping, sondern Beschaffung und Konfiguration:
+
+1. **Eine produktive Originaldatei** — klärt Zeichenkodierung, Zeilenende und
+   Datumsformat und ist der Referenzsatz für den byteweisen Abnahmevergleich. Bis
+   dahin sind diese drei Angaben in der Konfiguration **Annahmen**, ausdrücklich so
+   gekennzeichnet.
+2. **Das Attribut `uebertragungsstatus` in epilot.** Ohne es weiß der Lauf nicht, was
+   schon geliefert wurde, und jeder Lauf schickt alles erneut.
+3. **Der Netzlaufwerkpfad** samt Schreibrecht für das technische Konto.
+4. **Der Beleg, welches Attribut das Anschlussobjekt trägt** — prüfbar an einem
+   Vorgang, bei dem Anlagen- und Betreiberadresse abweichen. Bei der Aufdachanlage am
+   eigenen Haus sind sie identisch, dort fällt eine Verwechslung nicht auf.

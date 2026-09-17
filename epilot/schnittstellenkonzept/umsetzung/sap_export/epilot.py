@@ -7,7 +7,7 @@ aber mit möglichst enger Rollenzuweisung.
 from __future__ import annotations
 
 import logging
-from typing import Iterator
+from collections.abc import Iterator
 
 import requests
 
@@ -17,11 +17,25 @@ log = logging.getLogger(__name__)
 
 
 class EpilotFehler(Exception):
-    pass
+    """Die API hat nicht wie erwartet geantwortet — Suche oder Statusschreiben fehlgeschlagen."""
 
 
 class EntityAPI:
-    def __init__(self, cfg: Epilot, token: str, session: requests.Session | None = None):
+    """Schmaler Zugriff auf die Entity API: fällige Vorgänge lesen, Status zurückschreiben."""
+
+    def __init__(
+        self, cfg: Epilot, token: str, session: requests.Session | None = None
+    ) -> None:
+        """Sitzung mit Anmeldung und Organisationskopf vorbereiten.
+
+        Args:
+            cfg: Abschnitt `epilot` der Konfiguration.
+            token: Access Token vom Typ `api`.
+            session: Eigene requests-Sitzung; im Test der Ort für ein Double.
+
+        Raises:
+            EpilotFehler: Kein Token übergeben.
+        """
         if not token:
             raise EpilotFehler("Kein Access Token übergeben")
         self.cfg = cfg
@@ -37,10 +51,16 @@ class EntityAPI:
     def suche(self) -> Iterator[dict]:
         """Alle fälligen Vorgänge holen, seitenweise.
 
-        Paging über search_after statt from/size: 'from' bricht bei tiefen
+        Paging über `search_after` statt `from`/`size`: `from` bricht bei tiefen
         Ergebnismengen ab und liefert bei gleichzeitigen Änderungen inkonsistente
-        Seiten. Sortiert wird stabil über _created_at, damit die Reihenfolge
-        zwischen den Seiten eindeutig ist.
+        Seiten. Sortiert wird stabil über `_created_at`, damit die Reihenfolge zwischen
+        den Seiten eindeutig ist.
+
+        Yields:
+            Je eine Entity, in der Reihenfolge ihrer Anlage.
+
+        Raises:
+            EpilotFehler: Die Suche hat nicht mit HTTP 200 geantwortet.
         """
         such_nach = None
         gesehen = 0
@@ -87,10 +107,17 @@ class EntityAPI:
     def setze_status(self, entity_id: str, wert: str) -> None:
         """Übertragungsstatus am Vorgang setzen.
 
-        Erst nach erfolgreicher Ablage der Datei aufrufen. Schlägt das hier fehl,
-        wird der Vorgang im nächsten Lauf erneut geliefert - eine Dublette, die
-        SAP über die Korrelations-ID abfangen muss. Das ist die bewusst gewählte
-        Richtung: lieber doppelt als verloren.
+        Erst nach erfolgreicher Ablage der Datei aufrufen. Schlägt das hier fehl, wird
+        der Vorgang im nächsten Lauf erneut geliefert — eine Dublette, die SAP über die
+        Korrelations-ID abfangen muss. Das ist die bewusst gewählte Richtung:
+        **lieber doppelt als verloren.**
+
+        Args:
+            entity_id: Kennung des Vorgangs (`_id`).
+            wert: Neuer Wert des Statusattributs.
+
+        Raises:
+            EpilotFehler: Das Schreiben wurde nicht mit HTTP 200 oder 204 quittiert.
         """
         antwort = self.http.patch(
             f"{self.cfg.basis_url}/v1/entity/{self.cfg.schema}/{entity_id}",

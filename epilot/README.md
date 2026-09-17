@@ -4,8 +4,9 @@ Einführung von **epilot** als Anmeldeportal für den Netzanschluss von
 Einspeiseanlagen — API-Referenz, Schnittstellenkonzepte und die technische
 Umsetzung der Anbindung an SAP.
 
-> Status: Konzeptphase. SK-001 ist Entwurf 0.5, der Export-Job läuft gegen
-> Testdaten. Was fehlt, sind zwei Termine — nicht Technik.
+> Status: SK-001 ist Entwurf 0.9, SK-002 Entwurf 0.3. Der Zugriff auf die produktive
+> epilot-Instanz steht, die Datenstrecke nach Databricks ist angefangen. Wo die Arbeit
+> genau steht und was als Nächstes ansteht: [`CLAUDE.md`](./CLAUDE.md).
 
 ## Was hier liegt
 
@@ -16,6 +17,8 @@ Umsetzung der Anbindung an SAP.
 | [`schnittstellenkonzept/`](./schnittstellenkonzept/) | Vorgehen, Vorlage und die laufenden Konzepte. Aktuell **SK-001**: Einspeiseanlagen nach SAP. |
 | [`schnittstellenkonzept/erhebung/`](./schnittstellenkonzept/erhebung/) | Arbeitsmappe zum Einsammeln der SAP-Seite. |
 | [`schnittstellenkonzept/umsetzung/`](./schnittstellenkonzept/umsetzung/) | Der Export-Job. Python, 22 Tests, plattformfrei. |
+| [`databricks/`](./databricks/) | Die Notebooks der Datenstrecke, als Quelldateien versioniert statt im Workspace. `01` lädt Vorgänge, `02` erzeugt die SAP-Datei im Probelauf. |
+| [`KONVENTIONEN.md`](./KONVENTIONEN.md) | Wie hier Code und Doku geschrieben werden. Maschinenlesbar in `pyproject.toml`. |
 
 ## SK-001 — Einspeiseanlagen nach SAP in einem Absatz
 
