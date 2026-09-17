@@ -283,8 +283,14 @@ bewusst.** Ein Mapping ändert sich, solange die Abstimmung läuft; die Rohdaten
 - `databricks/01_vorgaenge_laden.py` — Notebook mit acht Markdown-Zellen
 - Präfix-Systematik des Schemas verstanden und im Werkzeug abgebildet
 
-**Der nächste Schritt** ist `databricks/02_bronze_ablegen`: die Rohdaten als
-Delta-Tabelle schreiben. Dafür fehlen zwei Angaben, die nur aus der Instanz kommen:
+**Zwei Stränge, die nicht voneinander abhängen:**
+
+`databricks/02_sap_export_probelauf.py` erzeugt aus echten Vorgängen eine echte CSV —
+das ist die EEG-Schnittstelle. Sie läuft direkt gegen die Entity API und braucht die
+Bronze-Ablage **nicht**. Wenn der Termindruck steigt, ist das der Entkopplungspunkt.
+
+`databricks/03_bronze_ablegen` (noch zu bauen) legt die Rohdaten als Delta-Tabelle ab —
+für Auswertung und Wiederverwendung. Dafür fehlen zwei Angaben aus der Instanz:
 
 1. **Zelle 5 aus Notebook 01** — wie viele Felder sind überhaupt gefüllt, und was ist
    der Median je Vorgang? Daran hängt, ob die Bronze-Tabelle eine **JSON-Spalte**
