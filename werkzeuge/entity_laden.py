@@ -117,20 +117,33 @@ def seiten(
         LadeFehler: Kein Token, unzulässige Seitengröße, oder die Suche hat nicht mit
             HTTP 200 geantwortet.
     """
+    # Vor dem ersten Aufruf prüfen: Eine zu große Seite quittiert die API mit HTTP 400,
+    # und zwar erst nach dem Verbindungsaufbau.
     if not 1 <= groesse <= MAX_SEITENGROESSE:
         raise LadeFehler(f"groesse muss zwischen 1 und {MAX_SEITENGROESSE} liegen")
 
     http = sitzung or _sitzung(token, org)
+
+    # Der Cursor auf die zuletzt gelesene Position. Beim ersten Aufruf gibt es ihn
+    # noch nicht — dann liefert die API den Anfang der Ergebnismenge.
     such_nach = None
     gezaehlt = 0
 
     while max_seiten is None or gezaehlt < max_seiten:
-        rumpf: dict = {"q": query, "size": groesse, "hydrate": hydrate,
-                       "sort": "_created_at:asc"}
+        rumpf: dict = {
+            "q": query,                    # Suchausdruck, z. B. _schema:opportunity
+            "size": groesse,               # Treffer je Seite, nicht insgesamt
+            "hydrate": hydrate,            # verknüpfte Entitäten mit Werten statt nur IDs
+            "sort": "_created_at:asc",     # stabile Ordnung, sonst ist Paging sinnlos
+        }
         if such_nach:
+            # Ab der zweiten Seite: dort weiterlesen, wo die vorige endete.
             rumpf["search_after"] = such_nach
 
         antwort = http.post(f"{basis}/v1/entity:search", json=rumpf, timeout=timeout)
+
+        # Abbrechen statt weitermachen: Eine halbe Ergebnismenge sieht aus wie eine
+        # ganze und fällt erst beim Bestandsabgleich auf — dann aber teuer.
         if antwort.status_code != 200:
             raise LadeFehler(
                 f"Suche fehlgeschlagen: HTTP {antwort.status_code} {antwort.text[:300]}"
@@ -145,12 +158,17 @@ def seiten(
         yield treffer
         gezaehlt += 1
 
-        # Weniger Treffer als angefragt: Das war die letzte Seite.
+        # Weniger Treffer als angefragt heißt: Das war die letzte Seite. Ohne diese
+        # Abkürzung kostet jeder Lauf einen zusätzlichen Aufruf ins Leere.
         if len(treffer) < groesse:
             return
 
+        # Der Cursor steckt im letzten Treffer der Seite und heißt je nach
+        # Dienstversion _sort oder sort.
         such_nach = treffer[-1].get("_sort") or treffer[-1].get("sort")
         if not such_nach:
+            # Ohne Cursor würde der nächste Aufruf dieselbe Seite liefern — endlos.
+            # Lieber sauber enden und sagen, dass etwas fehlen könnte.
             print("Antwort enthält keinen search_after-Cursor — Lauf endet hier. "
                   "Die Ergebnismenge ist womöglich unvollständig.", file=sys.stderr)
             return
@@ -176,6 +194,8 @@ def alle(query: str, token: str, **kwargs: object) -> list[dict]:
     gesammelt: list[dict] = []
     for seite in seiten(query, token, **kwargs):
         gesammelt.extend(seite)
+        # Fortschritt nach stderr, nicht nach stdout: So bleibt stdout frei für das
+        # eigentliche Ergebnis, wenn das Werkzeug in eine Datei umgeleitet wird.
         print(f"{len(gesammelt)} Vorgänge geladen", file=sys.stderr)
     return gesammelt
 
@@ -197,6 +217,9 @@ def belegung(vorgaenge: list[dict], mindestens: int = 1) -> list[tuple[str, int]
     zaehler: Counter[str] = Counter()
     for v in vorgaenge:
         for k, wert in v.items():
+            # Leere Zeichenkette, leere Liste und None zählen nicht als Wert: Ein Feld,
+            # das die API zwar mitliefert aber nie füllt, ist für das Mapping so
+            # uninteressant wie ein Feld, das gar nicht existiert.
             if wert not in (None, "", [], {}):
                 zaehler[k] += 1
     return [(k, n) for k, n in zaehler.most_common() if n >= mindestens]
