@@ -254,8 +254,46 @@ SAP eine MaLo-/MeLo-ID, steht sie woanders — Kandidaten sind die Schemas `mete
 mit `--praefix` eingrenzen. Der Präfix-Abzug beim Vergleich hebt Treffer wie
 `ZN_Z1 → 14a_anmeldung_zaehlernummer_z1` von 0,70 auf 1,00.
 
+## Wo die Arbeit steht (17.09.2026)
+
+Die Datenstrecke ist angefangen, das Mapping liegt auf Eis — **in dieser Reihenfolge
+bewusst.** Ein Mapping ändert sich, solange die Abstimmung läuft; die Rohdaten nicht.
+
+**Fertig und geprüft:**
+
+- Zugriff auf die produktive epilot-Instanz aus Databricks (Secret Scope `epilot`,
+  Schlüssel `access_token`)
+- `werkzeuge/entity_laden.py` — Vorgänge seitenweise holen, 10 Tests
+- `databricks/01_vorgaenge_laden.py` — Notebook mit acht Markdown-Zellen
+- Präfix-Systematik des Schemas verstanden und im Werkzeug abgebildet
+
+**Der nächste Schritt** ist `databricks/02_bronze_ablegen`: die Rohdaten als
+Delta-Tabelle schreiben. Dafür fehlen zwei Angaben, die nur aus der Instanz kommen:
+
+1. **Zelle 5 aus Notebook 01** — wie viele Felder sind überhaupt gefüllt, und was ist
+   der Median je Vorgang? Daran hängt, ob die Bronze-Tabelle eine **JSON-Spalte**
+   bekommt (dünn besetzt) oder **flach** wird (dicht besetzt).
+2. **Der Unity-Catalog-Katalog**, in den geschrieben werden darf —
+   `spark.sql("SHOW CATALOGS").display()`.
+
+Danach: Wiederholbarkeit ohne Dubletten, dann ein geplanter Job.
+
+**Offene fachliche Fragen** (gehören in die Mapping-Sitzung, nicht in den Code):
+
+- Bilden die neun `vorgang_*`-Blöcke mehrere Teilvorgänge ab, und nach welcher Regel
+  kommen sie in die Exportdatei?
+- Woher kommt eine MaLo-/MeLo-ID, falls SAP sie erwartet? An `opportunity` steht sie
+  nicht; Kandidaten sind die Schemas `meter` und `meter_counter`.
+- Gehört `vb_fertigmeldung_*` (50 Felder) zur Anmeldestrecke oder ist das ein
+  eigener Vorgang?
+
 ## Arbeitsweise im Repository
 
-Entwicklungsbranch `claude/epilot-api-docs-zpfvzb`, nach Freigabe auf `main`
-gemerged. Der Nutzer schaut über die GitHub-App auf `main` — was dort nicht liegt,
-sieht er nicht.
+**Dieses Repository ist `StefanStanleyNGD/ePilot`, Branch `main`.** Es ist aus dem
+Branch `epilot-standalone` von `StefanStanley/Claude` hervorgegangen (dort lag alles
+unter `epilot/`; hier ist es die Wurzel). Die Historie ist vollständig übernommen.
+
+Der Databricks-Git-Ordner hängt an diesem Repository — Änderungen an `werkzeuge/`
+oder `databricks/` werden dort erst nach einem Pull sichtbar. **Das war schon einmal
+die Ursache eines `AttributeError`:** Code gepusht, Notebook gegen den alten Stand
+gelaufen.
