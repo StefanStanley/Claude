@@ -5,6 +5,7 @@ Ergebnis in eine Datei — nichts hängt von einem laufenden Dienst ab.
 
 | Werkzeug | Eingabe | Ergebnis |
 | --- | --- | --- |
+| `entity_laden.py` | Suchausdruck + Token | die Vorgänge roh als JSON; optional Auswertung, welche Felder gefüllt sind |
 | `spaltenanalyse.py` | Spaltenliste des Ist-Exports | Markdown-Auswertung: Fallstricke, Blöcke, Benennung. Optional Vergleich zweier Strecken |
 | `schema_attribute.py` | Blueprint-Manifest **oder** Schema-Slug | Attributliste; optional Zuordnungsvorschläge zu den Exportspalten |
 | `mappe_bauen.py` | Spaltenliste, optional Vorschläge | Excel-Arbeitsmappe für die Mapping-Sitzung |
@@ -13,7 +14,16 @@ Ergebnis in eine Datei — nichts hängt von einem laufenden Dienst ab.
 
 ## Ablauf
 
+Die Kette zerfällt in zwei Stränge, die unabhängig voneinander laufen: **Daten holen**
+(`entity_laden.py`) und **Mapping vorbereiten** (der Rest). Der erste Strang trägt die
+Pipeline, der zweite die Mapping-Sitzung.
+
 ```bash
+# 0 · Daten holen — erst klein, zum Hinsehen
+export EPILOT_TOKEN="..."
+python3 werkzeuge/entity_laden.py --schema opportunity --max-seiten 3 \
+    --belegung -o probe.json
+
 # 1 · Ist-Export verstehen
 python3 werkzeuge/spaltenanalyse.py spalten.txt -o analyse.md --titel "Strecke X"
 
@@ -57,6 +67,15 @@ liefert vor allem Zufallstreffer. `--familien` zeigt die Präfixe, `--praefix` g
 
 `requests`, `PyYAML`, `openpyxl`. Installation über
 `schnittstellenkonzept/umsetzung/requirements.txt`.
+
+## Tests
+
+```bash
+python3 -m pytest werkzeuge/tests/ -q
+```
+
+Getestet ist das Paging in `entity_laden.py` — dort entstehen die Fehler, die niemand
+bemerkt, weil eine unvollständige Ergebnismenge aussieht wie eine vollständige.
 
 ## Beim Ändern
 

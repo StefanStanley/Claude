@@ -33,7 +33,7 @@ ignore = [
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"schnittstellenkonzept/umsetzung/tests/*" = ["D1", "ANN"]  # Tests dokumentieren über ihre Namen
+"**/tests/*" = ["D1", "ANN"]  # Tests dokumentieren über ihre Namen
 
 [tool.ruff.format]
 quote-style = "double"
