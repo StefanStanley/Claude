@@ -254,6 +254,22 @@ SAP eine MaLo-/MeLo-ID, steht sie woanders — Kandidaten sind die Schemas `mete
 mit `--praefix` eingrenzen. Der Präfix-Abzug beim Vergleich hebt Treffer wie
 `ZN_Z1 → 14a_anmeldung_zaehlernummer_z1` von 0,70 auf 1,00.
 
+## Mapping-Sitzung 19.09.2026 — vier Entscheidungen
+
+- **Die Kennung ist abgestimmt:** `Opportunity Nummer` ersetzt `Lovion ID`, SAP zieht nach.
+- **Die Datei darf schrumpfen:** 16 Spalten statt 30.
+- **epilot kann die Datei nicht selbst erzeugen** — der eigene Export-Lauf über die
+  Entity API ist der Weg. Der vorhandene Code in `umsetzung/` wird gebraucht.
+- **Anschlussobjekt ≠ Anlagenbetreiberadresse.** Zwei getrennte Adressen; welches
+  Attribut das Anschlussobjekt trägt, ist noch zu belegen.
+
+Daraus entstand `umsetzung/config.einspeiser.probelauf.yaml` — lauffähig, mit allen
+Annahmen als solche gekennzeichnet. Acht Tests sichern sie ab.
+
+**Noch offen:** Werteliste `Energieart` (Quell- und Zielwerte), Quellwerte für
+`Art der Einspeisung`, die Felder `Einspeisemanagement` und `Fernsteuerbarkeit`, der
+Attributname für `Wechselrichterleistung_kW` (Quelle ist bestätigt).
+
 ## Wo die Arbeit steht (17.09.2026)
 
 Die Datenstrecke ist angefangen, das Mapping liegt auf Eis — **in dieser Reihenfolge
