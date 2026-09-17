@@ -34,6 +34,10 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = ["D1", "ANN"]  # Tests dokumentieren über ihre Namen
+# Databricks-Notebooks sind kein Modul: dbutils und display spritzt die Laufzeit ein,
+# die Importe stehen zellenweise verteilt, und der Kopf ist eine Markdown-Zelle.
+# Zeilenlänge und Stil gelten weiter.
+"databricks/*.py" = ["D100", "E402", "F821"]
 
 [tool.ruff.format]
 quote-style = "double"
