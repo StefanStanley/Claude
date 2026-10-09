@@ -77,6 +77,14 @@ ablage, weitere Fachsysteme, Auswertungen.
 Jede gefundene Verbindung wird eine Zeile im Register oben. Die Frage an den Betrieb lautet
 schlicht: **Welche Systeme tauschen heute Daten mit Lovion aus, in welche Richtung?**
 
+## Governance
+
+Rollen, Zugangsdaten, Datenzugriff und Betrieb sind in einem eigenen Dokument geregelt:
+**[GOVERNANCE.md](./GOVERNANCE.md)** — mit drei Ausbaustufen von MVP (rund vier
+Personentage) bis Zielbild. Es beantwortet die vier Fragen, die die IT bei den letzten
+Vorhaben aufgeworfen hat: Connectoren, API-Keys, Zugriff auf Kundendaten, sauberer
+Betrieb.
+
 ## Wer zeichnet mit
 
 Klärt das **vor** dem ersten Dokument, nicht danach — sonst schreibt ihr für den falschen
