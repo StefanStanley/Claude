@@ -1,0 +1,162 @@
+# Einspeiser -> SAP · Konfiguration für den PROBELAUF
+#
+# Zweck: Aus echten Vorgängen eine echte Datei erzeugen, um zu sehen, was herauskommt.
+# NICHT für den produktiven Einsatz.
+#
+# Stand der Entscheidungen (Mapping-Sitzung 19.09.2026):
+#   - Die Datei DARF schrumpfen: 16 Spalten statt der 30 des Lovion-Exports. SAP passt
+#     den Import an.
+#   - epilot kann die Datei NICHT selbst erzeugen. Der Weg ist der eigene Export-Lauf
+#     über die Entity API - dieser Code hier.
+#   - Die Kennung ist abgestimmt: "Opportunity Nummer" ersetzt "Lovion ID".
+#   - Anschlussobjekt und Anlagenbetreiberadresse sind ZWEI VERSCHIEDENE Adressen.
+#
+# Wo diese Datei bewusst rät, steht ANNAHME. Jede Annahme ist eine Zeile, die vor dem
+# produktiven Einsatz durch eine belegte Angabe ersetzt werden muss.
+
+format:
+  # ANNAHME: Kodierung und Zeilenende sind ungeprüft. Sie stehen erst fest, wenn eine
+  # produktive Originaldatei vorliegt. Für den Probelauf ist das gleichgültig - für die
+  # Abnahme entscheidet es alles.
+  kodierung: utf-8
+  bom: false
+  trennzeichen: ";"
+  textbegrenzer: '"'
+  quoting: minimal
+  doppelte_begrenzer: true
+  zeilenende: CRLF
+  kopfzeile: true
+  dezimaltrennzeichen: ","
+  leerwert: ""
+
+ablage:
+  # Im Probelauf wird nichts abgelegt; der Pfad wird nicht angefasst.
+  verzeichnis: "./probelauf"
+  dateiname: "EINSPEISER_PROBE_%Y%m%d_%H%M%S.csv"
+  temp_endung: ".tmp"
+  leerlauf: keine_datei
+  protokoll_verzeichnis: "./probelauf/protokoll"
+
+epilot:
+  basis_url: "https://entity.sls.epilot.io"
+  schema: "opportunity"
+  # ANNAHME: Ohne Statusfilter, weil das Attribut "uebertragungsstatus" in epilot noch
+  # nicht angelegt ist. Produktiv MUSS hier gefiltert werden, sonst liefert jeder Lauf
+  # alle Vorgänge erneut.
+  # Eingegrenzt auf Vorgänge, die überhaupt eine Erzeugungsanlage tragen.
+  query: '_schema:opportunity AND _exists_:ea_see_erzeugungsanlage'
+  seitengroesse: 100
+  hydrate: true
+  status_attribut: "uebertragungsstatus"
+  status_nach_uebertragung: "uebertragen"
+
+# Im Probelauf lieber sehen, was kaputtgeht, als den Lauf abbrechen.
+bei_kodierungsfehler: zeile_zurueckhalten
+
+wertelisten:
+  art_der_einspeisung:
+    # Zielschlüssel sind bestätigt. Die QUELLWERTE aus epilot sind unbekannt - deshalb
+    # steht unten "unbekannt: durchreichen": Der Rohwert landet in der Datei und ist
+    # damit sichtbar, statt den Vorgang zurückzuhalten.
+    volleinspeisung: "01"
+    ueberschusseinspeisung: "02"
+  energieart: {}   # vollständig offen - Quell- und Zielwerte fehlen beide
+
+pruefungen:
+  # Bewusst nur das, was ohne Wertelisten prüfbar ist. Die Prüfung "in_werteliste" für
+  # die Einspeiseart fehlt hier absichtlich: Sie würde jeden Vorgang zurückhalten,
+  # solange die Quellwerte unbekannt sind - und dann sieht man gar nichts.
+  - feld: ea_inbetriebsetzungsdatum
+    art: pflicht
+  - feld: ea_inbetriebsetzungsdatum
+    art: datum_nicht_zukunft
+  - feld: ea_installierte_modulleistung_in_kwp
+    art: zahl_zwischen
+    min: 0.1
+    max: 20000
+  - feld: ea_see_erzeugungsanlage
+    art: pflicht
+
+spalten:
+  - name: Opportunity Nummer
+    quelle: opportunity_number
+    pflicht: true
+
+  # --- Anschlussobjekt: wo die Anlage steht ------------------------------------
+  # ENTSCHIEDEN (19.09.): Anschlussobjekt und Anlagenbetreiberadresse sind zu
+  # unterscheiden - sie fallen in der Praxis auseinander (Freiflächenanlage,
+  # vermietetes Objekt, Betreibergesellschaft).
+  #
+  # ANNAHME: delivery_address trägt das Anschlussobjekt. Das ist NICHT belegt.
+  # Nachsehen lässt sich das an einem Vorgang, bei dem beide Adressen abweichen -
+  # bei der Aufdachanlage am eigenen Haus sind sie identisch und der Fehler
+  # fällt nicht auf.
+  - name: Straße_Anschlussobjekt
+    quelle: delivery_address.0.street
+    transform:
+      - art: trimmen
+
+  - name: Hausnummer_Anschlussobjekt
+    quelle: delivery_address.0.street_number
+
+  - name: PLZ_Anschlussobjekt
+    quelle: delivery_address.0.postal_code
+    max_laenge: 5
+
+  - name: Ort_Anschlussobjekt
+    quelle: delivery_address.0.city
+
+  # --- Anlage ------------------------------------------------------------------
+  - name: Energieart
+    quelle: ea_erzeugungsanlage_anlagentyp
+    transform:
+      - art: werteliste
+        liste: energieart
+        unbekannt: durchreichen    # Rohwert sichtbar machen, statt zurückzuhalten
+
+  - name: EEG_Inbetriebnahmedatum
+    quelle: ea_inbetriebsetzungsdatum
+    pflicht: true
+    transform:
+      - art: datum
+        muster: "%d.%m.%Y"         # ANNAHME - bestätigt die Originaldatei
+
+  - name: Gesamtleistung_kW
+    quelle: ea_installierte_modulleistung_in_kwp
+    transform:
+      - art: dezimal
+        stellen: 2
+        trennzeichen: ","
+
+  - name: Nettoleistung_kW
+    konstante: ""                  # Entfall vorgeschlagen, noch nicht bestätigt
+
+  - name: Wechselrichterleistung_kW
+    quelle: TODO_attributname      # Quelle bestätigt, Attributname fehlt noch
+    transform:
+      - art: dezimal
+        stellen: 2
+        trennzeichen: ","
+
+  - name: Mieterstromzuschlag_gültig_ab
+    konstante: ""                  # nicht go-live-kritisch
+
+  - name: Einspeisemanagement
+    konstante: ""                  # offen
+
+  - name: Messkonzept
+    quelle: zaehlermeldung_messkonzept
+
+  - name: SEE-Nr.
+    quelle: ea_see_erzeugungsanlage
+    pflicht: true
+
+  - name: Art der Einspeisung
+    quelle: ea_erzeugungsanlage_art_der_einspeisung
+    transform:
+      - art: werteliste
+        liste: art_der_einspeisung
+        unbekannt: durchreichen
+
+  - name: Fernsteuerbarkeit
+    konstante: ""                  # offen

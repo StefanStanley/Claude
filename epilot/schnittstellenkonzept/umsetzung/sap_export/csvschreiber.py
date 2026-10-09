@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import io
 import os
+from datetime import datetime
 from pathlib import Path
 
 from .config import Config
@@ -29,7 +30,15 @@ class KodierungsFehler(Exception):
 
 
 def zeile_als_text(werte: list[str], cfg: Config) -> str:
-    """Eine Werteliste in eine CSV-Zeile umwandeln - ohne Zeilenende."""
+    """Eine Werteliste in eine CSV-Zeile umwandeln — ohne Zeilenende.
+
+    Args:
+        werte: Die Zellinhalte in Spaltenreihenfolge.
+        cfg: Konfiguration; maßgeblich ist der Abschnitt `format`.
+
+    Returns:
+        Die Zeile als Zeichenkette, maskiert nach den Regeln der Konfiguration.
+    """
     puffer = io.StringIO()
     schreiber = csv.writer(
         puffer,
@@ -45,7 +54,18 @@ def zeile_als_text(werte: list[str], cfg: Config) -> str:
 
 
 def pruefe_kodierbar(text: str, cfg: Config) -> None:
-    """Wirft KodierungsFehler, wenn ein Zeichen in der Zielkodierung fehlt."""
+    """Prüfen, ob sich der Text in der Zielkodierung darstellen lässt.
+
+    Wird vor dem Schreiben aufgerufen, damit ein einzelner Vorgang nicht den ganzen
+    Lauf mitreißt.
+
+    Args:
+        text: Die fertige CSV-Zeile.
+        cfg: Konfiguration; maßgeblich ist `format.kodierung`.
+
+    Raises:
+        KodierungsFehler: Ein Zeichen fehlt im Vorrat der Zielkodierung.
+    """
     try:
         text.encode(cfg.format.kodierung, errors="strict")
     except UnicodeEncodeError as e:
@@ -59,8 +79,21 @@ def pruefe_kodierbar(text: str, cfg: Config) -> None:
 def baue_datei(zeilen: list[list[str]], cfg: Config) -> bytes:
     """Den vollständigen Dateiinhalt als Bytes erzeugen.
 
-    Bewusst im Speicher: die Dateien sind klein, und so lässt sich der Inhalt
-    im Test byteweise gegen ein Original vergleichen.
+    Bewusst im Speicher: Die Dateien sind klein, und so lässt sich der Inhalt im Test
+    byteweise gegen ein Original vergleichen.
+
+    Args:
+        zeilen: Die Datenzeilen; die Kopfzeile entsteht aus der Konfiguration.
+        cfg: Konfiguration des Laufs.
+
+    Returns:
+        Der fertige Dateiinhalt, bereits in der Zielkodierung und mit BOM, falls
+        konfiguriert.
+
+    Raises:
+        KodierungsFehler: BOM für eine Kodierung verlangt, die keines vorsieht.
+        UnicodeEncodeError: Ein Zeichen lässt sich nicht kodieren; tritt nur auf, wenn
+            `pruefe_kodierbar` vorher übersprungen wurde.
     """
     teile: list[str] = []
     if cfg.format.kopfzeile:
@@ -82,14 +115,25 @@ def baue_datei(zeilen: list[list[str]], cfg: Config) -> bytes:
     return roh
 
 
-def lege_ab(inhalt: bytes, cfg: Config, zeitpunkt) -> Path:
+def lege_ab(inhalt: bytes, cfg: Config, zeitpunkt: datetime) -> Path:
     """Datei atomar im Zielverzeichnis ablegen.
 
-    Erst unter temporärem Namen schreiben, dann umbenennen: Sonst holt der
-    SAP-Job irgendwann eine halb geschriebene Datei ab. os.replace ist innerhalb
-    eines Dateisystems atomar; auf einem SMB-Netzlaufwerk hängt das an Server und
-    Protokollversion - deshalb liegt die temporäre Datei im selben Verzeichnis
-    und trägt eine Endung, die der Importjob nicht abholt.
+    Erst unter temporärem Namen schreiben, dann umbenennen: Sonst holt der SAP-Job
+    irgendwann eine halb geschriebene Datei ab. `os.replace` ist innerhalb eines
+    Dateisystems atomar; auf einem SMB-Netzlaufwerk hängt das an Server und
+    Protokollversion — deshalb liegt die temporäre Datei im selben Verzeichnis und
+    trägt eine Endung, die der Importjob nicht abholt.
+
+    Args:
+        inhalt: Fertiger Dateiinhalt, bereits in der Zielkodierung.
+        cfg: Konfiguration; maßgeblich ist der Abschnitt `ablage`.
+        zeitpunkt: Zeitstempel für das strftime-Muster im Dateinamen.
+
+    Returns:
+        Pfad der abgelegten Datei.
+
+    Raises:
+        OSError: Zielverzeichnis nicht beschreibbar oder Umbenennen fehlgeschlagen.
     """
     verzeichnis = Path(cfg.ablage.verzeichnis)
     verzeichnis.mkdir(parents=True, exist_ok=True)

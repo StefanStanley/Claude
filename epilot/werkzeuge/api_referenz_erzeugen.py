@@ -19,7 +19,8 @@ METHODS = ("get", "post", "put", "patch", "delete", "head", "options")
 GROUPS = [
     (
         "Daten & Modell",
-        "Das Fundament: Entities sind das flexible Datenmodell von epilot. Alles andere haengt daran.",
+        "Das Fundament: Entities sind das flexible Datenmodell von epilot. "
+        "Alles andere haengt daran.",
         ["entity", "query", "entity-mapping", "deduplication", "data-governance",
          "validation-rules", "snapshot", "blueprint-manifest", "environments",
          "sandbox", "configuration-hub"],
@@ -63,23 +64,44 @@ GROUPS = [
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "api-referenz")
 
 
-def camel(slug):
+def camel(slug: str) -> str:
+    """Slug in die Schreibweise bringen, unter der das SDK den Client anbietet.
+
+    Args:
+        slug: Client-Ordner ohne `-client`, etwa `entity-mapping`.
+
+    Returns:
+        Der Name in camelCase, etwa `entityMapping`.
+    """
     head, *rest = slug.split("-")
     return head + "".join(w.capitalize() for w in rest)
 
 
-def spec_url(pkg):
-    """Spec-URL aus dem npm-Script "openapi" des Clients lesen."""
+def spec_url(pkg: dict) -> str | None:
+    """Spec-URL aus dem npm-Script `openapi` des Clients lesen.
+
+    Args:
+        pkg: Inhalt der `package.json` des Clients.
+
+    Returns:
+        Die URL der YAML-Spec oder `None`, wenn das Script sie nicht nennt.
+    """
     script = pkg.get("scripts", {}).get("openapi", "")
     m = re.search(r"(https://\S+\.yaml)", script)
     return m.group(1) if m else None
 
 
-def op_summary(op):
+def op_summary(op: dict) -> str:
     """Kurzbeschreibung einer Operation.
 
-    Viele epilot-Specs setzen summary == operationId; in dem Fall ist der erste
-    Satz der description die einzige echte Information.
+    Viele epilot-Specs setzen `summary == operationId`; in dem Fall ist der erste Satz
+    der `description` die einzige echte Information.
+
+    Args:
+        op: Operationsobjekt aus der OpenAPI-Spec.
+
+    Returns:
+        Ein Satz, höchstens 160 Zeichen, oder eine leere Zeichenkette.
     """
     oid = op.get("operationId", "")
     summary = (op.get("summary") or "").strip()
@@ -98,7 +120,15 @@ def op_summary(op):
     return ""
 
 
-def load(sdk_root):
+def load(sdk_root: str) -> dict:
+    """Alle OpenAPI-Specs aus einem Clone von `epilot-dev/sdk-js` einlesen.
+
+    Args:
+        sdk_root: Wurzelverzeichnis des Clones; darunter liegt `clients/`.
+
+    Returns:
+        Je Slug die Spec, die Paketangaben und die flach aufgelisteten Operationen.
+    """
     clients_dir = os.path.join(sdk_root, "clients")
     apis = {}
     for name in sorted(os.listdir(clients_dir)):
@@ -109,7 +139,11 @@ def load(sdk_root):
         slug = name[: -len("-client")] if name.endswith("-client") else name
         with open(spec_path) as f:
             spec = json.load(f)
-        pkg = json.load(open(pkg_path)) if os.path.isfile(pkg_path) else {}
+        if os.path.isfile(pkg_path):
+            with open(pkg_path) as f:
+                pkg = json.load(f)
+        else:
+            pkg = {}
         ops = []
         for path, item in spec.get("paths", {}).items():
             shared = item.get("parameters", [])
@@ -137,11 +171,13 @@ def load(sdk_root):
     return apis
 
 
-def md_escape(text):
+def md_escape(text: str | None) -> str:
+    """Text so entschärfen, dass er in einer Markdown-Tabellenzelle steht."""
     return (text or "").replace("|", "\\|").replace("\n", " ").strip()
 
 
-def first_paragraph(text):
+def first_paragraph(text: str | None) -> str:
+    """Den ersten nicht leeren Absatz eines Beschreibungstextes als eine Zeile holen."""
     if not text:
         return ""
     for para in text.strip().split("\n\n"):
@@ -151,7 +187,15 @@ def first_paragraph(text):
     return ""
 
 
-def render_api(api):
+def render_api(api: dict) -> str:
+    """Die Markdown-Seite einer einzelnen API erzeugen.
+
+    Args:
+        api: Ein Eintrag aus `load`.
+
+    Returns:
+        Die vollständige Seite: Zugriff, Security Schemes, Endpunkte nach Tag.
+    """
     spec = api["spec"]
     info = spec.get("info", {})
     title = info.get("title", api["slug"])
@@ -172,12 +216,15 @@ def render_api(api):
     L.append("")
     L.append("| | |")
     L.append("| --- | --- |")
-    L.append(f"| Base URL | {' <br> '.join('`%s`' % s for s in servers) if servers else '– (nicht in der Spec hinterlegt)'} |")
+    basis = (" <br> ".join(f"`{s}`" for s in servers) if servers
+             else "– (nicht in der Spec hinterlegt)")
+    L.append(f"| Base URL | {basis} |")
     if api["spec_url"]:
         L.append(f"| OpenAPI-Spec | {api['spec_url']} |")
     L.append(f"| Docs | https://docs.epilot.io/api/{api['slug']} |")
     if api["pkg_name"]:
-        L.append(f"| SDK | `epilot.{camel(api['slug'])}` aus `@epilot/sdk/{api['slug']}` (Einzelpaket: `{api['pkg_name']}`) |")
+        L.append(f"| SDK | `epilot.{camel(api['slug'])}` aus `@epilot/sdk/{api['slug']}` "
+                 f"(Einzelpaket: `{api['pkg_name']}`) |")
     L.append("")
 
     if schemes:
@@ -221,7 +268,15 @@ def render_api(api):
     return "\n".join(L) + "\n"
 
 
-def render_index(apis):
+def render_index(apis: dict) -> str:
+    """Die Überblicksseite über alle APIs erzeugen.
+
+    Args:
+        apis: Das Ergebnis von `load`.
+
+    Returns:
+        Die Seite `api-referenz/README.md` als Markdown.
+    """
     total_ops = sum(len(a["ops"]) for a in apis.values())
     L = [
         "# epilot API – Überblick",
@@ -234,14 +289,15 @@ def render_index(apis):
         "",
         "## Wie epilot aufgebaut ist",
         "",
-        "epilot ist kein Monolith mit einer API, sondern eine Sammlung eigenständiger Services. "
-        "Jeder hat eine eigene Base URL nach dem Muster `https://<service>.sls.epilot.io` und eine "
-        "eigene OpenAPI-Spec. Authentifizierung, Fehlerformat und Org-Kontext sind über alle Services "
-        "hinweg identisch – siehe [Authentifizierung](./authentifizierung.md).",
+        "epilot ist kein Monolith mit einer API, sondern eine Sammlung eigenständiger "
+        "Services. Jeder hat eine eigene Base URL nach dem Muster "
+        "`https://<service>.sls.epilot.io` und eine eigene OpenAPI-Spec. "
+        "Authentifizierung, Fehlerformat und Org-Kontext sind über alle Services hinweg "
+        "identisch – siehe [Authentifizierung](./authentifizierung.md).",
         "",
-        "Der Einstieg ist fast immer die **Entity API**: Kontakte, Aufträge, Produkte, Verträge – alles "
-        "ist eine Entity mit einem konfigurierbaren Schema. Die anderen Services referenzieren Entities "
-        "über `entity_id` und `slug`.",
+        "Der Einstieg ist fast immer die **Entity API**: Kontakte, Aufträge, Produkte, "
+        "Verträge – alles ist eine Entity mit einem konfigurierbaren Schema. Die anderen "
+        "Services referenzieren Entities über `entity_id` und `slug`.",
         "",
         "## APIs nach Domäne",
         "",
@@ -276,7 +332,13 @@ def render_index(apis):
     return "\n".join(L) + "\n"
 
 
-def main():
+def main() -> None:
+    """Einstiegspunkt: Specs einlesen, Gruppierung prüfen, alle Seiten schreiben.
+
+    Bricht ab, wenn `GROUPS` und die vorhandenen Specs auseinanderlaufen — eine neue
+    API soll bewusst einsortiert werden und nicht stillschweigend aus der Übersicht
+    fallen.
+    """
     if len(sys.argv) != 2:
         sys.exit("usage: generate_docs.py <pfad-zum-sdk-js-clone>")
     apis = load(sys.argv[1])

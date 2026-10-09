@@ -1,0 +1,10 @@
+# Python-Artefakte, die bei jedem Testlauf entstehen.
+#
+# Diese Datei liegt bewusst in der Repository-Wurzel und nicht nur in epilot/:
+# Beim Wechsel auf den Branch epilot-standalone liegen dessen Verzeichnisse hier
+# oben, und die Artefakte eines Testlaufs bleiben nach dem Zurückwechseln als
+# unverfolgte Dateien stehen.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/

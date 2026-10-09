@@ -21,16 +21,17 @@ import argparse
 import csv
 import re
 import sys
-from collections import Counter
 from pathlib import Path
 
 from openpyxl import Workbook
+from openpyxl.cell.cell import Cell
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.worksheet import Worksheet
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from spaltenanalyse import TEXT_MUSTER, befunde, gruppiere, lies  # noqa: E402
+from spaltenanalyse import TEXT_MUSTER, befunde, gruppiere, lies
 
 F = "Arial"
 INK, HEADBG, PETROL, GREY = "1A1A1A", "1F3B42", "0E5A69", "5A6A73"
@@ -85,7 +86,24 @@ BESCHAFFEN = [
 ]
 
 
-def head(ws, row, labels, widths, fills=None, h=38):
+def head(
+    ws: Worksheet,
+    row: int,
+    labels: list[str],
+    widths: list[float],
+    fills: list[str] | None = None,
+    h: float = 38,
+) -> None:
+    """Kopfzeile eines Blattes setzen und darunter einfrieren.
+
+    Args:
+        ws: Das Arbeitsblatt.
+        row: Zeilennummer der Kopfzeile.
+        labels: Spaltenüberschriften.
+        widths: Spaltenbreiten in Zeichen, in derselben Reihenfolge.
+        fills: Hintergrundfarben je Spalte; `None` färbt alle einheitlich.
+        h: Höhe der Kopfzeile in Punkt.
+    """
     for i, t in enumerate(labels, 1):
         c = ws.cell(row=row, column=i, value=t)
         c.font = Font(name=F, size=9, bold=True, color="FFFFFF")
@@ -98,7 +116,33 @@ def head(ws, row, labels, widths, fills=None, h=38):
     ws.freeze_panes = ws.cell(row=row + 1, column=1)
 
 
-def cell(ws, r, c, v=None, fill=None, bold=False, size=10, italic=False, color=INK):
+def cell(
+    ws: Worksheet,
+    r: int,
+    c: int,
+    v: str | int | None = None,
+    fill: str | None = None,
+    bold: bool = False,
+    size: float = 10,
+    italic: bool = False,
+    color: str = INK,
+) -> Cell:
+    """Eine Zelle setzen und einheitlich formatieren.
+
+    Args:
+        ws: Das Arbeitsblatt.
+        r: Zeile, 1-basiert.
+        c: Spalte, 1-basiert.
+        v: Inhalt; `None` lässt die Zelle leer, aber formatiert sie.
+        fill: Hintergrundfarbe als Hexwert ohne `#`.
+        bold: Fett setzen.
+        size: Schriftgröße in Punkt.
+        italic: Kursiv setzen.
+        color: Schriftfarbe als Hexwert ohne `#`.
+
+    Returns:
+        Die gesetzte Zelle.
+    """
     x = ws.cell(row=r, column=c, value=v)
     x.font = Font(name=F, size=size, bold=bold, italic=italic, color=color)
     x.alignment = Alignment(vertical="top", wrap_text=True)
@@ -108,7 +152,22 @@ def cell(ws, r, c, v=None, fill=None, bold=False, size=10, italic=False, color=I
     return x
 
 
-def titel(ws, t, sub, hin=None, hin2=None):
+def titel(
+    ws: Worksheet,
+    t: str,
+    sub: str,
+    hin: str | None = None,
+    hin2: str | None = None,
+) -> None:
+    """Titelblock über die Kopfzeile setzen.
+
+    Args:
+        ws: Das Arbeitsblatt.
+        t: Überschrift.
+        sub: Erläuterung darunter.
+        hin: Hervorgehobener Hinweis, meist der Fallstrick dieses Blattes.
+        hin2: Nachgestellter Hinweis in kleiner Schrift, etwa ein Werkzeugaufruf.
+    """
     ws.sheet_view.showGridLines = False
     ws.cell(row=1, column=1, value=t).font = Font(name=F, size=14, bold=True, color=INK)
     ws.cell(row=2, column=1, value=sub).font = Font(name=F, size=9.5, color=GREY)
@@ -119,7 +178,15 @@ def titel(ws, t, sub, hin=None, hin2=None):
 
 
 def lies_vorschlaege(pfad: str) -> dict[int, list[str]]:
-    """CSV aus schema_attribute.py einlesen: Position -> Vorschläge mit Güte."""
+    """Zuordnungsvorschläge aus `schema_attribute.py` einlesen.
+
+    Args:
+        pfad: CSV-Datei, wie `schema_attribute.py --spalten` sie schreibt.
+
+    Returns:
+        Je Spaltenposition die Vorschläge, jeder mit seiner Güte in Klammern.
+        Positionen ohne Vorschlag fehlen im Ergebnis.
+    """
     ergebnis: dict[int, list[str]] = {}
     with open(pfad, encoding="utf-8-sig", newline="") as f:
         for zeile in csv.DictReader(f, delimiter=";"):
@@ -138,8 +205,26 @@ def lies_vorschlaege(pfad: str) -> dict[int, list[str]]:
     return ergebnis
 
 
-def baue(namen: list[str], ziel: str, titel_text: str, vorschlaege: dict[int, list[str]],
-         hinweis: str | None) -> None:
+def baue(
+    namen: list[str],
+    ziel: str,
+    titel_text: str,
+    vorschlaege: dict[int, list[str]],
+    hinweis: str | None,
+) -> None:
+    """Die vollständige Mapping-Arbeitsmappe schreiben.
+
+    Vier Blätter: Entscheidungen, Feldmapping, Wertelisten, Beschaffungsliste. Die
+    Spaltenreihenfolge des Ist-Exports bleibt unverändert — sie ist bei doppelten
+    Spaltennamen die einzige verlässliche Zuordnung.
+
+    Args:
+        namen: Spaltennamen des Ist-Exports in Originalreihenfolge.
+        ziel: Pfad der zu schreibenden .xlsx-Datei.
+        titel_text: Name der Strecke, erscheint in den Überschriften.
+        vorschlaege: Zuordnungsvorschläge je Position; leer lässt die Spalte weg.
+        hinweis: Streckenspezifischer Hinweis auf Blatt 1.
+    """
     b = befunde(namen)
     gruppen_von = {n: g for g, ms in gruppiere(namen).items() for n in ms}
     wb = Workbook()
@@ -149,7 +234,8 @@ def baue(namen: list[str], ziel: str, titel_text: str, vorschlaege: dict[int, li
     ws.title = "1 Entscheidungen"
     titel(ws, f"Mapping-Sitzung {titel_text}",
           "Diese fünf Punkte vor der Feldliste — sie bestimmen, wie viel Feldarbeit anfällt.",
-          hinweis or "Punkt 1 kann einen erheblichen Teil der Arbeit sparen. Deshalb steht er vorn.")
+          hinweis
+          or "Punkt 1 kann einen erheblichen Teil der Arbeit sparen. Deshalb steht er vorn.")
     head(ws, 6, ["Nr", "Punkt", "Warum zuerst", "Zu entscheiden", "Entscheidung", "Wer", "Bis"],
          [5, 30, 44, 34, 30, 14, 10], [HEADBG] * 4 + [FUELL] * 3, h=40)
     r = 7
@@ -168,7 +254,8 @@ def baue(namen: list[str], ziel: str, titel_text: str, vorschlaege: dict[int, li
     hat_vorschlaege = bool(vorschlaege)
     titel(ws, f"Feldmapping {titel_text} — {len(namen)} Spalten",
           "Reihenfolge und Schreibweise exakt wie im heutigen Export. Position ist verbindlich.",
-          ("Spalte „Vorschlag“ stammt aus dem Namensabgleich und ist ungeprüft — Güte unter 0,75 anschauen."
+          ("Spalte „Vorschlag“ stammt aus dem Namensabgleich und ist ungeprüft — "
+           "Güte unter 0,75 anschauen."
            if hat_vorschlaege else
            "Die Spalte „Quelle im Zielsystem“ ist leer: Es liegt noch kein Mapping-Vorschlag vor."),
           "Vorschläge erzeugen: werkzeuge/schema_attribute.py --manifest … --spalten …")
@@ -176,7 +263,9 @@ def baue(namen: list[str], ziel: str, titel_text: str, vorschlaege: dict[int, li
     breiten = [5, 32, 16, 10, 38]
     fuellungen = [HEADBG] * 5
     if hat_vorschlaege:
-        spalten.append("Vorschlag (ungeprüft)"); breiten.append(30); fuellungen.append(WARN)
+        spalten.append("Vorschlag (ungeprüft)")
+        breiten.append(30)
+        fuellungen.append(WARN)
     spalten += ["Wird inhaltlich gebraucht?", "Quelle im Zielsystem", "Transformation", "Wer"]
     breiten += [20, 28, 24, 10]
     fuellungen += [FUELL] * 4
@@ -189,7 +278,7 @@ def baue(namen: list[str], ziel: str, titel_text: str, vorschlaege: dict[int, li
         block = gruppen_von.get(name, "")
         if block != letzter and block and block != "(einzeln)":
             cell(ws, r, 2, block, GRUPPE, bold=True, size=9.5, color=PETROL)
-            for c_ in [1] + list(range(3, len(spalten) + 1)):
+            for c_ in [1, *range(3, len(spalten) + 1)]:
                 cell(ws, r, c_, None, GRUPPE)
             ws.row_dimensions[r].height = 16
             r += 1
@@ -236,7 +325,7 @@ def baue(namen: list[str], ziel: str, titel_text: str, vorschlaege: dict[int, li
                  "Bemerkung"], [26, 34, 26, 24, 32],
          [HEADBG, HEADBG, FUELL, FUELL, HEADBG])
     r = 6
-    for i in range(30):
+    for _ in range(30):
         for c_ in range(1, 6):
             cell(ws, r, c_, None, FUELL if c_ in (3, 4) else REF, size=9.5)
         r += 1
@@ -259,7 +348,15 @@ def baue(namen: list[str], ziel: str, titel_text: str, vorschlaege: dict[int, li
     wb.save(ziel)
 
 
-def main(argv=None) -> int:
+def main(argv: list[str] | None = None) -> int:
+    """Einstiegspunkt für den Aufruf über die Kommandozeile.
+
+    Args:
+        argv: Argumente; `None` nimmt die der Kommandozeile.
+
+    Returns:
+        0 — das Werkzeug erzeugt eine Arbeitsvorlage und bewertet nichts.
+    """
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("spalten", help="Datei mit den Spaltennamen des Ist-Exports")
@@ -276,7 +373,8 @@ def main(argv=None) -> int:
     b = befunde(namen)
     print(f"geschrieben: {a.ausgabe}", file=sys.stderr)
     print(f"  {len(namen)} Spalten · {len(b['anzeigetexte'])} mutmaßliche Anzeigetexte "
-          f"· {len(b['mehrfach'])} doppelte Namen · {len(b['randleerzeichen'])} mit Randleerzeichen",
+          f"· {len(b['mehrfach'])} doppelte Namen "
+          f"· {len(b['randleerzeichen'])} mit Randleerzeichen",
           file=sys.stderr)
     if vorschlaege:
         print(f"  {len(vorschlaege)} Spalten mit Zuordnungsvorschlag", file=sys.stderr)

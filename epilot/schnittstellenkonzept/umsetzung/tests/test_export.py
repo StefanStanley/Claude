@@ -8,6 +8,7 @@ import sys
 import unittest
 from datetime import datetime
 from pathlib import Path
+from typing import ClassVar
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -59,7 +60,7 @@ class TestMapping(unittest.TestCase):
     def test_vollstaendiger_vorgang_wird_abgebildet(self):
         werte, fehler = zeile(FIXTURES[0], self.cfg)
         self.assertEqual(fehler, [])
-        spalten = {s.name: w for s, w in zip(self.cfg.spalten, werte)}
+        spalten = {s.name: w for s, w in zip(self.cfg.spalten, werte, strict=True)}
         self.assertEqual(spalten["IBN_DATUM"], "17032026")          # ISO -> TTMMJJJJ
         self.assertEqual(spalten["LEISTUNG_KWP"], "9,90")           # Dezimalkomma
         self.assertEqual(spalten["ANLAGEN_TYP"], "PVA")             # Werteliste
@@ -104,7 +105,7 @@ class TestDateiformat(unittest.TestCase):
         self.assertNotIn(b"\n\n", roh)
         # Umlaut in Windows-1252, nicht UTF-8
         self.assertIn("Düsseldorf".encode("cp1252"), roh)
-        self.assertNotIn("Düsseldorf".encode("utf-8"), roh)
+        self.assertNotIn("Düsseldorf".encode(), roh)
 
     def test_kopfzeile_steht_in_konfigurierter_reihenfolge(self):
         roh = baue_datei([], self.cfg)
@@ -202,7 +203,9 @@ class TestConfigPruefung(unittest.TestCase):
             type(cfg.format)(kodierung="gibtsnicht")
 
     def test_doppelter_spaltenname_faellt_auf(self):
-        import tempfile, yaml
+        import tempfile
+
+        import yaml
         roh = yaml.safe_load((BASIS / "config.beispiel.yaml").read_text(encoding="utf-8"))
         roh["spalten"].append({"name": "PLZ", "quelle": "_id"})
         with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as f:
@@ -214,3 +217,67 @@ class TestConfigPruefung(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestProbelaufEinspeiser(unittest.TestCase):
+    """Die Konfiguration für den Probelauf gegen einen realistischen Vorgang.
+
+    Sichert die Feldnamen aus dem Billing-Mapping ab: Ändert epilot ein Attribut oder
+    vertippt sich jemand in der Konfiguration, fällt es hier auf und nicht erst in der
+    Datei, die bei SAP landet.
+    """
+
+    VORGANG: ClassVar[dict] = {
+        "_id": "abc-123",
+        "opportunity_number": "OPP-2026-004711",
+        "delivery_address": [{"street": "Musterstraße ", "street_number": "12a",
+                              "postal_code": "40233", "city": "Düsseldorf"}],
+        "ea_erzeugungsanlage_anlagentyp": "photovoltaik",
+        "ea_inbetriebsetzungsdatum": "2026-03-17T00:00:00.000Z",
+        "ea_installierte_modulleistung_in_kwp": 9.9,
+        "zaehlermeldung_messkonzept": "MK-03",
+        "ea_see_erzeugungsanlage": "SEE900000123456",
+        "ea_erzeugungsanlage_art_der_einspeisung": "ueberschusseinspeisung",
+    }
+
+    def setUp(self):
+        self.cfg = Config.laden(BASIS / "config.einspeiser.probelauf.yaml")
+
+    def spalten(self):
+        werte, fehler = zeile(self.VORGANG, self.cfg)
+        self.assertEqual(fehler, [])
+        return {s.name: w for s, w in zip(self.cfg.spalten, werte, strict=True)}
+
+    def test_vollstaendiger_vorgang_geht_durch(self):
+        self.assertEqual(pruefe(self.VORGANG, self.cfg), [])
+        self.assertEqual(zeile(self.VORGANG, self.cfg)[1], [])
+
+    def test_sechzehn_spalten_nicht_dreissig(self):
+        # Entscheidung vom 19.09.2026: Die Datei darf auf das Minimalset schrumpfen.
+        self.assertEqual(len(self.cfg.spalten), 16)
+
+    def test_einspeiseart_wird_zum_sap_schluessel(self):
+        self.assertEqual(self.spalten()["Art der Einspeisung"], "02")
+
+    def test_unbekannte_energieart_wird_durchgereicht_statt_zurueckgehalten(self):
+        # Die Werteliste ist leer, solange die Zielschlüssel fehlen. Im Probelauf soll
+        # der Rohwert sichtbar werden, damit man ihn überhaupt erfährt.
+        self.assertEqual(self.spalten()["Energieart"], "photovoltaik")
+
+    def test_datum_und_dezimaltrennzeichen(self):
+        s = self.spalten()
+        self.assertEqual(s["EEG_Inbetriebnahmedatum"], "17.03.2026")
+        self.assertEqual(s["Gesamtleistung_kW"], "9,90")
+
+    def test_randleerzeichen_der_strasse_faellt_weg(self):
+        self.assertEqual(self.spalten()["Straße_Anschlussobjekt"], "Musterstraße")
+
+    def test_offene_felder_bleiben_leer_statt_zu_scheitern(self):
+        s = self.spalten()
+        for feld in ("Einspeisemanagement", "Fernsteuerbarkeit", "Nettoleistung_kW"):
+            self.assertEqual(s[feld], "")
+
+    def test_fehlende_see_nummer_haelt_den_vorgang_zurueck(self):
+        # Ohne SEE-Nummer keine EEG-Vergütung — der Vorgang gehört in die Klärliste.
+        ohne = {k: v for k, v in self.VORGANG.items() if k != "ea_see_erzeugungsanlage"}
+        self.assertTrue(pruefe(ohne, self.cfg))

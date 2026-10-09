@@ -28,6 +28,19 @@ log = logging.getLogger("sap_export")
 
 @dataclass
 class Ergebnis:
+    """Was ein Lauf bewirkt hat — die Grundlage für Protokoll und Rückgabewert.
+
+    Attributes:
+        gelesen: Vorgänge, die die Suche geliefert hat.
+        geliefert: Vorgänge, die in der Datei stehen.
+        zurueckgehalten: Vorgänge in der Klärliste.
+        status_fehler: Kennungen, die geliefert, aber nicht markiert werden konnten;
+            sie kommen im nächsten Lauf erneut.
+        klaerliste: Je Vorgang die Kennung und die Gründe — ohne Antragsinhalte.
+        datei: Pfad der abgelegten Datei, `None` bei Leerlauf.
+        probelauf: War der Lauf ein Probelauf ohne Ablage und ohne Statusschreiben?
+    """
+
     gelesen: int = 0
     geliefert: int = 0
     zurueckgehalten: int = 0
@@ -37,6 +50,7 @@ class Ergebnis:
     probelauf: bool = False
 
     def als_dict(self) -> dict:
+        """Ergebnis als JSON-fähiges Wörterbuch für das Laufprotokoll."""
         return {
             "zeitpunkt": datetime.now().isoformat(timespec="seconds"),
             "gelesen": self.gelesen,
@@ -50,10 +64,17 @@ class Ergebnis:
 
 
 def _klaerfall(entity: dict, gruende: list[str]) -> dict:
-    """Eintrag für die Klärliste - bewusst ohne personenbezogene Inhalte.
+    """Eintrag für die Klärliste — bewusst ohne personenbezogene Inhalte.
 
-    Die Klärliste wird protokolliert und ggf. weitergereicht; sie braucht die
+    Die Klärliste wird protokolliert und gegebenenfalls weitergereicht; sie braucht die
     Kennung des Vorgangs, nicht die Daten des Betreibers.
+
+    Args:
+        entity: Der zurückgehaltene Vorgang.
+        gruende: Alle Befunde dieses Vorgangs.
+
+    Returns:
+        Eintrag aus Kennung, Titel und Gründen.
     """
     return {
         "entity_id": entity.get("_id"),
@@ -62,8 +83,32 @@ def _klaerfall(entity: dict, gruende: list[str]) -> dict:
     }
 
 
-def lauf(cfg: Config, token: str, probelauf: bool = False,
-         api: EntityAPI | None = None) -> Ergebnis:
+def lauf(
+    cfg: Config,
+    token: str,
+    probelauf: bool = False,
+    api: EntityAPI | None = None,
+) -> Ergebnis:
+    """Einen vollständigen Exportlauf durchführen.
+
+    Die Reihenfolge ist Absicht: Erst die Datei ablegen, dann den Status setzen. Bricht
+    der Lauf dazwischen ab, entsteht eine Dublette — andersherum entstünde ein
+    verlorener Vorgang.
+
+    Args:
+        cfg: Konfiguration des Laufs.
+        token: Access Token für die Entity API.
+        probelauf: Datei nur erzeugen, nichts ablegen und keinen Status schreiben.
+        api: Vorbereiteter API-Zugriff; im Test der Ort für ein Double.
+
+    Returns:
+        Das Ergebnis des Laufs samt Klärliste.
+
+    Raises:
+        KodierungsFehler: Nur wenn `bei_kodierungsfehler` auf `lauf_abbrechen` steht.
+        EpilotFehler: Die Suche ist fehlgeschlagen. Fehler beim Statusschreiben brechen
+            den Lauf dagegen nicht ab, sondern landen in `status_fehler`.
+    """
     erg = Ergebnis(probelauf=probelauf)
     api = api or EntityAPI(cfg.epilot, token)
 
@@ -139,6 +184,7 @@ def lauf(cfg: Config, token: str, probelauf: bool = False,
 
 
 def _protokolliere(cfg: Config, erg: Ergebnis) -> None:
+    """Laufprotokoll als JSON ablegen, falls ein Protokollverzeichnis konfiguriert ist."""
     if not cfg.ablage.protokoll_verzeichnis:
         return
     verzeichnis = Path(cfg.ablage.protokoll_verzeichnis)
@@ -148,7 +194,17 @@ def _protokolliere(cfg: Config, erg: Ergebnis) -> None:
     log.info("Protokoll: %s", pfad)
 
 
-def main(argv=None) -> int:
+def main(argv: list[str] | None = None) -> int:
+    """Einstiegspunkt für den Aufruf über die Kommandozeile.
+
+    Args:
+        argv: Argumente; `None` nimmt die der Kommandozeile.
+
+    Returns:
+        Rückgabewert für den Scheduler: 0 wenn alles glattlief, 1 wenn etwas
+        Aufmerksamkeit braucht (Klärfälle oder nicht gesetzte Status), 2 wenn kein
+        Token gesetzt ist.
+    """
     p = argparse.ArgumentParser(description="Einspeiseanlagen aus epilot nach SAP exportieren")
     p.add_argument("--config", required=True, help="Pfad zur YAML-Konfiguration")
     p.add_argument("--probelauf", action="store_true",
