@@ -270,6 +270,32 @@ Annahmen als solche gekennzeichnet. Acht Tests sichern sie ab.
 `Art der Einspeisung`, die Felder `Einspeisemanagement` und `Fernsteuerbarkeit`, der
 Attributname für `Wechselrichterleistung_kW` (Quelle ist bestätigt).
 
+## Governance (09.10.2026)
+
+`schnittstellenkonzept/GOVERNANCE.md` beantwortet die vier Punkte, die die IT bei
+früheren Vorhaben aufgeworfen hat, und schlägt drei Ausbaustufen vor (MVP ≈ vier
+Personentage / belastbar / Zielbild).
+
+**Das stärkste Argument gegenüber der IT:** epilot hat **keine klassischen API-Keys**.
+Jeder Zugang ist ein JWT mit Rollen (`assignments`), optionalem `read_only`, Ablaufzeit
+und sofortigem Widerruf per `DELETE /v1/access-tokens/{id}`. `GET /v1/access-tokens`
+liefert ein vollständiges Token-Inventar aus dem System. Das ist mehr Kontrolle, als ein
+statischer Schlüssel je bieten könnte.
+
+**Zweites Argument:** SK-001 überträgt **keine personenbezogenen Daten** — belegt durch
+die Spaltenanalyse, nicht behauptet. Die Klärliste ebenso, abgesichert durch einen Test.
+
+**Rollen:** Product Owner (fachlicher Owner), Application Manager (technischer Betrieb)
+und Key User (Klärfälle) decken den Regelbetrieb. **Eine neue Rolle ist nötig:**
+Integrationsverantwortlicher im Cluster, 2–4 h/Monat, pflegt das Register. Ohne ihn
+verwaist es binnen eines halben Jahres — und ein falsches Register ist schlimmer als
+keines. Dazu zwei Einbindungen bestehender Funktionen: Datenschutz als Prozessschritt,
+Stellvertretung als Register-Eintrag.
+
+**Aufgeworfen, aber ungelöst:** Die Bronze-Ablage in Databricks enthält *mehr* als die
+Exportdatei — den vollständigen Vorgang. Dort greifen die Berechtigungsfragen voll, auch
+wenn die Schnittstelle selbst harmlos ist.
+
 ## Wo die Arbeit steht (17.09.2026)
 
 Die Datenstrecke ist angefangen, das Mapping liegt auf Eis — **in dieser Reihenfolge
